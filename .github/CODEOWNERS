@@ -1,0 +1,24 @@
+# ==============================================================================
+# Reglas de Revisión Cruzada (Parejas de Revisión PEI / Tiza)
+# Cada PR debe ser aprobado por el par asignado antes de integrarse.
+# ==============================================================================
+
+# Microservicios: Pareja Identidad <-> Cursos
+/services/identidad/          @DevCursos
+/services/cursos/             @DevIdentidad
+
+# Microservicios: Pareja Evaluaciones <-> Sala en Vivo
+/services/evaluaciones/       @DevSalaEnVivo
+/services/sala-en-vivo/       @DevEvaluaciones
+
+# Inteligencia Artificial: Pareja IA-1 <-> IA-2
+/services/ia/                 @DevIA-1 @DevIA-2
+
+# Frontend: Pareja Frontend 1 <-> Frontend 2
+/frontend/                    @DevFrontend1 @DevFrontend2
+
+# Gateway, Infraestructura y Código Compartido
+/gateway/                     @ScrumMaster
+/infra/                       @ScrumMaster
+/building-blocks/             @ScrumMaster
+/contracts/                   @ScrumMaster @QA

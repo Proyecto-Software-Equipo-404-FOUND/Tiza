@@ -1,0 +1,49 @@
+name: CI - Build & Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  backend-build-test:
+    name: Backend Build & Test (.NET 8)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore PEI.sln
+
+      - name: Build solutions
+        run: dotnet build PEI.sln --no-restore --configuration Release
+
+      - name: Run unit tests
+        run: dotnet test PEI.sln --no-build --configuration Release --verbosity normal
+
+  frontend-check:
+    name: Frontend Lint & Check (React + Vite)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check Frontend (if package.json exists)
+        run: |
+          if [ -f "frontend/package.json" ]; then
+            cd frontend
+            npm ci || npm install
+            npm run build --if-present
+          fi
