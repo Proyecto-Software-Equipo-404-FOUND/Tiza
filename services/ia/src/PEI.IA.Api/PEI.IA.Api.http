@@ -1,0 +1,6 @@
+@PEI.IA.Api_HostAddress = http://localhost:5177
+
+GET {{PEI.IA.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,6 @@
+@PEI.Cursos.Api_HostAddress = http://localhost:5274
+
+GET {{PEI.Cursos.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
