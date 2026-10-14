@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PreguntasJson",
+  "description": "Esquema v1 para estructura de preguntas y rúbricas en evaluaciones de Tiza",
+  "type": "object",
+  "required": ["version", "preguntas"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "default": 1
+    },
+    "preguntas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "enunciado", "tipo", "puntajeMaximo"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "enunciado": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": ["OpcionMultiple", "Abierta"]
+          },
+          "puntajeMaximo": {
+            "type": "number",
+            "minimum": 0
+          },
+          "opciones": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "texto", "esCorrecta"],
+              "properties": {
+                "id": { "type": "string" },
+                "texto": { "type": "string" },
+                "esCorrecta": { "type": "boolean" }
+              }
+            }
+          },
+          "rubrica": {
+            "type": "object",
+            "properties": {
+              "criterios": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["descripcion", "puntaje"],
+                  "properties": {
+                    "descripcion": { "type": "string" },
+                    "puntaje": { "type": "number" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
