@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Calibri, 'Segoe UI', sans-serif;
+  color-scheme: light;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: Arial, sans-serif;
+  font-weight: 700;
+}
