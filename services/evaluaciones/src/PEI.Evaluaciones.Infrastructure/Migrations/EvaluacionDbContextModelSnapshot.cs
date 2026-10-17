@@ -28,6 +28,20 @@ namespace PEI.Evaluaciones.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("CohorteId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTimeOffset>("FechaActualizacion")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("FechaCreacion")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("InstitucionId")
                         .HasColumnType("uuid");
 
@@ -38,6 +52,11 @@ namespace PEI.Evaluaciones.Infrastructure.Migrations
                     b.Property<string>("Tipo")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("Titulo")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<int>("Version")
                         .IsConcurrencyToken()
