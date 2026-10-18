@@ -1,8 +1,14 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\PEI.Cursos.Application\PEI.Cursos.Application.csproj" />
     <ProjectReference Include="..\PEI.Cursos.Domain\PEI.Cursos.Domain.csproj" />
+    <ProjectReference Include="..\..\..\..\building-blocks\PEI.BuildingBlocks\PEI.BuildingBlocks.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
   </ItemGroup>
 
   <PropertyGroup>

@@ -1,11 +1,20 @@
+using PEI.BuildingBlocks.MultiTenancy;
+using PEI.Cursos.Infrastructure;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Infrastructure y persistencia
+builder.Services.AddInfrastructure(builder.Configuration);
+
+// Contexto multi-tenant
+builder.Services.AddScoped<TenantContext>();
+builder.Services.AddScoped<ITenantContext>(sp =>
+    sp.GetRequiredService<TenantContext>());
 
 var app = builder.Build();
 
