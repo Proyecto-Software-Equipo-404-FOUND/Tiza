@@ -1,12 +1,33 @@
-namespace services.sala-en-vivo.src.PEI.SalaEnVivo.Domain.Entities;
-
-public class Sala
+namespace services.SalaEnVivo.src.PEI.SalaEnVivo.Domain.Entities
 {
-    public int Id { get; set; }
-    public int InstitucionId { get; set; }
+    public class Sala
+    {
+        public int Id { get; set; }
+        public int InstitucionId { get; set; }
 
-    public byte[] Version { get; set; } = Array.Empty<byte>();
-    public DateTime FechaVencimiento { get; set; }
-    public int CodigoPIN { get; set; }
-    public string Estado { get; set; }
+        public byte[] Version { get; set; } = Array.Empty<byte>();
+        public DateTime FechaVencimiento { get; set; }
+        public int CodigoPIN { get; set; }
+        public string Estado { get; set; } = string.Empty;
+        public int CapacidadMaxima { get; set; }
+        public int CantidadParticipantes { get; set; }
+
+        public void setCapacidadMaxima(int capacidad)
+        {
+            if (capacidad < 1)
+            {
+                throw new ArgumentException("La capacidad máxima debe ser mayor a cero.");
+            }
+            CapacidadMaxima = capacidad;
+        }
+        public bool modificarCapacidadMaxima(int nuevaCapacidad)
+        {
+            if (nuevaCapacidad < 1 && nuevaCapacidad < CantidadParticipantes)
+            {
+                return false;
+            }
+            CapacidadMaxima = nuevaCapacidad;
+            return true;
+        }
+    }
 }

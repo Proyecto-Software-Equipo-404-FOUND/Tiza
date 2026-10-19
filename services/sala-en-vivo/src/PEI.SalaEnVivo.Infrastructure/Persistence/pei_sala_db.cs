@@ -1,25 +1,31 @@
-using services.sala-en-vivo.src.PEI.SalaEnVivo.Domain.Entities;
+using services.SalaEnVivo.src.PEI.SalaEnVivo.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace services.sala-en-vivo.src.PEI.SalaEnVivo.Infrastructure.Persistence;
-public class pei_sala_db : DbContext
+namespace services.SalaEnVivo.src.PEI.SalaEnVivo.Infrastructure.Persistence
 {
-    public pei_sala_db(DbContextOptions<pei_sala_db> options) : base(options) { }
-
-    public DbSet<Sala> Sala => Set<Sala>();
-    public DbSet<ParticipanteSala> ParticipanteSala => Set<ParticipanteSala>();
-
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    public class pei_sala_db : DbContext
     {
-        base.OnModelCreating(modelBuilder);
+        public pei_sala_db(DbContextOptions<pei_sala_db> options) : base(options) { }
 
-        modelBuilder.Entity<Sala>();
+        public DbSet<Sala> Sala => Set<Sala>();
+        public DbSet<ParticipanteSala> ParticipanteSala => Set<ParticipanteSala>();
 
-        modelBuilder.Entity<ParticipanteSala>(p =>
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            p.HasOne(s => s.Sala)
-            .WithMany()
-            .HasForeignKey(s => s.SalaId);
-        });
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<Sala>(s =>
+            {
+                s.HasKey(x => x.Id);
+                s.HasIndex(x => x.CodigoPIN);
+            });
+
+            modelBuilder.Entity<ParticipanteSala>(p =>
+            {
+                p.HasOne(x => x.Sala)
+                    .WithMany()
+                    .HasForeignKey(x => x.SalaId);
+            });
+        }
     }
 }
