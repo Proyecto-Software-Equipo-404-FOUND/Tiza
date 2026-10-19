@@ -4,7 +4,9 @@ public enum TipoResultado
 {
     Ok,
     Invalido,
-    NoEncontrado
+    NoEncontrado,
+
+    Conflicto
 }
 
 public class ResultadoOperacion<T>
@@ -33,4 +35,7 @@ public class ResultadoOperacion<T>
 
     public static ResultadoOperacion<T> NoEncontrado() =>
         new(TipoResultado.NoEncontrado, default, Array.Empty<string>());
+
+    public static ResultadoOperacion<T> Conflicto(string error) =>
+        new(TipoResultado.Conflicto, default, new[] { error });    
 }
