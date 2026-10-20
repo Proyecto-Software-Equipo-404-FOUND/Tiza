@@ -3,11 +3,26 @@ using PEI.BuildingBlocks.Errors;
 using PEI.BuildingBlocks.Logging;
 using PEI.IA.Application.Interfaces;
 using PEI.IA.Application.Services;
+using PEI.IA.Infrastructure.Mcp;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ── Configuración ──
+var mcpSettings = builder.Configuration.GetSection("McpSettings").Get<McpSettings>() ?? new McpSettings();
+builder.Services.AddSingleton(mcpSettings);
+
 // ── Servicios de aplicación ──
 builder.Services.AddScoped<ICorreccionService, CorreccionService>();
+
+// ── Tool Executor (Plan B o MCP real) ──
+if (mcpSettings.UsarPlanB)
+{
+    builder.Services.AddSingleton<IToolExecutor, LocalToolExecutor>();
+}
+else
+{
+    builder.Services.AddSingleton<IToolExecutor, McpToolExecutor>();
+}
 
 // ── Controllers + JSON ──
 builder.Services.AddControllers()
