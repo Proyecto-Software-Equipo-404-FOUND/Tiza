@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\PEI.Identidad.Application\PEI.Identidad.Application.csproj" />
+    <ProjectReference Include="..\..\src\PEI.Identidad.Infrastructure\PEI.Identidad.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\PEI.Identidad.Domain\PEI.Identidad.Domain.csproj" />
   </ItemGroup>
 
