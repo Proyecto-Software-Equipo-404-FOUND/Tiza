@@ -1,7 +1,7 @@
-using services.SalaEnVivo.src.PEI.SalaEnVivo.Application.Interfaces;
-using services.SalaEnVivo.src.PEI.SalaEnVivo.Application.Interfaces.Repositories;
-using services.SalaEnVivo.src.PEI.SalaEnVivo.Application.UseCases.Salas.Handlers;
-using services.SalaEnVivo.src.PEI.SalaEnVivo.Infrastructure.Persistence;
+using PEI.SalaEnVivo.Application.Interfaces;
+using PEI.SalaEnVivo.Application.Interfaces.Repositories;
+using PEI.SalaEnVivo.Application.UseCases.Salas.Handlers;
+using PEI.SalaEnVivo.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 

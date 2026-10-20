@@ -1,4 +1,4 @@
-namespace services.SalaEnVivo.src.PEI.SalaEnVivo.Domain.Entities
+namespace PEI.SalaEnVivo.Domain.Entities
 {
     public class ParticipanteSala
     {

@@ -1,7 +1,7 @@
-using services.SalaEnVivo.src.PEI.SalaEnVivo.Domain.Entities;
+using PEI.SalaEnVivo.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace services.SalaEnVivo.src.PEI.SalaEnVivo.Infrastructure.Persistence
+namespace PEI.SalaEnVivo.Infrastructure.Persistence
 {
     public class pei_sala_db : DbContext
     {

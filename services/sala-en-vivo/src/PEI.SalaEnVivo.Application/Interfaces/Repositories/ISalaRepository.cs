@@ -1,6 +1,6 @@
-using services.SalaEnVivo.src.PEI.SalaEnVivo.Domain.Entities;
+using PEI.SalaEnVivo.Domain.Entities;
 
-namespace services.SalaEnVivo.src.PEI.SalaEnVivo.Application.Interfaces.Repositories
+namespace PEI.SalaEnVivo.Application.Interfaces.Repositories
 {
     public interface ISalaRepository
     {

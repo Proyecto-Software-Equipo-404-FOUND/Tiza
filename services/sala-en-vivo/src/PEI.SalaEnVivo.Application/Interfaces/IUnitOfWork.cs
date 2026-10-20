@@ -1,4 +1,4 @@
-namespace services.SalaEnVivo.src.PEI.SalaEnVivo.Application.Interfaces
+namespace PEI.SalaEnVivo.Application.Interfaces
 {
     public interface IUnitOfWork
     {

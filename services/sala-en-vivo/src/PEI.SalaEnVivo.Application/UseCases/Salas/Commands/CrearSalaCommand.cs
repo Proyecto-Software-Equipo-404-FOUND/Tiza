@@ -1,4 +1,4 @@
-namespace services.SalaEnVivo.src.PEI.SalaEnVivo.Application.UseCases.Salas.Commands
+namespace PEI.SalaEnVivo.Application.UseCases.Salas.Commands
 {
     public class CrearSalaCommand
     {

@@ -1,10 +1,10 @@
-using services.SalaEnVivo.src.PEI.SalaEnVivo.Application.Interfaces.Repositories;
-using services.SalaEnVivo.src.PEI.SalaEnVivo.Domain.Entities;
-using services.SalaEnVivo.src.PEI.SalaEnVivo.Infrastructure.Persistence;
+using PEI.SalaEnVivo.Application.Interfaces.Repositories;
+using PEI.SalaEnVivo.Domain.Entities;
+using PEI.SalaEnVivo.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 
-namespace services.SalaEnVivo.src.PEI.SalaEnVivo.Infrastructure.Repositories
+namespace PEI.SalaEnVivo.Infrastructure.Repositories
 {
     public class SalaRepository : ISalaRepository   
     {

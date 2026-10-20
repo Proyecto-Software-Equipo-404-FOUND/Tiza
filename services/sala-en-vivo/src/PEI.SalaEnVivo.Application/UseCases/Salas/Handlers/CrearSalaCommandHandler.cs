@@ -1,10 +1,10 @@
-using services.SalaEnVivo.src.PEI.SalaEnVivo.Application.Interfaces;
-using services.SalaEnVivo.src.PEI.SalaEnVivo.Application.UseCases.Salas.Commands;
-using services.SalaEnVivo.src.PEI.SalaEnVivo.Application.Interfaces.Repositories;
-using services.SalaEnVivo.src.PEI.SalaEnVivo.Domain.Entities;
+using PEI.SalaEnVivo.Application.Interfaces;
+using PEI.SalaEnVivo.Application.UseCases.Salas.Commands;
+using PEI.SalaEnVivo.Application.Interfaces.Repositories;
+using PEI.SalaEnVivo.Domain.Entities;
 using System.Security.Cryptography;
 
-namespace services.SalaEnVivo.src.PEI.SalaEnVivo.Application.UseCases.Salas.Handlers
+namespace PEI.SalaEnVivo.Application.UseCases.Salas.Handlers
 {
     public class CrearSalaCommandHandler
     {

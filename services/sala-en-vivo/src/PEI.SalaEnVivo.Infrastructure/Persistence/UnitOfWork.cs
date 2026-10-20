@@ -1,7 +1,7 @@
-    using services.SalaEnVivo.src.PEI.SalaEnVivo.Application.Interfaces;
+    using PEI.SalaEnVivo.Application.Interfaces;
 
-    namespace services.SalaEnVivo.src.PEI.SalaEnVivo.Infrastructure.Persistence
-    {
+    namespace PEI.SalaEnVivo.Infrastructure.Persistence
+{
         public class UnitOfWork : IUnitOfWork
         {
             private readonly pei_sala_db _context;
