@@ -24,14 +24,15 @@ builder.Services.AddSingleton<IPromptBuilder, PromptBuilder>();
 builder.Services.AddScoped<ICorreccionService, CorreccionService>();
 
 // ── Tool Executor (Plan B o MCP real) ──
-if (mcpSettings.UsarPlanB)
+builder.Services.AddSingleton<LocalToolExecutor>();
+builder.Services.AddHttpClient<McpToolExecutor>();
+builder.Services.AddTransient<IToolExecutor>(sp =>
 {
-    builder.Services.AddSingleton<IToolExecutor, LocalToolExecutor>();
-}
-else
-{
-    builder.Services.AddSingleton<IToolExecutor, McpToolExecutor>();
-}
+    var settings = sp.GetRequiredService<McpSettings>();
+    return settings.UsarPlanB
+        ? sp.GetRequiredService<LocalToolExecutor>()
+        : sp.GetRequiredService<McpToolExecutor>();
+});
 
 // ── Controllers + JSON ──
 builder.Services.AddControllers()
