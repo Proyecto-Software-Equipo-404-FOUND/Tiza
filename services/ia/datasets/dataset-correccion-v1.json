@@ -1,0 +1,233 @@
+{
+  "version": 1,
+  "descripcion": "Dataset ficticio para validar corrección automatizada con IA. Contiene 3 preguntas abiertas de programación con rúbricas detalladas y ~10 respuestas cada una con notas esperadas.",
+  "fechaCreacion": "2026-10-19",
+  "autor": "Equipo 404 Found - Santiago Bruno / Franco Ávila",
+  "preguntas": [
+    {
+      "id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      "enunciado": "Explique qué es la herencia en Programación Orientada a Objetos, mencione sus beneficios y dé un ejemplo concreto en un lenguaje de su elección.",
+      "tipo": "Abierta",
+      "puntajeMaximo": 10,
+      "rubrica": {
+        "criterios": [
+          { "descripcion": "Define correctamente el concepto de herencia como mecanismo de reutilización donde una clase hija hereda atributos y métodos de una clase padre", "puntaje": 4 },
+          { "descripcion": "Proporciona un ejemplo válido en código (pseudocódigo o lenguaje real) que demuestre la relación de herencia", "puntaje": 3 },
+          { "descripcion": "Menciona al menos dos beneficios concretos (reutilización de código, polimorfismo, extensibilidad, jerarquía de tipos)", "puntaje": 3 }
+        ]
+      },
+      "respuestas": [
+        {
+          "id": "r001-a1b2",
+          "texto": "La herencia en POO es un mecanismo que permite que una clase (llamada clase hija o subclase) herede los atributos y métodos de otra clase (llamada clase padre o superclase). Esto permite reutilizar código sin tener que escribirlo de nuevo. Por ejemplo, en C#: class Animal { public string Nombre; public void Comer() { } } class Perro : Animal { public void Ladrar() { } }. Los beneficios principales son la reutilización de código, ya que no hay que duplicar funcionalidad, y el polimorfismo, que permite tratar objetos de distintas clases derivadas de forma uniforme.",
+          "notaEsperada": 10,
+          "justificacionEsperada": "Respuesta completa: define herencia correctamente (4/4), da ejemplo válido en C# (3/3), y menciona dos beneficios concretos: reutilización y polimorfismo (3/3)."
+        },
+        {
+          "id": "r002-a1b2",
+          "texto": "La herencia es cuando una clase puede usar las cosas de otra clase. Es útil para no escribir tanto código.",
+          "notaEsperada": 4,
+          "justificacionEsperada": "Define herencia de forma vaga pero correcta en esencia (2/4). No proporciona ejemplo en código (0/3). Menciona solo un beneficio de forma superficial (1/3)."
+        },
+        {
+          "id": "r003-a1b2",
+          "texto": "La herencia permite que una clase derivada adquiera las propiedades y comportamientos de una clase base. En Python: class Vehiculo: def __init__(self, marca): self.marca = marca; class Auto(Vehiculo): def __init__(self, marca, puertas): super().__init__(marca); self.puertas = puertas. Beneficios: se puede extender funcionalidad sin modificar la clase original (principio abierto/cerrado) y permite crear jerarquías de tipos organizadas.",
+          "notaEsperada": 10,
+          "justificacionEsperada": "Definición correcta y precisa (4/4). Ejemplo válido en Python con uso de super() (3/3). Menciona extensibilidad y jerarquía de tipos como beneficios (3/3)."
+        },
+        {
+          "id": "r004-a1b2",
+          "texto": "La herencia es un pilar de la POO. Permite que las clases hijas obtengan los atributos de las clases padres.",
+          "notaEsperada": 5,
+          "justificacionEsperada": "Definición correcta pero básica (3/4). Sin ejemplo en código (0/3). Menciona que es un pilar pero no detalla beneficios concretos (2/3)."
+        },
+        {
+          "id": "r005-a1b2",
+          "texto": "No sé qué es la herencia en programación.",
+          "notaEsperada": 0,
+          "justificacionEsperada": "No responde ningún criterio de la rúbrica (0/4 + 0/3 + 0/3)."
+        },
+        {
+          "id": "r006-a1b2",
+          "texto": "La herencia en POO es el mecanismo por el cual una clase hija extiende a una clase padre, heredando sus miembros (atributos y métodos). Ejemplo en Java: public class Figura { double area() { return 0; } } public class Circulo extends Figura { double radio; double area() { return Math.PI * radio * radio; } }. Los beneficios son: 1) Reutilización de código, 2) Polimorfismo (puedo tratar un Circulo como Figura), 3) Facilita el mantenimiento del código.",
+          "notaEsperada": 10,
+          "justificacionEsperada": "Definición precisa (4/4). Ejemplo excelente en Java con override de método (3/3). Tres beneficios detallados (3/3)."
+        },
+        {
+          "id": "r007-a1b2",
+          "texto": "Herencia es cuando copias código de una clase a otra para no escribir tanto. No tengo ejemplo.",
+          "notaEsperada": 2,
+          "justificacionEsperada": "Concepto incorrecto: confunde herencia con copiar código (1/4). Sin ejemplo (0/3). Beneficio mencionado superficialmente (1/3)."
+        },
+        {
+          "id": "r008-a1b2",
+          "texto": "La herencia permite a una subclase obtener las características de una superclase. En TypeScript: class Empleado { nombre: string; constructor(n: string) { this.nombre = n; } } class Gerente extends Empleado { departamento: string; }. Beneficio: reutilización de código.",
+          "notaEsperada": 8,
+          "justificacionEsperada": "Definición correcta (4/4). Ejemplo válido en TypeScript (3/3). Solo menciona un beneficio (1/3)."
+        },
+        {
+          "id": "r009-a1b2",
+          "texto": "La herencia en objetos es que una clase puede recibir cosas de otra. Sirve para que el código sea más corto y para poder usar polimorfismo. No recuerdo cómo se escribe en código pero sería algo como ClaseHija extiende ClasePadre.",
+          "notaEsperada": 6,
+          "justificacionEsperada": "Definición básica pero correcta en esencia (2/4). Pseudocódigo muy vago, no es un ejemplo completo (1/3). Menciona dos beneficios: código más corto y polimorfismo (3/3)."
+        },
+        {
+          "id": "r010-a1b2",
+          "texto": "La encapsulación permite ocultar los datos internos de un objeto y exponer solo lo necesario a través de métodos públicos.",
+          "notaEsperada": 0,
+          "justificacionEsperada": "La respuesta describe encapsulación, no herencia. No responde a la pregunta formulada (0/4 + 0/3 + 0/3)."
+        }
+      ]
+    },
+    {
+      "id": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
+      "enunciado": "Describa qué es la normalización en bases de datos relacionales, explique la diferencia entre la Primera Forma Normal (1FN) y la Tercera Forma Normal (3FN), y dé un ejemplo de una tabla que NO esté en 1FN.",
+      "tipo": "Abierta",
+      "puntajeMaximo": 10,
+      "rubrica": {
+        "criterios": [
+          { "descripcion": "Define normalización como proceso de organizar datos para reducir redundancia y mejorar integridad", "puntaje": 3 },
+          { "descripcion": "Explica correctamente 1FN (valores atómicos, sin grupos repetitivos) y 3FN (cumple 2FN y no hay dependencias transitivas)", "puntaje": 4 },
+          { "descripcion": "Proporciona un ejemplo claro de una tabla que viola 1FN (valores no atómicos o grupos repetitivos)", "puntaje": 3 }
+        ]
+      },
+      "respuestas": [
+        {
+          "id": "r001-b2c3",
+          "texto": "La normalización es el proceso de estructurar una base de datos relacional para minimizar la redundancia de datos y evitar anomalías de inserción, actualización y eliminación. La 1FN requiere que cada celda contenga un solo valor atómico (no listas ni conjuntos) y que no haya grupos repetitivos. La 3FN, además de cumplir 1FN y 2FN, elimina las dependencias transitivas: ningún atributo no clave debe depender de otro atributo no clave. Ejemplo de tabla NO en 1FN: Alumno(id, nombre, telefonos:'011-1234, 011-5678') donde telefonos contiene múltiples valores en una sola celda.",
+          "notaEsperada": 10,
+          "justificacionEsperada": "Definición completa con mención de anomalías (3/3). Explica 1FN y 3FN correctamente incluyendo dependencias transitivas (4/4). Ejemplo claro de violación de 1FN (3/3)."
+        },
+        {
+          "id": "r002-b2c3",
+          "texto": "La normalización sirve para que la base de datos esté bien organizada. La 1FN es la primera y la 3FN es más avanzada.",
+          "notaEsperada": 2,
+          "justificacionEsperada": "Definición muy vaga (1/3). No explica qué significa 1FN ni 3FN (0/4). Sin ejemplo (0/3). Reconoce que existe una jerarquía (1/4)."
+        },
+        {
+          "id": "r003-b2c3",
+          "texto": "La normalización organiza los datos para reducir redundancia. En 1FN todos los campos deben tener valores atómicos. En 3FN no debe haber dependencias transitivas. Ejemplo: una tabla Pedido con una columna 'Productos' que contiene 'Laptop, Mouse, Teclado' viola 1FN porque tiene múltiples valores.",
+          "notaEsperada": 9,
+          "justificacionEsperada": "Definición correcta aunque breve (2/3). Explica correctamente ambas formas normales (4/4). Ejemplo válido y claro (3/3)."
+        },
+        {
+          "id": "r004-b2c3",
+          "texto": "Normalizar es el proceso de separar tablas grandes en más pequeñas. 1FN = no repetir columnas. 3FN = que todo dependa de la clave primaria.",
+          "notaEsperada": 4,
+          "justificacionEsperada": "Definición parcialmente correcta (1/3). 1FN incorrecta (confunde valores atómicos con no repetir columnas), 3FN simplificada pero parcialmente correcta (2/4). Sin ejemplo (0/3)."
+        },
+        {
+          "id": "r005-b2c3",
+          "texto": "La normalización es un proceso para organizar datos en una BD relacional reduciendo redundancia y mejorando integridad referencial. 1FN: cada atributo debe contener valores atómicos indivisibles y cada fila debe ser única. 3FN: la tabla debe estar en 2FN y ningún atributo no clave debe depender transitivamente de la clave primaria (ejemplo: si A->B y B->C, entonces C depende transitivamente de A). Ejemplo NO en 1FN: Estudiante(legajo, nombre, materias_aprobadas:'Algebra,Fisica,Quimica') - la columna materias_aprobadas contiene una lista.",
+          "notaEsperada": 10,
+          "justificacionEsperada": "Definición completa y precisa (3/3). Explicación excelente de ambas formas con ejemplo de transitividad (4/4). Ejemplo claro con contexto educativo (3/3)."
+        },
+        {
+          "id": "r006-b2c3",
+          "texto": "La normalización permite reducir la duplicación de datos. La 1FN exige valores atómicos. La 3FN elimina dependencias transitivas. No recuerdo un ejemplo concreto.",
+          "notaEsperada": 6,
+          "justificacionEsperada": "Definición correcta pero breve (2/3). Explica ambas formas correctamente aunque sin profundidad (3/4). Sin ejemplo (0/3). Honesto al admitir que no recuerda."
+        },
+        {
+          "id": "r007-b2c3",
+          "texto": "No tengo idea de qué es normalización.",
+          "notaEsperada": 0,
+          "justificacionEsperada": "No responde ningún criterio (0/3 + 0/4 + 0/3)."
+        },
+        {
+          "id": "r008-b2c3",
+          "texto": "La normalización es cuando ponemos los datos en tablas separadas para que no se repitan. 1FN significa que cada campo tiene un solo dato. La 3FN es cuando sacamos los datos que dependen de algo que no es la clave. Ejemplo: tabla con columna 'direccion' que tiene 'Calle Falsa 123, Springfield, CP 12345' todo junto.",
+          "notaEsperada": 8,
+          "justificacionEsperada": "Definición informal pero correcta (2/3). 1FN correcta, 3FN simplificada pero aceptable (3/4). Ejemplo válido de violación de 1FN (3/3)."
+        },
+        {
+          "id": "r009-b2c3",
+          "texto": "Normalizar es poner los datos en orden. 1FN y 3FN son niveles de normalización. Un ejemplo sería una tabla desordenada.",
+          "notaEsperada": 1,
+          "justificacionEsperada": "Definición incorrecta: normalizar no es 'poner en orden' (0/3). No explica qué significan 1FN ni 3FN (0/4). El ejemplo es vago e inválido (0/3). Se otorga 1 punto por reconocer que existen niveles."
+        },
+        {
+          "id": "r010-b2c3",
+          "texto": "La normalización en BD relacionales busca minimizar redundancia y anomalías. La 1FN requiere que cada celda tenga un valor atómico, sin listas ni conjuntos. La 3FN elimina dependencias transitivas (atributo no clave depende de otro no clave). Ejemplo de tabla NO en 1FN: Curso(id, nombre, horarios) donde horarios = 'Lunes 8-10, Miercoles 14-16'.",
+          "notaEsperada": 10,
+          "justificacionEsperada": "Definición precisa (3/3). Ambas formas bien explicadas (4/4). Ejemplo pertinente y claro (3/3)."
+        }
+      ]
+    },
+    {
+      "id": "c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f",
+      "enunciado": "Explique el patrón de arquitectura MVC (Modelo-Vista-Controlador), describa la responsabilidad de cada componente y mencione una ventaja y una desventaja de usar este patrón.",
+      "tipo": "Abierta",
+      "puntajeMaximo": 10,
+      "rubrica": {
+        "criterios": [
+          { "descripcion": "Explica correctamente qué es MVC como patrón arquitectónico que separa responsabilidades en tres componentes", "puntaje": 3 },
+          { "descripcion": "Describe la responsabilidad de cada componente: Modelo (datos/lógica de negocio), Vista (presentación/UI), Controlador (intermediario que recibe input y coordina)", "puntaje": 4 },
+          { "descripcion": "Menciona al menos una ventaja y una desventaja reales del patrón", "puntaje": 3 }
+        ]
+      },
+      "respuestas": [
+        {
+          "id": "r001-c3d4",
+          "texto": "MVC es un patrón de diseño arquitectónico que separa una aplicación en tres componentes principales: el Modelo, que maneja los datos y la lógica de negocio; la Vista, que se encarga de la presentación e interfaz de usuario; y el Controlador, que actúa como intermediario recibiendo las acciones del usuario, procesándolas y actualizando el Modelo o la Vista según corresponda. Ventaja: facilita el trabajo en equipo porque los desarrolladores pueden trabajar en paralelo en cada capa. Desventaja: puede agregar complejidad innecesaria en aplicaciones muy pequeñas.",
+          "notaEsperada": 10,
+          "justificacionEsperada": "Definición completa de MVC (3/3). Responsabilidades correctas de los tres componentes (4/4). Ventaja y desventaja válidas y concretas (3/3)."
+        },
+        {
+          "id": "r002-c3d4",
+          "texto": "MVC es Modelo Vista Controlador. Sirve para separar las cosas.",
+          "notaEsperada": 2,
+          "justificacionEsperada": "Sabe el nombre completo y que separa componentes (1/3). No describe responsabilidades (0/4). Sin ventajas ni desventajas (0/3). Reconoce el concepto básico (1/3)."
+        },
+        {
+          "id": "r003-c3d4",
+          "texto": "MVC separa la app en Modelo (datos), Vista (lo que ve el usuario) y Controlador (procesa las peticiones). Es bueno porque permite mantener el código ordenado. No se me ocurre una desventaja.",
+          "notaEsperada": 6,
+          "justificacionEsperada": "Definición correcta pero breve (2/3). Responsabilidades simplificadas pero aceptables (3/4). Solo menciona ventaja, no desventaja (1/3)."
+        },
+        {
+          "id": "r004-c3d4",
+          "texto": "El patrón MVC (Modelo-Vista-Controlador) es una arquitectura que divide la aplicación en tres capas con responsabilidades bien definidas. El Modelo encapsula los datos de la aplicación, las reglas de negocio y la lógica de acceso a datos. La Vista presenta la información al usuario y captura sus interacciones. El Controlador recibe las entradas del usuario desde la Vista, invoca operaciones en el Modelo y selecciona qué Vista mostrar. Ventaja: alta cohesión y bajo acoplamiento, facilitando el testing unitario del Modelo sin depender de la UI. Desventaja: en aplicaciones complejas, los controladores pueden volverse muy grandes (fat controllers) si no se aplican patrones adicionales.",
+          "notaEsperada": 10,
+          "justificacionEsperada": "Definición excelente y técnica (3/3). Responsabilidades detalladas y precisas (4/4). Ventaja (testabilidad) y desventaja (fat controllers) muy pertinentes (3/3)."
+        },
+        {
+          "id": "r005-c3d4",
+          "texto": "MVC es un patrón de diseño usado en web. El modelo son las tablas de la base de datos. La vista es el HTML. El controlador son los endpoints.",
+          "notaEsperada": 5,
+          "justificacionEsperada": "Concepto básico correcto (2/3). Responsabilidades parcialmente correctas pero demasiado simplificadas y ligadas a una implementación específica (2/4). Sin ventajas ni desventajas (0/3). Se dan puntos extra por asociación correcta aunque simplificada (1/3)."
+        },
+        {
+          "id": "r006-c3d4",
+          "texto": "No conozco el patrón MVC.",
+          "notaEsperada": 0,
+          "justificacionEsperada": "No responde ningún criterio (0/3 + 0/4 + 0/3)."
+        },
+        {
+          "id": "r007-c3d4",
+          "texto": "MVC divide la aplicación en tres partes. El Modelo maneja los datos y la lógica de negocio. La Vista muestra la interfaz. El Controlador coordina entre Modelo y Vista procesando las entradas del usuario. Una ventaja es que permite cambiar la Vista sin tocar la lógica (por ejemplo, pasar de web a mobile). Una desventaja es la curva de aprendizaje inicial para desarrolladores nuevos.",
+          "notaEsperada": 10,
+          "justificacionEsperada": "Definición correcta (3/3). Responsabilidades bien explicadas (4/4). Ventaja con ejemplo práctico y desventaja válida (3/3)."
+        },
+        {
+          "id": "r008-c3d4",
+          "texto": "MVC es como dividir el trabajo. Uno se ocupa de los datos, otro de mostrarlos y otro de manejar lo que hace el usuario. Es bueno porque es organizado pero malo porque es más complicado.",
+          "notaEsperada": 5,
+          "justificacionEsperada": "Descripción informal pero con la idea correcta (2/3). Responsabilidades vagas sin usar terminología técnica (1/4). Ventaja y desventaja mencionadas aunque de forma superficial (2/3)."
+        },
+        {
+          "id": "r009-c3d4",
+          "texto": "El patrón Modelo Vista Controlador separa responsabilidades. Modelo = datos. Vista = UI. Controlador = lógica. Ventaja: se puede testear cada parte por separado. Desventaja: más archivos y clases que crear.",
+          "notaEsperada": 7,
+          "justificacionEsperada": "Definición correcta (2/3). Responsabilidades correctas pero muy escuetas; controlador como 'lógica' es impreciso (2/4). Ventaja y desventaja válidas (3/3)."
+        },
+        {
+          "id": "r010-c3d4",
+          "texto": "MVC es un framework como Angular o React que se usa para hacer páginas web modernas.",
+          "notaEsperada": 1,
+          "justificacionEsperada": "Confunde patrón arquitectónico con framework (0/3). No describe responsabilidades de cada componente (0/4). Sin ventajas ni desventajas (0/3). Se otorga 1 punto por asociarlo al contexto de desarrollo web."
+        }
+      ]
+    }
+  ]
+}
