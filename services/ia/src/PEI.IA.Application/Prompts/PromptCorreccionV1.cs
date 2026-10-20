@@ -58,9 +58,9 @@ public static class PromptCorreccionV1
     {RUBRICA_JSON}
 
     ### RESPUESTA ENTREGADA POR EL ESTUDIANTE
-    \"\"\"
+    [INICIO_RESPUESTA]
     {RESPUESTA_ALUMNO}
-    \"\"\"
+    [FIN_RESPUESTA]
 
     Evalúa la respuesta aplicando cada criterio de la rúbrica y procede a registrar la calificación sugerida con el desglose detallado.
     """;
