@@ -1,25 +1,64 @@
+using Microsoft.OpenApi.Models;
+using PEI.BuildingBlocks.Errors;
+using PEI.BuildingBlocks.Logging;
+using PEI.IA.Application.Interfaces;
+using PEI.IA.Application.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// ── Servicios de aplicación ──
+builder.Services.AddScoped<ICorreccionService, CorreccionService>();
 
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+// ── Controllers + JSON ──
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    });
+
+// ── Swagger / OpenAPI ──
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "PEI Tiza — Servicio de Inteligencia Artificial",
+        Version = "v1",
+        Description = "Endpoints internos de corrección automatizada de respuestas abiertas usando IA.",
+        Contact = new OpenApiContact
+        {
+            Name = "Equipo 404 Found",
+        }
+    });
+
+    // Incluir XML comments si existen
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        options.IncludeXmlComments(xmlPath);
+    }
+});
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// ── Middlewares de BuildingBlocks ──
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseMiddleware<ProblemDetailsMiddleware>();
+
+// ── Swagger (solo en Development) ──
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "PEI.IA v1");
+        options.DocumentTitle = "PEI Tiza — IA API";
+    });
 }
 
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();
