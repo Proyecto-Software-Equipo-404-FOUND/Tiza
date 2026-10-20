@@ -2,6 +2,7 @@ using Microsoft.OpenApi.Models;
 using PEI.BuildingBlocks.Errors;
 using PEI.BuildingBlocks.Logging;
 using PEI.IA.Application.Interfaces;
+using PEI.IA.Application.Prompts;
 using PEI.IA.Application.Services;
 using PEI.IA.Infrastructure.LlmClients;
 using PEI.IA.Infrastructure.Mcp;
@@ -19,6 +20,7 @@ builder.Services.AddSingleton(llmSettings);
 builder.Services.AddHttpClient<ILlmClient, OpenAiCompatibleClient>();
 
 // ── Servicios de aplicación ──
+builder.Services.AddSingleton<IPromptBuilder, PromptBuilder>();
 builder.Services.AddScoped<ICorreccionService, CorreccionService>();
 
 // ── Tool Executor (Plan B o MCP real) ──
