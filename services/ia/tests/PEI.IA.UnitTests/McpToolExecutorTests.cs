@@ -130,6 +130,7 @@ public class McpToolExecutorTests
         Assert.Equal(9.5m, response.NotaSugerida);
         Assert.Equal("Groq", response.Proveedor);
         Assert.Contains("sobresaliente", response.Justificacion);
+        Assert.NotNull(response.DesglosePorCriterio);
         Assert.Single(response.DesglosePorCriterio);
         Assert.Equal(9.5m, response.DesglosePorCriterio[0].PuntajeOtorgado);
     }
