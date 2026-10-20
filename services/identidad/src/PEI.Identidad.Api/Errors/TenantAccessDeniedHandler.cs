@@ -14,7 +14,7 @@ public sealed class TenantAccessDeniedHandler : IExceptionHandler
         {
             Status = StatusCodes.Status403Forbidden,
             Title = "Operacion no autorizada."
-        }, cancellationToken);
+        }, options: (System.Text.Json.JsonSerializerOptions?)null, contentType: "application/problem+json", cancellationToken: cancellationToken);
         return true;
     }
 }
