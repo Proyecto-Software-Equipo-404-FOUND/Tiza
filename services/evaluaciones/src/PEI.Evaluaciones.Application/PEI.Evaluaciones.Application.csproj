@@ -3,6 +3,12 @@
   <ItemGroup>
     <ProjectReference Include="..\PEI.Evaluaciones.Domain\PEI.Evaluaciones.Domain.csproj" />
     <ProjectReference Include="..\..\..\..\building-blocks\PEI.BuildingBlocks\PEI.BuildingBlocks.csproj" />
+    <EmbeddedResource Include="..\..\..\..\contracts\schemas\preguntas-v1.schema.json" LogicalName="preguntas-v1.schema.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="JsonSchema.Net" Version="9.4.1" />
+    <PackageReference Include="MediatR" Version="12.4.1" />
   </ItemGroup>
 
   <PropertyGroup>
