@@ -22,7 +22,7 @@ namespace PEI.SalaEnVivo.Domain.Entities
         }
         public bool modificarCapacidadMaxima(int nuevaCapacidad)
         {
-            if (nuevaCapacidad < 1 && nuevaCapacidad < CantidadParticipantes)
+            if (nuevaCapacidad < 1 || nuevaCapacidad < CantidadParticipantes)
             {
                 return false;
             }
