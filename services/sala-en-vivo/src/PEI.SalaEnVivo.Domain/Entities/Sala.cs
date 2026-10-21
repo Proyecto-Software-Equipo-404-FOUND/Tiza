@@ -11,6 +11,7 @@ namespace PEI.SalaEnVivo.Domain.Entities
         public string Estado { get; set; } = string.Empty;
         public int CapacidadMaxima { get; set; }
         public int CantidadParticipantes { get; set; }
+        public Guid EvaluacionId { get; set; }
 
         public void setCapacidadMaxima(int capacidad)
         {
