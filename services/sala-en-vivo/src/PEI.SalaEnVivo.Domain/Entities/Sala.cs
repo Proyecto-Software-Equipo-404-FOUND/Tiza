@@ -13,7 +13,7 @@ namespace PEI.SalaEnVivo.Domain.Entities
         public int CantidadParticipantes { get; set; }
         public Guid EvaluacionId { get; set; }
 
-        public void setCapacidadMaxima(int capacidad)
+        public void SetCapacidadMaxima(int capacidad)
         {
             if (capacidad < 1)
             {
@@ -21,7 +21,7 @@ namespace PEI.SalaEnVivo.Domain.Entities
             }
             CapacidadMaxima = capacidad;
         }
-        public bool modificarCapacidadMaxima(int nuevaCapacidad)
+        public bool ModificarCapacidadMaxima(int nuevaCapacidad)
         {
             if (nuevaCapacidad < 1 || nuevaCapacidad < CantidadParticipantes)
             {

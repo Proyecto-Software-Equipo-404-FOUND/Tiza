@@ -26,7 +26,7 @@ namespace PEI.SalaEnVivo.Application.UseCases.Salas.Handlers
                 FechaVencimiento = DateTime.UtcNow.AddHours(2),
                 Estado = "Activa",
             };
-            sala.setCapacidadMaxima(command.CapacidadMaxima);
+            sala.SetCapacidadMaxima(command.CapacidadMaxima);
 
             await _salaRepository.AddAsync(sala, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);

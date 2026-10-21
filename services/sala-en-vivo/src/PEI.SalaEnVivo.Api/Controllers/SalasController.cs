@@ -18,12 +18,16 @@ namespace PEI.SalaEnVivo.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> CrearSala(CrearSalaCommand command, CancellationToken cancellationToken)
         {
-            var resultado = await _crearSalaCommandHandler.HandleAsync(command, cancellationToken);
+            var sala = await _crearSalaCommandHandler.HandleAsync(command, cancellationToken);
 
-            return StatusCode(StatusCodes.Status201Created, new
-            {
-                mensaje = "Sala creada exitosamente",
-            });
+            return Created($"/api/v1/salas/{sala.Id}",
+                new
+                {
+                    Id = sala.Id,
+                    CodigoPIN = sala.CodigoPIN,
+                    FechaVencimiento = sala.FechaVencimiento,
+                    CapacidadMaxima = sala.CapacidadMaxima
+                });
         }
     }
 }
