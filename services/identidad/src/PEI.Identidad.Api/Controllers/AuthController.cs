@@ -20,6 +20,11 @@ public class AuthController : ControllerBase
         _loginHandler = loginHandler;
     }
 
+
+    [ProducesResponseType(StatusCodes.Status200Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+
     [AllowAnonymous]
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterCommand command)
@@ -50,6 +55,11 @@ public class AuthController : ControllerBase
         }
     }
 
+
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    
     [AllowAnonymous]
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginCommand command)
