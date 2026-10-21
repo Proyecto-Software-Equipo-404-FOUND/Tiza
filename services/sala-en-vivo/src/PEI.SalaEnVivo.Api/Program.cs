@@ -2,6 +2,7 @@ using PEI.SalaEnVivo.Application.Interfaces;
 using PEI.SalaEnVivo.Application.Interfaces.Repositories;
 using PEI.SalaEnVivo.Application.UseCases.Salas.Handlers;
 using PEI.SalaEnVivo.Infrastructure.Persistence;
+using PEI.SalaEnVivo.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
