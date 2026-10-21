@@ -10,6 +10,8 @@ export function guardarToken(nuevo: string | null) {
   else sessionStorage.removeItem('token');
 }
 
+export const obtenerToken = () => token;
+
 export class ApiError extends Error {
   estado: number;
   detalle: ProblemDetails | null;
