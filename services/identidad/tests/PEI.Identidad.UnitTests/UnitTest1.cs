@@ -9,6 +9,7 @@ using PEI.Identidad.Application.Interfaces.Service;
 using PEI.Identidad.Application.UseCases.Auth.Login;
 using PEI.Identidad.Application.UseCases.Auth.Register;
 using PEI.Identidad.Domain.Entities;
+using PEI.Identidad.Application.UseCases.Auth.Refresh;
 
 namespace PEI.Identidad.UnitTests;
 
@@ -23,7 +24,8 @@ public class AuthHandlerTests
         Email = " Prueba@Example.com ",
         Password = "Prueba123!",
         Nombre = " Usuario ",
-        Apellido = " Prueba "
+        Apellido = " Prueba ",
+        Rol = "Alumno"
     };
 
     private static Usuario CrearUsuario(
@@ -36,7 +38,7 @@ public class AuthHandlerTests
         PasswordHash = "HASH:Prueba123!",
         Nombre = "Usuario",
         Apellido = "Prueba",
-        Rol = "Usuario",
+        Rol = "Alumno",
         Activo = usuarioActivo,
         Institucion = new Institucion
         {
@@ -60,9 +62,9 @@ public class AuthHandlerTests
         Assert.Single(repositorio.Usuarios);
         Assert.Equal(id, repositorio.Usuarios[0].Id);
         Assert.Equal("prueba@example.com", repositorio.Usuarios[0].Email);
-        Assert.Equal("Usuario", repositorio.Usuarios[0].Nombre);
+        Assert.Equal("Alumno", repositorio.Usuarios[0].Rol);
         Assert.Equal("Prueba", repositorio.Usuarios[0].Apellido);
-        Assert.Equal("Usuario", repositorio.Usuarios[0].Rol);
+        Assert.Equal("Alumno", repositorio.Usuarios[0].Rol);
         Assert.True(repositorio.Guardado);
     }
 
@@ -103,23 +105,41 @@ public class AuthHandlerTests
     }
 
     [Fact]
-    public async Task LoginValido_DevuelveToken()
+    public async Task LoginValido_DevuelveTokensYGuardaRefreshToken()
     {
         var repositorio = new RepositorioFalso(InstitucionId);
         repositorio.AgregarExistente(CrearUsuario());
 
+        var repositorioRefresh = new RefreshTokenRepositorioFalso();
+
         var handler = new LoginHandler(
             repositorio,
             new HasherFalso(),
-            new TokenFalso());
+            new TokenFalso(),
+            repositorioRefresh,
+            new RefreshTokenServicioFalso(),
+            new RefreshTokenHasherFalso());
 
-        var token = await handler.HandleAsync(new LoginCommand
+        var resultado = await handler.HandleAsync(new LoginCommand
         {
             Email = " Prueba@Example.com ",
             Password = "Prueba123!"
         });
 
-        Assert.Equal("token-de-prueba", token);
+        Assert.Equal("token-de-prueba", resultado.AccessToken);
+        Assert.Equal("refresh-token-de-prueba", resultado.RefreshToken);
+        Assert.True(resultado.AccessTokenExpiresAt > DateTime.UtcNow);
+        Assert.True(resultado.RefreshTokenExpiresAt > resultado.AccessTokenExpiresAt);
+
+        Assert.Single(repositorioRefresh.Tokens);
+        Assert.Equal(
+            "HASH:refresh-token-de-prueba",
+            repositorioRefresh.Tokens[0].Token);
+        Assert.Equal(
+            repositorio.Usuarios[0].Id,
+            repositorioRefresh.Tokens[0].UsuarioId);
+        Assert.False(repositorioRefresh.Tokens[0].Revocado);
+        Assert.True(repositorioRefresh.Guardado);
     }
 
     [Fact]
@@ -131,7 +151,10 @@ public class AuthHandlerTests
         var handler = new LoginHandler(
             repositorio,
             new HasherFalso(),
-            new TokenFalso());
+            new TokenFalso(),
+            new RefreshTokenRepositorioFalso(),
+            new RefreshTokenServicioFalso(),
+            new RefreshTokenHasherFalso());
 
         await Assert.ThrowsAsync<UnauthorizedAccessException>(
             () => handler.HandleAsync(new LoginCommand
@@ -149,7 +172,10 @@ public class AuthHandlerTests
         var handler = new LoginHandler(
             repositorio,
             new HasherFalso(),
-            new TokenFalso());
+            new TokenFalso(),
+            new RefreshTokenRepositorioFalso(),
+            new RefreshTokenServicioFalso(),
+            new RefreshTokenHasherFalso());
 
         await Assert.ThrowsAsync<UnauthorizedAccessException>(
             () => handler.HandleAsync(new LoginCommand
@@ -169,8 +195,10 @@ public class AuthHandlerTests
         var handler = new LoginHandler(
             repositorio,
             new HasherFalso(),
-            new TokenFalso());
-
+            new TokenFalso(),
+            new RefreshTokenRepositorioFalso(),
+            new RefreshTokenServicioFalso(),
+            new RefreshTokenHasherFalso());
         await Assert.ThrowsAsync<UnauthorizedAccessException>(
             () => handler.HandleAsync(new LoginCommand
             {
@@ -189,7 +217,10 @@ public class AuthHandlerTests
         var handler = new LoginHandler(
             repositorio,
             new HasherFalso(),
-            new TokenFalso());
+            new TokenFalso(),
+            new RefreshTokenRepositorioFalso(),
+            new RefreshTokenServicioFalso(),
+            new RefreshTokenHasherFalso());
 
         await Assert.ThrowsAsync<UnauthorizedAccessException>(
             () => handler.HandleAsync(new LoginCommand
@@ -197,6 +228,203 @@ public class AuthHandlerTests
                 Email = "prueba@example.com",
                 Password = "Prueba123!"
             }));
+    }
+
+    [Fact]
+    public async Task RefreshValido_RotaTokensYRevocaElAnterior()
+    {
+        var usuario = CrearUsuario();
+        var repositorio = new RefreshTokenRepositorioFalso();
+
+        var tokenAnterior = new RefreshToken
+        {
+            UsuarioId = usuario.Id,
+            Usuario = usuario,
+            Token = "HASH:refresh-original",
+            FechaExpiracion = DateTime.UtcNow.AddDays(7),
+            Revocado = false
+        };
+
+        repositorio.AgregarExistente(tokenAnterior);
+
+        var handler = new RefreshHandler(
+            repositorio,
+            new RefreshTokenServicioFalso(),
+            new RefreshTokenHasherFalso(),
+            new TokenFalso());
+
+        var resultado = await handler.HandleAsync(new RefreshCommand
+        {
+            RefreshToken = "refresh-original"
+        });
+
+        Assert.Equal("token-de-prueba", resultado.AccessToken);
+        Assert.Equal("refresh-token-de-prueba", resultado.RefreshToken);
+        Assert.True(tokenAnterior.Revocado);
+        Assert.Equal(2, repositorio.Tokens.Count);
+        Assert.Equal(
+            "HASH:refresh-token-de-prueba",
+            repositorio.Tokens[1].Token);
+        Assert.False(repositorio.Tokens[1].Revocado);
+        Assert.True(repositorio.Guardado);
+    }
+
+    [Fact]
+    public async Task RefreshConTokenInexistente_LanzaExcepcion()
+    {
+        var repositorio = new RefreshTokenRepositorioFalso();
+
+        var handler = new RefreshHandler(
+            repositorio,
+            new RefreshTokenServicioFalso(),
+            new RefreshTokenHasherFalso(),
+            new TokenFalso());
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => handler.HandleAsync(new RefreshCommand
+            {
+                RefreshToken = "token-inexistente"
+            }));
+
+        Assert.Empty(repositorio.Tokens);
+        Assert.False(repositorio.Guardado);
+    }
+
+    [Fact]
+    public async Task RefreshConTokenVencido_LanzaExcepcion()
+    {
+        var usuario = CrearUsuario();
+        var repositorio = new RefreshTokenRepositorioFalso();
+
+        repositorio.AgregarExistente(new RefreshToken
+        {
+            UsuarioId = usuario.Id,
+            Usuario = usuario,
+            Token = "HASH:refresh-vencido",
+            FechaExpiracion = DateTime.UtcNow.AddDays(-1),
+            Revocado = false
+        });
+
+        var handler = new RefreshHandler(
+            repositorio,
+            new RefreshTokenServicioFalso(),
+            new RefreshTokenHasherFalso(),
+            new TokenFalso());
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => handler.HandleAsync(new RefreshCommand
+            {
+                RefreshToken = "refresh-vencido"
+            }));
+
+        Assert.False(repositorio.Guardado);
+    }
+
+    [Fact]
+    public async Task RefreshConTokenRevocado_LanzaExcepcion()
+    {
+        var usuario = CrearUsuario();
+        var repositorio = new RefreshTokenRepositorioFalso();
+
+        repositorio.AgregarExistente(new RefreshToken
+        {
+            UsuarioId = usuario.Id,
+            Usuario = usuario,
+            Token = "HASH:refresh-revocado",
+            FechaExpiracion = DateTime.UtcNow.AddDays(7),
+            Revocado = true
+        });
+
+        var handler = new RefreshHandler(
+            repositorio,
+            new RefreshTokenServicioFalso(),
+            new RefreshTokenHasherFalso(),
+            new TokenFalso());
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => handler.HandleAsync(new RefreshCommand
+            {
+                RefreshToken = "refresh-revocado"
+            }));
+
+        Assert.False(repositorio.Guardado);
+    }
+
+    [Fact]
+    public async Task RefreshConUsuarioInactivo_LanzaExcepcion()
+    {
+        var usuario = CrearUsuario(usuarioActivo: false);
+        var repositorio = new RefreshTokenRepositorioFalso();
+
+        repositorio.AgregarExistente(new RefreshToken
+        {
+            UsuarioId = usuario.Id,
+            Usuario = usuario,
+            Token = "HASH:refresh-usuario-inactivo",
+            FechaExpiracion = DateTime.UtcNow.AddDays(7),
+            Revocado = false
+        });
+
+        var handler = new RefreshHandler(
+            repositorio,
+            new RefreshTokenServicioFalso(),
+            new RefreshTokenHasherFalso(),
+            new TokenFalso());
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => handler.HandleAsync(new RefreshCommand
+            {
+                RefreshToken = "refresh-usuario-inactivo"
+            }));
+
+        Assert.False(repositorio.Guardado);
+    }
+
+    [Fact]
+    public async Task LogoutValido_RevocaTokenYGuardaCambios()
+    {
+        var usuario = CrearUsuario();
+        var repositorio = new RefreshTokenRepositorioFalso();
+
+        var token = new RefreshToken
+        {
+            UsuarioId = usuario.Id,
+            Usuario = usuario,
+            Token = "HASH:refresh-logout",
+            FechaExpiracion = DateTime.UtcNow.AddDays(7),
+            Revocado = false
+        };
+
+        repositorio.AgregarExistente(token);
+
+        var handler = new LogoutHandler(
+            repositorio,
+            new RefreshTokenHasherFalso());
+
+        await handler.HandleAsync(new LogoutCommand
+        {
+            RefreshToken = "refresh-logout"
+        });
+
+        Assert.True(token.Revocado);
+        Assert.True(repositorio.Guardado);
+    }
+
+    [Fact]
+    public async Task LogoutConTokenInexistente_NoFalla()
+    {
+        var repositorio = new RefreshTokenRepositorioFalso();
+
+        var handler = new LogoutHandler(
+            repositorio,
+            new RefreshTokenHasherFalso());
+
+        await handler.HandleAsync(new LogoutCommand
+        {
+            RefreshToken = "token-inexistente"
+        });
+
+        Assert.False(repositorio.Guardado);
     }
 
     private sealed class RepositorioFalso : IUsuarioRepository
@@ -268,6 +496,54 @@ public class AuthHandlerTests
         public string GenerateToken(Usuario usuario)
         {
             return "token-de-prueba";
+        }
+    }
+
+    private sealed class RefreshTokenRepositorioFalso
+    : IRefreshTokenRepository
+{
+    private readonly List<RefreshToken> _tokens = new();
+
+    public IReadOnlyList<RefreshToken> Tokens => _tokens;
+    public bool Guardado { get; private set; }
+
+    public void AgregarExistente(RefreshToken token)
+    {
+        _tokens.Add(token);
+    }
+
+    public Task<RefreshToken?> GetByTokenAsync(string token)
+    {
+        var refreshToken = _tokens.FirstOrDefault(t => t.Token == token);
+        return Task.FromResult(refreshToken);
+    }
+
+    public Task AddAsync(RefreshToken refreshToken)
+    {
+        _tokens.Add(refreshToken);
+        return Task.CompletedTask;
+    }
+
+    public Task SaveChangesAsync()
+    {
+        Guardado = true;
+        return Task.CompletedTask;
+    }
+}
+
+    private sealed class RefreshTokenServicioFalso : IRefreshTokenService
+    {
+        public string GenerateToken()
+        {
+            return "refresh-token-de-prueba";
+        }
+    }
+
+    private sealed class RefreshTokenHasherFalso : IRefreshTokenHasher
+    {
+        public string Hash(string token)
+        {
+            return "HASH:" + token;
         }
     }
 }

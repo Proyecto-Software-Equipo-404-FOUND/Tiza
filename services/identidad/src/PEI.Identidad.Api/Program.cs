@@ -8,8 +8,12 @@ using PEI.Identidad.Application.Interfaces.Security;
 using PEI.Identidad.Application.Interfaces.Service;
 using PEI.Identidad.Application.UseCases.Auth.Login;
 using PEI.Identidad.Application.UseCases.Auth.Register;
+using PEI.Identidad.Application.UseCases.Auth.Refresh;
 using PEI.Identidad.Infrastructure.Repositories;
 using PEI.Identidad.Infrastructure.Security;
+using System.Security.Claims;
+using Microsoft.OpenApi.Models;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,12 +31,45 @@ builder.Services.AddDbContext<IdentidadDbContext>(options =>
 // Servicios de la API
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Ingresá el access token JWT."
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 builder.Services.AddScoped<RegisterHandler>();
 builder.Services.AddScoped<LoginHandler>();
+builder.Services.AddScoped<RefreshHandler>();
+builder.Services.AddScoped<LogoutHandler>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+builder.Services.AddScoped<IRefreshTokenHasher, RefreshTokenHasher>();
 
 var issuer = builder.Configuration["Jwt:Issuer"]
     ?? throw new InvalidOperationException("Falta configurar Jwt:Issuer.");
@@ -56,7 +93,8 @@ builder.Services
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(secretKey))
+                Encoding.UTF8.GetBytes(secretKey)),
+            RoleClaimType = ClaimTypes.Role
         };
     });
 
