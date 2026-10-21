@@ -17,7 +17,7 @@ namespace PEI.SalaEnVivo.Infrastructure.Persistence
             modelBuilder.Entity<Sala>(s =>
             {
                 s.HasKey(x => x.Id);
-                s.HasIndex(x => x.CodigoPIN);
+                s.HasIndex(x => x.CodigoPIN).IsUnique();
             });
 
             modelBuilder.Entity<ParticipanteSala>(p =>
