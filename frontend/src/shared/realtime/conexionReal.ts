@@ -2,7 +2,7 @@ import type { HubConnection } from '@microsoft/signalr';
 import type { ConexionSala, EstadoConexion } from './tipos';
 
 export function conexionReal(hub: HubConnection): ConexionSala {
-  const oyentes: Array<(estado: EstadoConexion) => void> = [];
+  const oyentes = new Set<(estado: EstadoConexion) => void>();
   const avisar = (estado: EstadoConexion) => oyentes.forEach((oyente) => oyente(estado));
 
   hub.onreconnecting(() => avisar('reconectando'));
@@ -26,7 +26,10 @@ export function conexionReal(hub: HubConnection): ConexionSala {
       await hub.invoke(metodo, ...args);
     },
     alCambiarEstado: (manejador) => {
-      oyentes.push(manejador);
+      oyentes.add(manejador);
+      return () => {
+        oyentes.delete(manejador);
+      };
     },
   };
 }

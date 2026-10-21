@@ -2,7 +2,7 @@ import type { ConexionSala, EstadoConexion, Manejador } from './tipos';
 
 export function crearConexionFalsa() {
   const manejadores = new Map<string, Manejador[]>();
-  const oyentes: Array<(estado: EstadoConexion) => void> = [];
+  const oyentes = new Set<(estado: EstadoConexion) => void>();
 
   const simularEstado = (estado: EstadoConexion) => oyentes.forEach((oyente) => oyente(estado));
 
@@ -18,7 +18,10 @@ export function crearConexionFalsa() {
     },
     invocar: async () => {},
     alCambiarEstado: (manejador) => {
-      oyentes.push(manejador);
+      oyentes.add(manejador);
+      return () => {
+        oyentes.delete(manejador);
+      };
     },
   };
 

@@ -17,6 +17,18 @@ describe('conexionFalsa', () => {
     expect(() => simular('eventoSinOyentes')).not.toThrow();
   });
 
+  it('deja de avisar cuando se llama a la función que devolvió alCambiarEstado', async () => {
+    const { conexion, simularEstado } = crearConexionFalsa();
+    const estados: EstadoConexion[] = [];
+    const dejarDeEscuchar = conexion.alCambiarEstado((estado) => estados.push(estado));
+
+    simularEstado('reconectando');
+    dejarDeEscuchar();
+    simularEstado('desconectado');
+
+    expect(estados).toEqual(['reconectando']);
+  });
+
   it('informa los cambios de estado', async () => {
     const { conexion, simularEstado } = crearConexionFalsa();
     const estados: EstadoConexion[] = [];

@@ -7,5 +7,6 @@ export type ConexionSala = {
   detener: () => Promise<void>;
   escuchar: (evento: string, manejador: Manejador) => void;
   invocar: (metodo: string, ...args: unknown[]) => Promise<void>;
-  alCambiarEstado: (manejador: (estado: EstadoConexion) => void) => void;
+  // Devuelve una función para dejar de escuchar (hay que llamarla al limpiar el efecto)
+  alCambiarEstado: (manejador: (estado: EstadoConexion) => void) => () => void;
 };

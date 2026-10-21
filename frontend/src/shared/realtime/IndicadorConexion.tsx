@@ -13,6 +13,7 @@ export function IndicadorConexion({ estado, onReintentar }: Props) {
   if (estado === 'conectado') {
     return (
       <p role='status' className='text-sm text-tiza-pizarra'>
+        {/* Verde a propósito: la guía (sección 10.4) pide un detalle discreto en verde para «Conectado» */}
         <span aria-hidden='true' className='mr-2 inline-block h-2 w-2 rounded-full bg-green-600' />
         Conectado
       </p>
