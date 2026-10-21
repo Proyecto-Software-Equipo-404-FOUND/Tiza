@@ -1,8 +1,8 @@
-using services.SalaEnVivo.src.PEI.SalaEnVivo.Application.UseCases.Salas.Commands;
-using services.SalaEnVivo.src.PEI.SalaEnVivo.Application.UseCases.Salas.Handlers;
+using PEI.SalaEnVivo.Application.UseCases.Salas.Commands;
+using PEI.SalaEnVivo.Application.UseCases.Salas.Handlers;
 using Microsoft.AspNetCore.Mvc;
 
-namespace services.SalaEnVivo.src.PEI.SalaEnVivo.Api.Controllers
+namespace PEI.SalaEnVivo.Api.Controllers
 {
     [ApiController]
     [Route("api/v1/salas")]
