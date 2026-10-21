@@ -2,10 +2,10 @@ namespace PEI.SalaEnVivo.Domain.Entities
 {
     public class Sala
     {
-        public int Id { get; set; }
-        public int InstitucionId { get; set; }
+        public Guid Id { get; set; }
+        public Guid InstitucionId { get; set; }
 
-        public byte[] Version { get; set; } = Array.Empty<byte>();
+        public int[] Version { get; set; } = Array.Empty<int>();
         public DateTime FechaVencimiento { get; set; }
         public int CodigoPIN { get; set; }
         public string Estado { get; set; } = string.Empty;
