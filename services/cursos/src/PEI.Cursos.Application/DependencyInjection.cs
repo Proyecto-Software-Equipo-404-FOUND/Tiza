@@ -23,6 +23,8 @@ public static class DependencyInjection
 
         // Registrar Handlers de Cursos
         services.AddScoped<IRequestHandler<CrearCursoCommand, CursoDto>, CrearCursoCommandHandler>();
+        services.AddScoped<IRequestHandler<ActualizarCursoCommand, CursoDto?>, ActualizarCursoCommandHandler>();
+        services.AddScoped<IRequestHandler<DesactivarCursoCommand, bool>, DesactivarCursoCommandHandler>();
         services.AddScoped<IRequestHandler<GetCursosQuery, ResultadoPaginadoDTO<CursoDto>>, GetCursosQueryHandler>();
         services.AddScoped<IRequestHandler<GetCursoByIdQuery, CursoDto?>, GetCursoByIdQueryHandler>();
 

@@ -54,7 +54,7 @@ public class CrearCursoCommandHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_ConNombreDuplicadoEnInstitucion_DebeLanzarDomainException()
+    public async Task HandleAsync_ConNombreDuplicadoEnInstitucion_DebeLanzarInvalidOperationException()
     {
         // Arrange
         var institucionId = Guid.NewGuid();
@@ -65,7 +65,7 @@ public class CrearCursoCommandHandlerTests
         var command = new CrearCursoCommand("Quimica General", "Exactas");
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<DomainException>(() => handler.HandleAsync(command));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => handler.HandleAsync(command));
         Assert.Contains("Ya existe un curso con el nombre", ex.Message);
         Assert.Equal(0, _uow.CommitsRealizados);
     }

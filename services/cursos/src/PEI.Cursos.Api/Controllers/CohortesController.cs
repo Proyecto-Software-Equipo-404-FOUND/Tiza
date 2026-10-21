@@ -51,6 +51,7 @@ public class CohortesController : ControllerBase
     [ProducesResponseType(typeof(CohorteDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> CrearCohorte(
         [FromRoute] Guid cursoId,
         [FromBody] CrearCohorteDto dto,

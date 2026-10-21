@@ -80,7 +80,7 @@ public class CrearCohorteCommandHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_ConComisionDuplicadaEnPeriodo_DebeLanzarDomainException()
+    public async Task HandleAsync_ConComisionDuplicadaEnPeriodo_DebeLanzarInvalidOperationException()
     {
         // Arrange
         var institucionId = Guid.NewGuid();
@@ -95,7 +95,7 @@ public class CrearCohorteCommandHandlerTests
         var command = new CrearCohorteCommand(curso.Id, "Division A", "2026-1C", docenteId);
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<DomainException>(() => handler.HandleAsync(command));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => handler.HandleAsync(command));
         Assert.Contains("Ya existe una comision llamada", ex.Message);
         Assert.Equal(0, _uow.CommitsRealizados);
     }

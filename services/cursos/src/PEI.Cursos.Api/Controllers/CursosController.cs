@@ -68,6 +68,7 @@ public class CursosController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(CursoDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> CrearCurso(
         [FromBody] CrearCursoDto dto,
         CancellationToken cancellationToken)
@@ -80,5 +81,55 @@ public class CursosController : ControllerBase
         );
 
         return CreatedAtAction(nameof(GetById), new { id = cursoCreado.Id }, cursoCreado);
+    }
+
+    /* Modifica los datos descriptivos de un curso existente garantizando aislamiento tenant. */
+    [HttpPut("{id:guid}")]
+    [ProducesResponseType(typeof(CursoDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ActualizarCurso(
+        [FromRoute] Guid id,
+        [FromBody] ActualizarCursoDto dto,
+        CancellationToken cancellationToken)
+    {
+        var command = new ActualizarCursoCommand(id, dto.Nombre, dto.Area);
+
+        var cursoActualizado = await _mediator.SendAsync<ActualizarCursoCommand, CursoDto?>(
+            command,
+            cancellationToken
+        );
+
+        if (cursoActualizado is null)
+        {
+            return NotFound(new { error = $"No se encontro el curso con ID '{id}' o no pertenece a la institucion." });
+        }
+
+        return Ok(cursoActualizado);
+    }
+
+    /* Ejecuta la baja logica de un curso impidiendo aperturas futuras. */
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DesactivarCurso(
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken)
+    {
+        var command = new DesactivarCursoCommand(id);
+
+        var desactivado = await _mediator.SendAsync<DesactivarCursoCommand, bool>(
+            command,
+            cancellationToken
+        );
+
+        if (!desactivado)
+        {
+            return NotFound(new { error = $"No se encontro el curso con ID '{id}' o no pertenece a la institucion." });
+        }
+
+        return NoContent();
     }
 }

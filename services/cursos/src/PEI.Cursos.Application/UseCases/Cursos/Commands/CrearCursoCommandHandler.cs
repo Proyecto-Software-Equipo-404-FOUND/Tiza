@@ -36,11 +36,11 @@ public class CrearCursoCommandHandler : IRequestHandler<CrearCursoCommand, Curso
             throw new DomainException("No se pudo identificar la institucion del usuario autenticado.");
         }
 
-        // 2. Validacion preventiva de unicidad para evitar excepciones directas de base de datos
+        // 2. Validacion preventiva de unicidad (mapea a 409 Conflict en ProblemDetailsMiddleware)
         var existeNombre = await _cursoRepository.ExisteNombreAsync(request.Nombre, cancellationToken);
         if (existeNombre)
         {
-            throw new DomainException($"Ya existe un curso con el nombre '{request.Nombre}' en la institucion.");
+            throw new InvalidOperationException($"Ya existe un curso con el nombre '{request.Nombre}' en la institucion.");
         }
 
         // 3. Creacion de la entidad pura de dominio aplicando sus invariantes

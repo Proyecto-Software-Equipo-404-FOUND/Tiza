@@ -51,7 +51,7 @@ public class CrearCohorteCommandHandler : IRequestHandler<CrearCohorteCommand, C
             throw new DomainException("No es posible registrar cohortes en un curso inactivo.");
         }
 
-        // 3. Validacion preventiva de unicidad para la tupla (CursoId, Periodo, Nombre)
+        // 3. Validacion preventiva de unicidad para la tupla (CursoId, Periodo, Nombre) (mapea a 409 Conflict)
         var yaExiste = await _cohorteRepository.ExisteNombreEnPeriodoAsync(
             request.CursoId,
             request.Periodo,
@@ -61,7 +61,7 @@ public class CrearCohorteCommandHandler : IRequestHandler<CrearCohorteCommand, C
 
         if (yaExiste)
         {
-            throw new DomainException($"Ya existe una comision llamada '{request.Nombre}' para el ciclo '{request.Periodo}' en este curso.");
+            throw new InvalidOperationException($"Ya existe una comision llamada '{request.Nombre}' para el ciclo '{request.Periodo}' en este curso.");
         }
 
         // 4. Instanciar la entidad de dominio Cohorte asegurando invariantes
