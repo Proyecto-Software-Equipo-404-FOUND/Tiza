@@ -218,7 +218,7 @@ public sealed partial class TenantIsolationTests : IAsyncLifetime
         await using var db = Context(a);
         await db.Instituciones.ExecuteUpdateAsync(s => s.SetProperty(i => i.Activo, false));
         var writer = new AuthenticationTokenWriter(db);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => writer.CrearRefreshTokenAsync(ua,
+        await Assert.ThrowsAsync<AuthenticationIdentityUnavailableException>(() => writer.CrearRefreshTokenAsync(ua,
             Guid.NewGuid().ToString("N"), DateTime.UtcNow.AddHours(1)));
         Assert.False(await writer.RotarRefreshTokenAsync(hash, Guid.NewGuid().ToString("N"), DateTime.UtcNow.AddHours(1)));
         Assert.Null(await new AuthenticationDataAccess(db).BuscarIdentidadParaRenovacionAsync(hash));

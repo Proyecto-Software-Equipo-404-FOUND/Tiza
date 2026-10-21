@@ -52,6 +52,8 @@ public sealed class PlatformHttpFactory : WebApplicationFactory<Program>
             foreach (var descriptor in s.Where(x => x.ImplementationType == typeof(InvitacionesWorker)).ToList()) s.Remove(descriptor);
             s.RemoveAll<IPlataformaDataAccess>(); s.AddSingleton<IPlataformaDataAccess>(Store);
             s.RemoveAll<IAuthenticatedUserValidator>(); s.AddSingleton<IAuthenticatedUserValidator>(InstitucionalStore);
+            s.RemoveAll<IAuthenticationDataAccess>(); s.AddSingleton<IAuthenticationDataAccess>(InstitucionalStore);
+            s.RemoveAll<IAuthenticationTokenWriter>(); s.AddSingleton<IAuthenticationTokenWriter>(InstitucionalStore);
             s.AddControllers().AddApplicationPart(typeof(TenantProbeController).Assembly);
         });
     }

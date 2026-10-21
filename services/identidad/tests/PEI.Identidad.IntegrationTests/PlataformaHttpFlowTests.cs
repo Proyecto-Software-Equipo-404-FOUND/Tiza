@@ -88,6 +88,15 @@ public sealed partial class TenantIsolationTests
         Assert.Equal(HttpStatusCode.Created, (await client.PostAsJsonAsync("/api/auth/register", new { Email = "docente@tiza.test", Password = "Prueba123!", Nombre = "D", Apellido = "P", Rol = "Docente" })).StatusCode);
         await using var comprobar = Context(creada.InstitucionId);
         Assert.Equal(2, await comprobar.Usuarios.CountAsync());
+        // Integración ID-04/ID-06: el administrador activado renueva y cierra su sesión institucional.
+        var refresh = institucionalJson.GetProperty("refreshToken").GetString();
+        var renovacion = await client.PostAsJsonAsync("/api/auth/refresh", new { RefreshToken = refresh });
+        Assert.Equal(HttpStatusCode.OK, renovacion.StatusCode);
+        var siguiente = await renovacion.Content.ReadFromJsonAsync<JsonElement>();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", siguiente.GetProperty("accessToken").GetString());
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/plataforma/instituciones")).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsJsonAsync("/api/auth/logout", new { RefreshToken = siguiente.GetProperty("refreshToken").GetString() })).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsJsonAsync("/api/auth/refresh", new { RefreshToken = siguiente.GetProperty("refreshToken").GetString() })).StatusCode);
     }
 
     [DatabaseFact]

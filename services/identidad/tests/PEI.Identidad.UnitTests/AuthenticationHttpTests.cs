@@ -23,6 +23,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using PEI.Identidad.Api.Security;
 using PEI.Identidad.Application.Abstractions;
+using PEI.Identidad.Application.Exceptions;
 using PEI.Identidad.Domain.Entities;
 using PEI.Identidad.Domain.Security;
 using PEI.Identidad.Infrastructure.Security;
@@ -71,6 +72,7 @@ public sealed class IdentityHttpFactory(int limit = 1000, string hostEnvironment
         {
             s.RemoveAll<IAuthenticationDataAccess>(); s.RemoveAll<IRegistrationDataAccess>(); s.RemoveAll<IAuthenticatedUserValidator>();
             s.AddSingleton<IAuthenticationDataAccess>(Store); s.AddSingleton<IRegistrationDataAccess>(Store); s.AddSingleton<IAuthenticatedUserValidator>(Store);
+            s.RemoveAll<IAuthenticationTokenWriter>(); s.AddSingleton<IAuthenticationTokenWriter>(Store);
             s.AddControllers().AddApplicationPart(typeof(TenantProbeController).Assembly);
         });
     }
@@ -83,7 +85,7 @@ public sealed class IdentityHttpFactory(int limit = 1000, string hostEnvironment
     public string Token(Usuario? user = null) => new JwtTokenService(Options.Create(Jwt)).GenerateToken(user ?? Store.Admin);
 }
 
-public sealed class FakeIdentityStore : IAuthenticationDataAccess, IRegistrationDataAccess, IAuthenticatedUserValidator
+public sealed class FakeIdentityStore : IAuthenticationDataAccess, IRegistrationDataAccess, IAuthenticatedUserValidator, IAuthenticationTokenWriter
 {
     private static readonly string Hash = new BCryptPasswordHasher().Hash("Prueba123!");
     public Usuario Admin { get; } = new() { InstitucionId = Guid.NewGuid(), Email = "admin@example.org", Rol = IdentityRoles.Administrador, PasswordHash = Hash };
@@ -93,7 +95,39 @@ public sealed class FakeIdentityStore : IAuthenticationDataAccess, IRegistration
     public Task<Usuario?> BuscarUsuarioParaLoginAsync(string email, CancellationToken cancellationToken = default) =>
         Task.FromResult(Users.Values.FirstOrDefault(u => u.Activo && InstitutionActive && string.Equals(u.Email, email.Trim(), StringComparison.OrdinalIgnoreCase)));
     public Task<RefreshToken?> BuscarRefreshTokenAsync(string hash, CancellationToken cancellationToken = default) => Task.FromResult<RefreshToken?>(null);
-    public Task<RefreshIdentity?> BuscarIdentidadParaRenovacionAsync(string hash, CancellationToken cancellationToken = default) => Task.FromResult<RefreshIdentity?>(null);
+    private sealed record Session(Guid Usuario, DateTime Expira, bool Revocado);
+    private readonly ConcurrentDictionary<string, Session> sessions = new();
+    private readonly object sessionLock = new();
+    public Task<RefreshIdentity?> BuscarIdentidadParaRenovacionAsync(string hash, CancellationToken cancellationToken = default) =>
+        Task.FromResult(sessions.TryGetValue(hash, out var t) && !t.Revocado && t.Expira > DateTime.UtcNow &&
+            InstitutionActive && Users.TryGetValue(t.Usuario, out var u) && u.Activo
+            ? new RefreshIdentity(u.Id, u.InstitucionId, u.Email, u.Rol) : null);
+    public Task CrearRefreshTokenAsync(Guid usuarioId, string hash, DateTime expira, CancellationToken cancellationToken = default)
+    {
+        if (!InstitutionActive || !Users.TryGetValue(usuarioId, out var u) || !u.Activo)
+            throw new AuthenticationIdentityUnavailableException();
+        if (!sessions.TryAdd(hash, new(usuarioId, expira, false))) throw new InvalidOperationException();
+        return Task.CompletedTask;
+    }
+    public Task<bool> RevocarRefreshTokenAsync(string hash, CancellationToken cancellationToken = default)
+    {
+        lock (sessionLock)
+        {
+            if (!sessions.TryGetValue(hash, out var t) || t.Revocado) return Task.FromResult(false);
+            sessions[hash] = t with { Revocado = true }; return Task.FromResult(true);
+        }
+    }
+    public Task<bool> RotarRefreshTokenAsync(string anterior, string nuevo, DateTime expira, CancellationToken cancellationToken = default)
+    {
+        lock (sessionLock)
+        {
+            if (!sessions.TryGetValue(anterior, out var t) || t.Revocado || t.Expira <= DateTime.UtcNow ||
+                !InstitutionActive || !Users.TryGetValue(t.Usuario, out var u) || !u.Activo) return Task.FromResult(false);
+            if (sessions.ContainsKey(nuevo)) throw new InvalidOperationException();
+            sessions[anterior] = t with { Revocado = true }; sessions[nuevo] = new(t.Usuario, expira, false);
+            return Task.FromResult(true);
+        }
+    }
     public Task<bool> PuedeRegistrarAsync(Guid institucion) => Task.FromResult(InstitutionActive && institucion == Admin.InstitucionId && Admin.Activo);
     public Task<bool> ExisteEmailAsync(string email) => Task.FromResult(Users.Values.Any(u => string.Equals(u.Email, email.Trim(), StringComparison.OrdinalIgnoreCase)));
     public Task AddAsync(Usuario usuario) { Users[usuario.Id] = usuario; return Task.CompletedTask; }

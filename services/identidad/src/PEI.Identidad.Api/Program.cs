@@ -7,6 +7,7 @@ using PEI.Identidad.Application.Abstractions;
 using PEI.Identidad.Application.Interfaces.Security;
 using PEI.Identidad.Application.Interfaces.Service;
 using PEI.Identidad.Application.UseCases.Auth.Login;
+using PEI.Identidad.Application.UseCases.Auth.Refresh;
 using PEI.Identidad.Application.UseCases.Auth.Register;
 using PEI.Identidad.Infrastructure.Persistence;
 using PEI.Identidad.Infrastructure.Tenancy;
@@ -35,6 +36,12 @@ builder.Services.AddScoped<IRegistrationDataAccess, RegistrationDataAccess>();
 builder.Services.AddScoped<IAuthenticatedUserValidator, AuthenticatedUserValidator>();
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
+builder.Services.AddScoped<IAccessTokenIssuer, JwtTokenService>();
+builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+builder.Services.AddScoped<IRefreshTokenHasher, RefreshTokenHasher>();
+builder.Services.AddScoped<InstitutionalSessionService>();
+builder.Services.AddScoped<RefreshHandler>();
+builder.Services.AddScoped<LogoutHandler>();
 builder.Services.AddScoped<LoginHandler>();
 builder.Services.AddScoped<RegisterHandler>();
 builder.Services.AddIdentityAuthentication(builder.Configuration, builder.Environment);
@@ -44,7 +51,16 @@ builder.Services.AddExceptionHandler<PEI.Identidad.Api.Errors.IdentityExceptionH
 builder.Services.AddProblemDetails();
 builder.Services.AddControllers().AddJsonOptions(o => o.JsonSerializerOptions.UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow);
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(o =>
+{
+    foreach (var scheme in new[] { "Bearer", PlataformaSetup.Scheme })
+        o.AddSecurityDefinition(scheme, new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+        {
+            Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http, Scheme = "bearer", BearerFormat = "JWT",
+            Description = scheme == "Bearer" ? "JWT institucional con institucion_id." : "JWT global exclusivo de plataforma; sin institucion_id."
+        });
+    o.OperationFilter<IdentitySecurityOperationFilter>();
+});
 var loginLimit = builder.Configuration.GetValue<int?>("LoginRateLimit:PermitLimit") ?? 10;
 if (loginLimit < 1) throw new InvalidOperationException("LoginRateLimit:PermitLimit debe ser positivo.");
 builder.Services.AddRateLimiter(o =>

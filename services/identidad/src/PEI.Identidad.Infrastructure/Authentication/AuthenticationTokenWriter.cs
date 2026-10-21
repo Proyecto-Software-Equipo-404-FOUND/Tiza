@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PEI.Identidad.Application.Abstractions;
+using PEI.Identidad.Application.Exceptions;
 using PEI.Identidad.Infrastructure.Persistence;
 
 namespace PEI.Identidad.Infrastructure.Authentication;
@@ -25,7 +26,7 @@ public sealed class AuthenticationTokenWriter(IdentidadDbContext dbContext) : IA
             WHERE u."Id" = {usuarioId} AND u."Activo" AND i."Activo"
             FOR SHARE OF u, i
             """, cancellationToken);
-        if (filas != 1) throw new InvalidOperationException("Usuario o institucion no disponible.");
+        if (filas != 1) throw new AuthenticationIdentityUnavailableException();
     }
 
     public async Task<bool> RevocarRefreshTokenAsync(string tokenHash,
@@ -33,6 +34,7 @@ public sealed class AuthenticationTokenWriter(IdentidadDbContext dbContext) : IA
     {
         if (string.IsNullOrWhiteSpace(tokenHash)) return false;
         return await dbContext.Database.ExecuteSqlInterpolatedAsync($"""
+            /* identidad:revocar-refresh */
             UPDATE "RefreshToken" SET "Revocado" = TRUE
             WHERE "Token" = {tokenHash} AND NOT "Revocado"
             """, cancellationToken) == 1;
@@ -44,19 +46,29 @@ public sealed class AuthenticationTokenWriter(IdentidadDbContext dbContext) : IA
         Validar(tokenNuevoHash, fechaExpiracion);
         if (string.IsNullOrWhiteSpace(tokenAnteriorHash) || tokenAnteriorHash == tokenNuevoHash)
             throw new ArgumentException("Se requieren hashes distintos.");
-        // Un solo statement: el UPDATE condicional decide el ganador y el INSERT es atomico.
+        // Cada CTE materializado entrega filas solo después de adquirir sus locks.
+        // La vigencia se comprueba sobre esa fila bloqueada con el reloj de PostgreSQL,
+        // no sobre el target del UPDATE ni con una hora capturada antes de esperar.
+        // Consumo y reemplazo permanecen en una única sentencia atómica.
         return await dbContext.Database.ExecuteSqlInterpolatedAsync($"""
+            /* identidad:rotar-refresh */
             WITH propietario AS MATERIALIZED (
                 SELECT u."Id" FROM "Usuario" u
                 JOIN "Institucion" i ON i."Id" = u."InstitucionId"
                 JOIN "RefreshToken" t ON t."UsuarioId" = u."Id"
                 WHERE t."Token" = {tokenAnteriorHash} AND u."Activo" AND i."Activo"
                 FOR SHARE OF u, i
+            ), bloqueado AS MATERIALIZED (
+                SELECT t."Id", t."UsuarioId", t."FechaExpiracion"
+                FROM "RefreshToken" t
+                JOIN propietario p ON p."Id" = t."UsuarioId"
+                WHERE t."Token" = {tokenAnteriorHash} AND NOT t."Revocado"
+                FOR UPDATE OF t
             ), consumido AS (
                 UPDATE "RefreshToken" t SET "Revocado" = TRUE
-                WHERE t."Token" = {tokenAnteriorHash} AND NOT t."Revocado"
-                  AND t."FechaExpiracion" > {DateTime.UtcNow}
-                  AND t."UsuarioId" IN (SELECT "Id" FROM propietario)
+                FROM bloqueado b
+                WHERE t."Id" = b."Id" AND NOT t."Revocado"
+                  AND b."FechaExpiracion" > clock_timestamp()
                 RETURNING t."UsuarioId"
             )
             INSERT INTO "RefreshToken" ("Id", "UsuarioId", "Token", "FechaExpiracion", "Revocado")
