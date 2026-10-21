@@ -39,7 +39,7 @@ public sealed class RegistrationDataAccess(IdentidadDbContext db, IHttpContextAc
             await db.SaveChangesAsync();
             if (registrationTransaction is not null) await registrationTransaction.CommitAsync();
         }
-        catch (DbUpdateException e) when (e.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: "IX_Usuario_EmailNormalizado" })
+        catch (DbUpdateException e) when (e.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
         { throw new RegistrationConflictException(); }
         finally { await DisposeAsync(); }
     }

@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.DataProtection;
 using System.Threading.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using PEI.Identidad.Api.Security;
@@ -14,7 +15,9 @@ using PEI.Identidad.Infrastructure.Repositories;
 using PEI.Identidad.Infrastructure.Security;
 
 var generateTestToken = args.Contains("--generate-test-token", StringComparer.Ordinal);
-var builder = WebApplication.CreateBuilder(args.Where(a => a != "--generate-test-token").ToArray());
+var bootstrapPlatform = args.Contains("--bootstrap-platform", StringComparer.Ordinal);
+var readDevelopmentMail = args.Contains("--read-development-mail", StringComparer.Ordinal);
+var builder = WebApplication.CreateBuilder(args.Where(a => a is not "--generate-test-token" and not "--bootstrap-platform" and not "--read-development-mail").ToArray());
 if (generateTestToken)
 {
     Console.WriteLine(DevelopmentTokenCommand.Generate(builder.Configuration, builder.Environment.EnvironmentName));
@@ -23,6 +26,7 @@ if (generateTestToken)
 var connectionString = builder.Configuration.GetConnectionString("IdentidadDb")
     ?? throw new InvalidOperationException("No se configuro la conexion IdentidadDb.");
 builder.Services.AddDbContext<IdentidadDbContext>(o => o.UseNpgsql(connectionString));
+builder.Services.AddDbContext<PlataformaDbContext>(options => options.UseNpgsql(connectionString, npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistoryPlataforma")));
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ITenantContext, TenantContext>();
 builder.Services.AddScoped<IAuthenticationDataAccess, AuthenticationDataAccess>();
@@ -34,6 +38,7 @@ builder.Services.AddScoped<ITokenService, JwtTokenService>();
 builder.Services.AddScoped<LoginHandler>();
 builder.Services.AddScoped<RegisterHandler>();
 builder.Services.AddIdentityAuthentication(builder.Configuration, builder.Environment);
+builder.Services.AddPlataforma(builder.Configuration, builder.Environment);
 builder.Services.AddExceptionHandler<PEI.Identidad.Api.Errors.TenantAccessDeniedHandler>();
 builder.Services.AddExceptionHandler<PEI.Identidad.Api.Errors.IdentityExceptionHandler>();
 builder.Services.AddProblemDetails();
@@ -54,6 +59,30 @@ builder.Services.AddRateLimiter(o =>
         options: (System.Text.Json.JsonSerializerOptions?)null, contentType: "application/problem+json", cancellationToken: cancellationToken);
 });
 var app = builder.Build();
+if (bootstrapPlatform || readDevelopmentMail)
+{
+    if (!builder.Configuration.GetValue<bool>("Platform:Enabled")) throw new InvalidOperationException("Habilitar Platform explícitamente.");
+    await using var scope = app.Services.CreateAsyncScope();
+    if (bootstrapPlatform)
+    {
+        if (!builder.Configuration.GetValue<bool>("PlatformBootstrap:Enabled")) throw new InvalidOperationException("Bootstrap no habilitado explícitamente.");
+        var config = builder.Configuration.GetSection("PlatformBootstrap");
+        await scope.ServiceProvider.GetRequiredService<PEI.Identidad.Infrastructure.Plataforma.PlataformaBootstrap>().EjecutarAsync(
+            config["Email"] ?? "", config["Password"] ?? "", config["Nombre"] ?? "", config["Apellido"] ?? "", config["Operador"] ?? "", CancellationToken.None);
+        Console.WriteLine("Bootstrap completado. Retirar secretos y deshabilitar PlatformBootstrap.");
+    }
+    else
+    {
+        if (!builder.Environment.IsDevelopment()) throw new InvalidOperationException("Buzón disponible solo en Development.");
+        var id = Guid.Parse(builder.Configuration["PlatformDevelopment:MailId"] ?? "");
+        var options = scope.ServiceProvider.GetRequiredService<PEI.Identidad.Infrastructure.Security.PlataformaOptions>();
+        var path = Path.Combine(options.DevelopmentMailDirectory, id.ToString("N") + ".mail");
+        var protection = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.DataProtection.IDataProtectionProvider>();
+        Console.WriteLine(Microsoft.AspNetCore.DataProtection.DataProtectionCommonExtensions.Unprotect(
+            protection.CreateProtector(PEI.Identidad.Infrastructure.Plataforma.DevelopmentEmailSender.Purpose), await File.ReadAllTextAsync(path)));
+    }
+    return; // Nunca publicar HTTP durante operaciones de consola.
+}
 if (builder.Configuration.GetValue<bool>("DevelopmentTools:EnableTestTokens"))
     DevelopmentTokenCommand.ValidateConfiguredBindings(builder.Configuration);
 if (app.Environment.IsDevelopment()) { app.UseSwagger(); app.UseSwaggerUI(); }

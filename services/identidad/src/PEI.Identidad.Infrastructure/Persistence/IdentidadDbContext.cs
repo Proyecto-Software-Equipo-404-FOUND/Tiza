@@ -28,7 +28,9 @@ public class IdentidadDbContext : DbContext
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.ApplyConfigurationsFromAssembly(
-            typeof(IdentidadDbContext).Assembly);
+            typeof(IdentidadDbContext).Assembly,
+            type => type.Namespace ==
+                "PEI.Identidad.Infrastructure.Persistence.Configurations");
 
         modelBuilder.HasDbFunction(typeof(EmailDbFunctions).GetMethod(nameof(EmailDbFunctions.Normalize))!)
             .HasName("pei_normalize_email");
