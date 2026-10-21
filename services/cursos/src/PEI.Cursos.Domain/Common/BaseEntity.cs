@@ -1,3 +1,6 @@
+using System;
+using PEI.Cursos.Domain.Exceptions;
+
 namespace PEI.Cursos.Domain.Common;
 
 /* Clase base abstracta para todas las entidades del microservicio de Cursos.
@@ -16,4 +19,13 @@ public abstract class BaseEntity
 
     public DateTime FechaCreacionUtc { get; protected set; } = DateTime.UtcNow;
     public DateTime? FechaModificacionUtc { get; protected set; }
+
+    // Permite fijar un identificador determinista, utilizado exclusivamente en escenarios de siembra de datos o pruebas.
+    public void AsignarId(Guid id)
+    {
+        if (id == Guid.Empty)
+            throw new DomainException("El identificador a asignar no puede ser un GUID vacío.");
+
+        Id = id;
+    }
 }
