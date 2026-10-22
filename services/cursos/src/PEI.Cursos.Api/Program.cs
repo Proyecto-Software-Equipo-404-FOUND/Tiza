@@ -1,24 +1,32 @@
+using PEI.BuildingBlocks.Errors;
+using PEI.BuildingBlocks.Logging;
 using PEI.BuildingBlocks.MultiTenancy;
+using PEI.Cursos.Application;
 using PEI.Cursos.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Configuracion de servicios
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Infrastructure y persistencia
+// Registro de capas de Application e Infrastructure
+builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// Contexto multi-tenant
+// Contexto multi-tenant por solicitud
 builder.Services.AddScoped<TenantContext>();
 builder.Services.AddScoped<ITenantContext>(sp =>
     sp.GetRequiredService<TenantContext>());
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Middlewares transversales de BuildingBlocks en pipeline ordenado
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseMiddleware<ProblemDetailsMiddleware>();
+app.UseMiddleware<TenantContextMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
