@@ -10,6 +10,7 @@ import { FormularioCurso } from '../components/FormularioCurso';
 
 const columnas: Columna<Curso>[] = [
   { titulo: 'Nombre', celda: (curso) => curso.nombre },
+  { titulo: 'Área', celda: (curso) => curso.area },
   {
     titulo: 'Cohortes',
     celda: (curso) => (
@@ -21,7 +22,7 @@ const columnas: Columna<Curso>[] = [
 ];
 
 export function PaginaCursos() {
-  const { data: cursos, isPending, isError, error, refetch } = useCursos();
+  const { data: resultado, isPending, isError, error, refetch } = useCursos();
 
   return (
     <main className='mx-auto flex max-w-4xl flex-col gap-4 p-6'>
@@ -35,13 +36,20 @@ export function PaginaCursos() {
 
       {isError && <BannerError mensaje={mensajeDeError(error)} onReintentar={() => refetch()} />}
 
-      {cursos && (
-        <Tabla
-          columnas={columnas}
-          filas={cursos}
-          clave={(curso) => curso.id}
-          textoVacio='Todavía no hay cursos.'
-        />
+      {resultado && (
+        <>
+          <Tabla
+            columnas={columnas}
+            filas={resultado.items}
+            clave={(curso) => curso.id}
+            textoVacio='Todavía no hay cursos.'
+          />
+          {resultado.totalItems > resultado.items.length && (
+            <p className='text-sm text-tiza-pizarra'>
+              Mostrando {resultado.items.length} de {resultado.totalItems} cursos.
+            </p>
+          )}
+        </>
       )}
     </main>
   );
