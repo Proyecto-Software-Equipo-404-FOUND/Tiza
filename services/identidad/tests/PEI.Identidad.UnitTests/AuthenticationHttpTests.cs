@@ -94,7 +94,6 @@ public sealed class FakeIdentityStore : IAuthenticationDataAccess, IRegistration
     public FakeIdentityStore() { Users[Admin.Id] = Admin; }
     public Task<Usuario?> BuscarUsuarioParaLoginAsync(string email, CancellationToken cancellationToken = default) =>
         Task.FromResult(Users.Values.FirstOrDefault(u => u.Activo && InstitutionActive && string.Equals(u.Email, email.Trim(), StringComparison.OrdinalIgnoreCase)));
-    public Task<RefreshToken?> BuscarRefreshTokenAsync(string hash, CancellationToken cancellationToken = default) => Task.FromResult<RefreshToken?>(null);
     private sealed record Session(Guid Usuario, DateTime Expira, bool Revocado);
     private readonly ConcurrentDictionary<string, Session> sessions = new();
     private readonly object sessionLock = new();
