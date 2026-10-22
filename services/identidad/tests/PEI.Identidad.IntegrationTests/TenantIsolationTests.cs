@@ -38,6 +38,9 @@ public sealed partial class TenantIsolationTests : IAsyncLifetime
         if (builder.Database != "pei_identidad_tests" || builder.Port != 5541 ||
             builder.Host is not ("localhost" or "127.0.0.1" or "::1"))
             throw new InvalidOperationException("Solo se autoriza pei_identidad_tests local en puerto 5541.");
+        // A different SearchPath per case creates a different pool. Release physical connections
+        // on disposal instead of retaining dozens of idle pools until the test process exits.
+        builder.Pooling = false;
         await using var cn = new NpgsqlConnection(builder.ConnectionString);
         await cn.OpenAsync();
         await using (var check = new NpgsqlCommand("SELECT current_database()", cn))
