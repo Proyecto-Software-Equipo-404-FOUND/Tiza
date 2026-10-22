@@ -21,4 +21,8 @@ describe('mensajeDeError', () => {
   it('devuelve un texto genérico para errores desconocidos', () => {
     expect(mensajeDeError(new Error('x'))).toBe('Algo salió mal. Probá de nuevo.');
   });
+
+  it('avisa que la sesión venció ante un 401', () => {
+    expect(mensajeDeError(new ApiError(401, null))).toBe('Tu sesión venció. Ingresá de nuevo.');
+  });
 });
