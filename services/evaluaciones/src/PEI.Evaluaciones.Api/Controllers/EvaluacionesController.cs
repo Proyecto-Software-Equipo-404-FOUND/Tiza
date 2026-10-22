@@ -106,7 +106,6 @@ public class EvaluacionesController : ControllerBase
     public async Task<IActionResult> Eliminar(
         Guid id,
         [FromHeader(Name = EncabezadoInstitucion)] Guid institucionId,
-        [FromBody] PublicarEvaluacionRequest peticion,
         CancellationToken ct)
     {
         if (institucionId == Guid.Empty)
@@ -114,15 +113,14 @@ public class EvaluacionesController : ControllerBase
             return FaltaInstitucion();
         }
 
-        var resultado = await _mediador.Send(
-            new PublicarEvaluacionCommand(id, institucionId, peticion.VersionEsperada, peticion.CohorteId), ct);
+        var resultado = await _mediador.Send(new EliminarEvaluacionCommand(id, institucionId), ct);
 
         if (resultado.Tipo != TipoResultado.Ok)
         {
             return RespuestaError(resultado);
         }
 
-        return Ok(resultado.Valor);
+        return NoContent();
     }
 
     [HttpPost("{id:guid}/publicar")]
