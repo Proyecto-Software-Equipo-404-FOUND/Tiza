@@ -24,6 +24,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\PEI.Identidad.Api\PEI.Identidad.Api.csproj" />
     <ProjectReference Include="..\..\src\PEI.Identidad.Infrastructure\PEI.Identidad.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\tools\PEI.Identidad.DevelopmentSeed\PEI.Identidad.DevelopmentSeed.csproj" />
   </ItemGroup>
 
 </Project>
