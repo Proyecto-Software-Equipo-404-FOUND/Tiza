@@ -31,6 +31,21 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+
+    // Siembra de datos semilla en segundo plano para desarrollo local
+    app.Lifetime.ApplicationStarted.Register(() => _ = Task.Run(async () =>
+    {
+        using var scope = app.Services.CreateScope();
+        try
+        {
+            var db = scope.ServiceProvider.GetRequiredService<PEI.Cursos.Infrastructure.Persistence.CursosDbContext>();
+            await PEI.Cursos.Infrastructure.Persistence.DataSeeder.SembrarAsync(db, app.Logger);
+        }
+        catch (Exception ex)
+        {
+            app.Logger.LogWarning(ex, "No se pudo sembrar la base de datos inicial de Cursos.");
+        }
+    }));
 }
 
 app.UseHttpsRedirection();
