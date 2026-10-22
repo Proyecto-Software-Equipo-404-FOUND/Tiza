@@ -66,4 +66,27 @@ public class CohortesController : ControllerBase
 
         return CreatedAtAction(nameof(GetCohortes), new { cursoId }, cohorteCreada);
     }
+
+    /* Valida la existencia y pertenencia institucional de una cohorte (Caso de Uso CU-05).
+    Endpoint inter-servicio consumido por Evaluaciones para vincular evaluaciones a comisiones.
+    Retorna 200 OK con metadatos si pertenece a la institucion, o 404 Not Found si no existe. */
+    [HttpGet("/api/v1/cohortes/{id:guid}/validacion")]
+    [ProducesResponseType(typeof(CohorteValidacionDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ValidarCohorte(
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken)
+    {
+        var resultado = await _mediator.SendAsync<ValidarCohorteQuery, CohorteValidacionDto?>(
+            new ValidarCohorteQuery(id),
+            cancellationToken
+        );
+
+        if (resultado is null)
+        {
+            return NotFound(new { error = $"No se encontro la cohorte con ID '{id}' o no pertenece a la institucion." });
+        }
+
+        return Ok(resultado);
+    }
 }
