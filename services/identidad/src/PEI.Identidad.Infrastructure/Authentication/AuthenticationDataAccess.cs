@@ -31,21 +31,6 @@ public sealed class AuthenticationDataAccess : IAuthenticationDataAccess
                 cancellationToken);
     }
 
-    public async Task<RefreshToken?> BuscarRefreshTokenAsync(
-        string tokenHash,
-        CancellationToken cancellationToken = default)
-    {
-        return await _dbContext.RefreshTokens
-            .IgnoreQueryFilters()
-            .AsNoTracking()
-            .FirstOrDefaultAsync(
-                token => token.Token == tokenHash
-                    && !token.Revocado
-                    && token.FechaExpiracion > DateTime.UtcNow
-                    && token.Usuario.Activo
-                    && token.Usuario.Institucion.Activo,
-                cancellationToken);
-    }
     public Task<RefreshIdentity?> BuscarIdentidadParaRenovacionAsync(string tokenHash,
         CancellationToken cancellationToken = default) =>
         _dbContext.RefreshTokens.IgnoreQueryFilters().AsNoTracking()

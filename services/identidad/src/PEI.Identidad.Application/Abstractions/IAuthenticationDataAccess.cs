@@ -10,8 +10,4 @@ public interface IAuthenticationDataAccess
     Task<Usuario?> BuscarUsuarioParaLoginAsync(
         string email,
         CancellationToken cancellationToken = default);
-
-    Task<RefreshToken?> BuscarRefreshTokenAsync(
-        string tokenHash,
-        CancellationToken cancellationToken = default);
 }
