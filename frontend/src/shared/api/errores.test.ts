@@ -25,4 +25,10 @@ describe('mensajeDeError', () => {
   it('avisa que la sesión venció ante un 401', () => {
     expect(mensajeDeError(new ApiError(401, null))).toBe('Tu sesión venció. Ingresá de nuevo.');
   });
+
+  it('avisa del límite de intentos ante un 429', () => {
+    expect(mensajeDeError(new ApiError(429, null))).toBe(
+      'Demasiados intentos. Esperá un momento e intentá de nuevo.',
+    );
+  });
 });

@@ -8,6 +8,7 @@ export function mensajeDeError(error: unknown): string {
     if (error.estado === 404) return 'No se encontró lo que buscás.';
     if (error.estado === 400) return error.detalle?.detail ?? 'Revisá los datos ingresados.';
     if (error.estado === 401) return 'Tu sesión venció. Ingresá de nuevo.';
+    if (error.estado === 429) return 'Demasiados intentos. Esperá un momento e intentá de nuevo.';
   }
   return 'Algo salió mal. Probá de nuevo.';
 }
