@@ -5,6 +5,9 @@ import { useCursos } from '../hooks/useCursos';
 import { ApiError } from '@/shared/api/cliente';
 
 vi.mock('../hooks/useCursos', () => ({ useCursos: vi.fn() }));
+vi.mock('../components/FormularioCurso', () => ({
+  FormularioCurso: () => <div>formulario</div>,
+}));
 
 type Estado = ReturnType<typeof useCursos>;
 
