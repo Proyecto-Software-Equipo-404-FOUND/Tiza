@@ -122,3 +122,26 @@ public class FakeCohorteRepository : ICohorteRepository
         return Task.FromResult(existe);
     }
 }
+
+public class FakeMatriculacionRepository : IMatriculacionRepository
+{
+    public List<Matriculacion> Items { get; } = new();
+
+    public Task<Matriculacion?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var matriculacion = Items.FirstOrDefault(m => m.Id == id);
+        return Task.FromResult(matriculacion);
+    }
+
+    public Task<bool> ExisteMatriculacionAsync(Guid cohorteId, Guid alumnoId, CancellationToken cancellationToken = default)
+    {
+        var existe = Items.Any(m => m.CohorteId == cohorteId && m.AlumnoId == alumnoId);
+        return Task.FromResult(existe);
+    }
+
+    public Task AddAsync(Matriculacion matriculacion, CancellationToken cancellationToken = default)
+    {
+        Items.Add(matriculacion);
+        return Task.CompletedTask;
+    }
+}
