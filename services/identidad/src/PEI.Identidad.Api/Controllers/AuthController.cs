@@ -1,174 +1,57 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using PEI.Identidad.Application.UseCases.Auth.Login;
 using PEI.Identidad.Application.UseCases.Auth.Register;
 using PEI.Identidad.Application.UseCases.Auth.Refresh;
-
+using PEI.Identidad.Domain.Security;
+using PEI.Identidad.Api.Contracts;
 namespace PEI.Identidad.Api.Controllers;
-
-[ApiController]
-[Route("api/auth")]
-public class AuthController : ControllerBase
+[ApiController, Route("api/auth")]
+public sealed class AuthController(InstitutionalSessionService sessions, RegisterHandler register, RefreshHandler refresh, LogoutHandler logout) : ControllerBase
 {
-    private readonly RegisterHandler _registerHandler;
-    private readonly LoginHandler _loginHandler;
-    private readonly RefreshHandler _refreshHandler;
-    private readonly LogoutHandler _logoutHandler;
-
-    public AuthController(
-        RegisterHandler registerHandler,
-        LoginHandler loginHandler,
-        RefreshHandler refreshHandler,
-        LogoutHandler logoutHandler)
-    {
-        _registerHandler = registerHandler;
-        _loginHandler = loginHandler;
-        _refreshHandler = refreshHandler;
-        _logoutHandler = logoutHandler;
-    }
-
-
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-
-    [AllowAnonymous]
-    [HttpPost("register")]
-    public async Task<IActionResult> Register(RegisterCommand command)
-    {
-        try
-        {
-           var id = await _registerHandler.HandleAsync(command);
-
-            return Created(
-                $"/api/usuarios/{id}",
-                new
-                {
-                    id,
-                    message = "Usuario registrado correctamente."
-                });
-        }
-        catch (InvalidOperationException ex)
-        {
-            var problem = new ProblemDetails
-            {
-                Status = StatusCodes.Status409Conflict,
-                Title = "No se pudo registrar el usuario",
-                Detail = ex.Message,
-                Instance = HttpContext.Request.Path
-            };
-
-            return Conflict(problem);
-        }
-    }
-
-
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [AllowAnonymous, HttpPost("login"), EnableRateLimiting("login")]
+    [ProducesResponseType(typeof(SessionResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-    
-    [AllowAnonymous]
-    [HttpPost("login")]
-    public async Task<IActionResult> Login(LoginCommand command)
-    {
-        try
-        {
-            var resultado = await _loginHandler.HandleAsync(command);
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status429TooManyRequests)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> Login(LoginCommand command, CancellationToken ct) => TokenResponse(await sessions.LoginAsync(command, ct));
+    [Authorize(Policy = "InstitutionAdmin"), HttpPost("register")]
+    public async Task<IActionResult> Register(RegisterCommand command) => StatusCode(StatusCodes.Status201Created, new { id = await register.HandleAsync(command), message = "Usuario registrado correctamente." });
 
-            return Ok(new
-            {
-                accessToken = resultado.AccessToken,
-                refreshToken = resultado.RefreshToken,
-                tokenType = "Bearer",
-                accessTokenExpiresAt = resultado.AccessTokenExpiresAt,
-                refreshTokenExpiresAt = resultado.RefreshTokenExpiresAt
-            });
-        }
-        catch (UnauthorizedAccessException)
-        {
-            var problem = new ProblemDetails
-            {
-                Status = StatusCodes.Status401Unauthorized,
-                Title = "No autorizado",
-                Detail = "Credenciales inválidas.",
-                Instance = HttpContext.Request.Path
-            };
+    [AllowAnonymous, HttpPost("refresh"), EnableRateLimiting("login")]
+    [ProducesResponseType(typeof(SessionResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status429TooManyRequests)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> Refresh(RefreshCommand command, CancellationToken ct) => TokenResponse(await refresh.HandleAsync(command, ct));
 
-            return Unauthorized(problem);
-        }
-    }
-
-    [AllowAnonymous]
-    [HttpPost("refresh")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Refresh(RefreshCommand command)
-    {
-        try
-        {
-            var resultado = await _refreshHandler.HandleAsync(command);
-
-            return Ok(new
-            {
-                accessToken = resultado.AccessToken,
-                refreshToken = resultado.RefreshToken,
-                tokenType = "Bearer",
-                accessTokenExpiresAt = resultado.AccessTokenExpiresAt,
-                refreshTokenExpiresAt = resultado.RefreshTokenExpiresAt
-            });
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Unauthorized(new ProblemDetails
-            {
-                Status = StatusCodes.Status401Unauthorized,
-                Title = "No autorizado",
-                Detail = "El refresh token es inválido, venció o fue revocado.",
-                Instance = HttpContext.Request.Path
-            });
-        }
-    }
-
-    [AllowAnonymous]
-    [HttpPost("logout")]
+    [AllowAnonymous, HttpPost("logout"), EnableRateLimiting("login")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Logout(LogoutCommand command)
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status429TooManyRequests)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> Logout(LogoutCommand command, CancellationToken ct)
     {
-        await _logoutHandler.HandleAsync(command);
+        await logout.HandleAsync(command, ct);
         return NoContent();
     }
 
-    
-    [HttpGet("administrador")]
-    [Authorize(Roles = "Administrador")]
-    public IActionResult SoloAdministrador()
+    [Authorize(Policy = "InstitutionAdmin"), HttpGet("administrador")]
+    public IActionResult SoloAdministrador() => Ok(new { mensaje = "Acceso autorizado para Administrador." });
+
+    [Authorize(Roles = IdentityRoles.Docente), HttpGet("docente")]
+    public IActionResult SoloDocente() => Ok(new { mensaje = "Acceso autorizado para Docente." });
+
+    [Authorize(Roles = IdentityRoles.Alumno), HttpGet("alumno")]
+    public IActionResult SoloAlumno() => Ok(new { mensaje = "Acceso autorizado para Alumno." });
+
+    private IActionResult TokenResponse(LoginResult resultado)
     {
-        return Ok(new
-        {
-            mensaje = "Acceso autorizado para Administrador."
-        });
+        Response.Headers.CacheControl = "no-store";
+        Response.Headers.Pragma = "no-cache";
+        return Ok(SessionResponse.From(resultado));
     }
-
-    [HttpGet("docente")]
-    [Authorize(Roles = "Docente")]
-    public IActionResult SoloDocente()
-    {
-        return Ok(new
-        {
-            mensaje = "Acceso autorizado para Docente."
-        });
-    }
-
-    [HttpGet("alumno")]
-    [Authorize(Roles = "Alumno")]
-    public IActionResult SoloAlumno()
-    {
-        return Ok(new
-        {
-            mensaje = "Acceso autorizado para Alumno."
-        });
-    }
-
-
-
 }

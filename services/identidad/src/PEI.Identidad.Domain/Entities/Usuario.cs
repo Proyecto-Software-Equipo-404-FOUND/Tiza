@@ -10,7 +10,12 @@ public class Usuario
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid InstitucionId { get; set; }
-    public string Email { get; set; } = string.Empty;
+    private string _email = string.Empty;
+    public string Email
+    {
+        get => _email;
+        set => _email = (value ?? throw new ArgumentNullException(nameof(value))).Trim();
+    }
     public string PasswordHash { get; set; } = string.Empty;
     public string Nombre { get; set; } = string.Empty;
     public string Apellido { get; set; } = string.Empty;

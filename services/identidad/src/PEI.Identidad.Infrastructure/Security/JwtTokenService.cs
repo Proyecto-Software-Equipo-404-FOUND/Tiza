@@ -1,54 +1,33 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using PEI.Identidad.Application.Interfaces.Service;
 using PEI.Identidad.Domain.Entities;
-
+using PEI.Identidad.Domain.Security;
 namespace PEI.Identidad.Infrastructure.Security;
-
-public class JwtTokenService : ITokenService
+public sealed class JwtTokenService(IOptions<JwtOptions> options) : ITokenService, IAccessTokenIssuer
 {
-    private readonly IConfiguration _configuration;
+    public string GenerateToken(Usuario usuario) => Issue(usuario).AccessToken;
 
-    public JwtTokenService(IConfiguration configuration)
+    public IssuedAccessToken Issue(Usuario usuario)
     {
-        _configuration = configuration;
-    }
-
-    public string GenerateToken(Usuario usuario)
-    {
-        var issuer = _configuration["Jwt:Issuer"]
-            ?? throw new InvalidOperationException("Falta configurar Jwt:Issuer.");
-
-        var audience = _configuration["Jwt:Audience"]
-            ?? throw new InvalidOperationException("Falta configurar Jwt:Audience.");
-
-        var secretKey = _configuration["Jwt:SecretKey"]
-            ?? throw new InvalidOperationException("Falta configurar Jwt:SecretKey.");
-
-        var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(secretKey));
-
-        var credentials = new SigningCredentials(
-            key, SecurityAlgorithms.HmacSha256);
-
-        var claims = new[]
+        var config = options.Value;
+        if (!config.IsValid()) throw new InvalidOperationException("Configuracion JWT invalida.");
+        if (usuario.Id == Guid.Empty || usuario.InstitucionId == Guid.Empty || !IdentityRoles.IsCanonical(usuario.Rol))
+            throw new ArgumentException("Identidad no valida para emision.");
+        var now = DateTimeOffset.FromUnixTimeSeconds(DateTimeOffset.UtcNow.ToUnixTimeSeconds()).UtcDateTime;
+        var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, usuario.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, usuario.Email),
-            new Claim(ClaimTypes.Role, usuario.Rol),
-            new Claim("institucionId", usuario.InstitucionId.ToString())
+            new("sub", usuario.Id.ToString()), new("institucion_id", usuario.InstitucionId.ToString()), new("role", usuario.Rol),
+            new("jti", Guid.NewGuid().ToString()), new("iat", new DateTimeOffset(now).ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
         };
-
-        var token = new JwtSecurityToken(
-            issuer: issuer,
-            audience: audience,
-            claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(60),
-            signingCredentials: credentials);
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        if (!string.IsNullOrWhiteSpace(usuario.Email)) claims.Add(new("email", usuario.Email));
+        var expires = now.AddMinutes(config.AccessTokenMinutes);
+        var token = new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(config.Issuer, config.Audience, claims,
+            now, expires, new SigningCredentials(
+                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config.SecretKey)), SecurityAlgorithms.HmacSha256)));
+        return new(token, expires);
     }
 }
