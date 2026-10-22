@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using PEI.Cursos.Application.Interfaces;
 using PEI.Cursos.Infrastructure.Persistence;
 
 namespace PEI.Cursos.Infrastructure;
@@ -18,6 +19,11 @@ public static class DependencyInjection
 
         services.AddDbContext<CursosDbContext>(options =>
             options.UseNpgsql(connectionString));
+
+        // Registro de abstracciones de persistencia (SOLID: Dependency Inversion)
+        services.AddScoped<ICursoRepository, Persistence.Repositories.CursoRepository>();
+        services.AddScoped<ICohorteRepository, Persistence.Repositories.CohorteRepository>();
+        services.AddScoped<Application.Interfaces.IUnitOfWork, Persistence.UnitOfWork>();
 
         return services;
     }
