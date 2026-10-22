@@ -6,6 +6,7 @@ using PEI.Evaluaciones.Application.Evaluaciones;
 namespace PEI.Evaluaciones.Api.Controllers;
 
 public record EvaluacionRequest(string Titulo, string Tipo, JsonElement PreguntasJson);
+public record PublicarEvaluacionRequest(int VersionEsperada, Guid CohorteId);
 
 [ApiController]
 [Route("api/v1/evaluaciones")]
@@ -105,6 +106,7 @@ public class EvaluacionesController : ControllerBase
     public async Task<IActionResult> Eliminar(
         Guid id,
         [FromHeader(Name = EncabezadoInstitucion)] Guid institucionId,
+        [FromBody] PublicarEvaluacionRequest peticion,
         CancellationToken ct)
     {
         if (institucionId == Guid.Empty)
@@ -112,14 +114,38 @@ public class EvaluacionesController : ControllerBase
             return FaltaInstitucion();
         }
 
-        var resultado = await _mediador.Send(new EliminarEvaluacionCommand(id, institucionId), ct);
+        var resultado = await _mediador.Send(
+            new PublicarEvaluacionCommand(id, institucionId, peticion.VersionEsperada, peticion.CohorteId), ct);
 
         if (resultado.Tipo != TipoResultado.Ok)
         {
             return RespuestaError(resultado);
         }
 
-        return NoContent();
+        return Ok(resultado.Valor);
+    }
+
+    [HttpPost("{id:guid}/publicar")]
+    public async Task<IActionResult> Publicar(
+        Guid id,
+        [FromHeader(Name = EncabezadoInstitucion)] Guid institucionId,
+        [FromBody] PublicarEvaluacionRequest peticion,
+        CancellationToken ct)
+    {
+        if (institucionId == Guid.Empty)
+        {
+            return FaltaInstitucion();
+        }
+
+        var resultado = await _mediador.Send(
+            new PublicarEvaluacionCommand(id, institucionId, peticion.VersionEsperada, peticion.CohorteId), ct);
+
+        if (resultado.Tipo != TipoResultado.Ok)
+        {
+            return RespuestaError(resultado);
+        }
+
+        return Ok(resultado.Valor);
     }
 
     private IActionResult FaltaInstitucion()
