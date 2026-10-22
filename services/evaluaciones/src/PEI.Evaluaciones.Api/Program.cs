@@ -23,6 +23,24 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+if (app.Environment.IsDevelopment())
+{
+    app.Lifetime.ApplicationStarted.Register(() => _ = Task.Run(async () =>
+    {
+        using var scope = app.Services.CreateScope();
+        try
+        {
+            var db = scope.ServiceProvider.GetRequiredService<PEI.Evaluaciones.Infrastructure.Persistence.EvaluacionDbContext>();
+            var validador = scope.ServiceProvider.GetRequiredService<PEI.Evaluaciones.Application.Validacion.ValidadorPreguntas>();
+            await PEI.Evaluaciones.Infrastructure.Persistence.EvaluacionSeedData.SembrarAsync(db, validador, app.Logger);
+        }
+        catch (Exception ex)
+        {
+            app.Logger.LogWarning(ex, "No se pudo sembrar la base de datos de evaluaciones.");
+        }
+    }));
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
