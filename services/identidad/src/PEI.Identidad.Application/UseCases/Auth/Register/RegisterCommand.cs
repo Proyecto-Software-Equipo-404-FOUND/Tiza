@@ -4,6 +4,9 @@ namespace PEI.Identidad.Application.UseCases.Auth.Register;
 
 public class RegisterCommand
 {
+    [Required(ErrorMessage = "El rol es obligatorio")]
+    public string Rol { get; set; } = string.Empty;
+    
     [Required(ErrorMessage = "La institución es obligatoria")]
     public Guid InstitucionId { get; set; }
 
