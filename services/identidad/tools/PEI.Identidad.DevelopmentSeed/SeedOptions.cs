@@ -27,9 +27,13 @@ public sealed class SeedOptions
         NpgsqlConnectionStringBuilder connection;
         try { connection = new(ConnectionString); }
         catch (ArgumentException) { throw new SeedRejectedException("Configuración de conexión inválida."); }
-        if (Schema == "public" && (!AllowDevelopmentPublic || EnvironmentName != "Development" ||
-            connection.Host != "localhost" || connection.Port != 5541 || connection.Database != "pei_identidad_db"))
-            throw new SeedRejectedException("public requiere autorización explícita para Development en localhost:5541/pei_identidad_db.");
+        // La lista externa no debe poder autorizar un servidor remoto u otra base
+        // cambiando public por un esquema dedicado.
+        if (EnvironmentName == "Development" && (connection.Host != "localhost" ||
+            connection.Port != 5441 || connection.Database != "pei_identidad_db"))
+            throw new SeedRejectedException("Development requiere el destino estándar localhost:5441/pei_identidad_db.");
+        if (Schema == "public" && (!AllowDevelopmentPublic || EnvironmentName != "Development"))
+            throw new SeedRejectedException("public requiere autorización explícita para Development en localhost:5441/pei_identidad_db.");
         if (!AllowedDestinations.Contains(new SeedDestination(connection.Host ?? "", connection.Port, connection.Database ?? "", Schema)))
             throw new SeedRejectedException("Destino fuera de la lista autorizada.");
         if (EnvironmentName == "Testing" &&

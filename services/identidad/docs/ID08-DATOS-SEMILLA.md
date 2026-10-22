@@ -2,7 +2,7 @@
 
 ## Alcance y base
 
-Catálogo sintético `ID08-v1`: dos instituciones activas y ocho usuarios activos.
+Catálogo sintético `ID08-v2`: dos instituciones activas y ocho usuarios activos.
 Implementado sobre `2eb588bfe669b363d41287009016845a7710b899`, por autorización expresa;
 depende del modelo institucional y de las migraciones de plataforma de esa integración.
 La rama no debe confundirse con una implementación independiente del estado actual de main.
@@ -17,23 +17,76 @@ el alta productiva conserva la invitación y activación de ID-06.
 
 | Institución | Nombre | Código | UUID |
 |---|---|---|---|
-| A | Institución de prueba A | TIZA-TEST-A | 08000000-0000-4000-8000-000000000001 |
-| B | Institución de prueba B | TIZA-TEST-B | 08000000-0000-4000-8000-000000000002 |
+| A | Institución de prueba A | TIZA-TEST-A | 11111111-1111-1111-1111-111111111111 |
+| B | Institución de prueba B | TIZA-TEST-B | 22222222-2222-2222-2222-222222222222 |
 
 | Institución | Rol | Correo | UUID |
 |---|---|---|---|
 | A | Administrador | admin@a.test | 08000001-0000-4000-8000-000000000001 |
-| A | Docente | docente@a.test | 08000001-0000-4000-8000-000000000002 |
-| A | Alumno | alumno1@a.test | 08000001-0000-4000-8000-000000000003 |
-| A | Alumno | alumno2@a.test | 08000001-0000-4000-8000-000000000004 |
+| A | Docente | docente@a.test | 11111111-0000-0000-0000-000000000002 |
+| A | Alumno | alumno1@a.test | 11111111-0000-0000-0000-000000000003 |
+| A | Alumno | alumno2@a.test | 11111111-0000-0000-0000-000000000004 |
 | B | Administrador | admin@b.test | 08000002-0000-4000-8000-000000000001 |
-| B | Docente | docente@b.test | 08000002-0000-4000-8000-000000000002 |
-| B | Alumno | alumno1@b.test | 08000002-0000-4000-8000-000000000003 |
-| B | Alumno | alumno2@b.test | 08000002-0000-4000-8000-000000000004 |
+| B | Docente | docente@b.test | 22222222-0000-0000-0000-000000000002 |
+| B | Alumno | alumno1@b.test | 22222222-0000-0000-0000-000000000003 |
+| B | Alumno | alumno2@b.test | 22222222-0000-0000-0000-000000000004 |
 
 Cada usuario referencia el UUID de su institución. Los nombres son Administrador, Docente,
 Alumno uno o Alumno dos; los apellidos son Prueba A o Prueba B. Se reutiliza IdentityRoles.
 El formato de UUID facilita la documentación; nunca es fuente de permisos.
+
+### Correspondencias de v2 y decisiones pendientes
+
+Fuente verificada: origin/main en `f1ef6b79e34f985d2a1df56f1a56ebbbec34a21e`.
+En `services/cursos/src/PEI.Cursos.Infrastructure/Persistence/DataSeeder.cs`, líneas 15–38,
+las referencias tienen nombre y uso explícitos: InstitucionAId/BId, DocenteAId/BId,
+Alumno1AId/BId y Alumno2AId/BId. Se usan en las cohortes y matrículas de cada institución.
+La correspondencia es la posición nominal del catálogo sintético (institución A/B y alumno 1/2),
+no la equivalencia entre personas por compartir un rol. Cursos no declara emails de estos usuarios.
+Se conservan los emails y datos sintéticos propios de ID-08; no se atribuyen datos personales nuevos.
+
+`services/evaluaciones/src/PEI.Evaluaciones.Infrastructure/Persistence/EvaluacionSeedData.cs`,
+líneas 11–16, confirma InstitucionDemoId = institución A y CohorteDemoId = cohorte A de Cursos.
+Su TODO pide confirmar los identificadores; se toma la coincidencia concreta del código actual,
+no una aprobación externa que el repositorio no demuestra.
+
+| Registro ID-08 | UUID anterior (v1) | UUID actual (v2) / referencia |
+|---|---|---|
+| Institución A | 08000000-0000-4000-8000-000000000001 | 11111111-1111-1111-1111-111111111111 — InstitucionAId / InstitucionDemoId |
+| Institución B | 08000000-0000-4000-8000-000000000002 | 22222222-2222-2222-2222-222222222222 — InstitucionBId |
+| admin@a.test | 08000001-0000-4000-8000-000000000001 | Sin cambio; no hay referencia externa verificable |
+| docente@a.test | 08000001-0000-4000-8000-000000000002 | 11111111-0000-0000-0000-000000000002 — DocenteAId |
+| alumno1@a.test | 08000001-0000-4000-8000-000000000003 | 11111111-0000-0000-0000-000000000003 — Alumno1AId |
+| alumno2@a.test | 08000001-0000-4000-8000-000000000004 | 11111111-0000-0000-0000-000000000004 — Alumno2AId |
+| admin@b.test | 08000002-0000-4000-8000-000000000001 | Sin cambio; no hay referencia externa verificable |
+| docente@b.test | 08000002-0000-4000-8000-000000000002 | 22222222-0000-0000-0000-000000000002 — DocenteBId |
+| alumno1@b.test | 08000002-0000-4000-8000-000000000003 | 22222222-0000-0000-0000-000000000003 — Alumno1BId |
+| alumno2@b.test | 08000002-0000-4000-8000-000000000004 | 22222222-0000-0000-0000-000000000004 — Alumno2BId |
+
+Los administradores conservan sus UUID anteriores aunque su InstitucionId referencia ahora la
+institución canónica. **Pendiente:** confirmar si habrá referencias externas a esos administradores;
+no inventar UUID terminados en 0001 para completar el patrón de Cursos.
+
+Otros identificadores inspeccionados, sin crear entidades nuevas en Identidad:
+
+| Entidades de otros servicios | UUID / alcance |
+|---|---|
+| Cursos A1, B1, A2, B2 | cccccccc-0000-0000-0000-000000000001 a 000000000004, respectivamente |
+| Cohorte A1 / CohorteDemo de Evaluaciones | 33333333-3333-3333-3333-333333333333 |
+| Cohorte B1 | 44444444-4444-4444-4444-444444444444 |
+| Matrículas A1/A2 | aaaaaaaa-0000-0000-0001-000000000001 / aaaaaaaa-0000-0000-0001-000000000002 |
+| Matrículas B1/B2 | bbbbbbbb-0000-0000-0002-000000000001 / bbbbbbbb-0000-0000-0002-000000000002 |
+| Evaluaciones publicada/borrador | aaaaaaaa-0000-0000-0000-000000000001 / aaaaaaaa-0000-0000-0000-000000000002 |
+| Preguntas/opciones de Evaluaciones | 00000000-0000-0000-0000-000000000101 a 105 y 201 a 210; identificadores locales, no cuentas |
+
+Evaluaciones no declara docentes, alumnos ni administradores adicionales en su seed. Las entidades
+académicas permanecen en sus respectivos servicios. ID-08 sigue creando solo 2 instituciones y 8 usuarios.
+
+**Catálogo v2 no es una migración de datos existentes.** Si se cargó v1, los códigos/correos/UUID
+existentes producirán conflictos y la transacción se cancelará. No se trasladan usuarios ni se
+renombran, eliminan o liberan reservas históricas. Incluso los administradores con UUID conservado
+pueden entrar en conflicto por pertenecer a una institución v1. El responsable debe decidir un
+procedimiento separado antes de cualquier carga sobre esos datos. No hay comando force/reset.
 
 ## Diseño y seguridad
 
@@ -96,13 +149,24 @@ La herramienta deshabilita detalles de error y logging de parámetros de Npgsql.
 no imprimen excepciones, filas, hashes ni conexiones. Los conflictos solo identifican UUIDs del catálogo.
 
 **Desarrollo:** se autoriza exclusivamente para la excepción public el destino existente
-`localhost:5541/pei_identidad_db`, entorno `Development`. Además de ID08_ENABLED, operador y
+`localhost:5441/pei_identidad_db`, entorno `Development`. Además de ID08_ENABLED, operador y
 lista autorizada, exige ID08_ALLOW_DEVELOPMENT_PUBLIC=true. No acepta aliases, 127.0.0.1,
 otros puertos, bases o entornos para public, aunque aparezcan en la lista. Testing conserva
 sus esquemas efímeros en pei_identidad_tests y rechaza public. No se crea otra base ni esquema.
-Los destinos dedicados previos conservan sus validaciones; esta excepción no amplía su lista.
+En Development los esquemas dedicados también se limitan a localhost:5441/pei_identidad_db
+y a su entrada exacta en la lista autorizada. No se puede eludir la restricción remota o de base
+cambiando public por otro esquema. Los esquemas dedicados siguen sin requerir el flag de public.
 Una lista vacía impide ejecutar. No usar contra producción o staging; el suministro de configuración
 y la identificación del contenedor local como desarrollo siguen bajo control del operador.
+
+El puerto 5441 proviene del servicio postgres-identidad del Compose estándar de origin/main,
+que publica 5441:5432. Esta corrección sustituye la excepción public anterior de 5541; no se
+admiten ambos puertos ni se amplía la lista a destinos remotos. El puerto 5541 se conserva
+exclusivamente en la validación Testing/pei_identidad_tests y sus ejemplos de pruebas.
+Si el contenedor de desarrollo existente publica 5541, el nuevo cargador public lo rechazará:
+no recrear el contenedor ni cambiar volúmenes para forzar la ejecución. Una alternativa local
+adicional necesitaría decisión y autorización explícitas separadas. Este ajuste no ejecuta Docker,
+no crea bases ni esquemas, no migra y no carga datos.
 
 ## Ejecución explícita
 
@@ -143,21 +207,21 @@ $env:ID08_ENABLED = 'true'
 $env:ID08_ALLOW_DEVELOPMENT_PUBLIC = 'true'
 $env:ID08_SCHEMA = 'public'
 $env:ID08_OPERATOR = Read-Host 'Identificador del operador'
-$env:ID08_ALLOWED_DESTINATIONS = '[{"Host":"localhost","Port":5541,"Database":"pei_identidad_db","Schema":"public"}]'
+$env:ID08_ALLOWED_DESTINATIONS = '[{"Host":"localhost","Port":5441,"Database":"pei_identidad_db","Schema":"public"}]'
 
 $userIds = @(
     '08000001-0000-4000-8000-000000000001',
-    '08000001-0000-4000-8000-000000000002',
-    '08000001-0000-4000-8000-000000000003',
-    '08000001-0000-4000-8000-000000000004',
+    '11111111-0000-0000-0000-000000000002',
+    '11111111-0000-0000-0000-000000000003',
+    '11111111-0000-0000-0000-000000000004',
     '08000002-0000-4000-8000-000000000001',
-    '08000002-0000-4000-8000-000000000002',
-    '08000002-0000-4000-8000-000000000003',
-    '08000002-0000-4000-8000-000000000004'
+    '22222222-0000-0000-0000-000000000002',
+    '22222222-0000-0000-0000-000000000003',
+    '22222222-0000-0000-0000-000000000004'
 )
 try {
     # Introducir la conexión completa desde la configuración local existente, sin imprimirla.
-    # Debe indicar Host=localhost, Port=5541 y Database=pei_identidad_db.
+    # Debe indicar Host=localhost, Port=5441 y Database=pei_identidad_db.
     $env:ID08_CONNECTION = Read-LocalSecret 'Conexión PostgreSQL local completa (incluye credenciales)'
     foreach ($id in $userIds) {
         $key = 'ID08_PASSWORD_' + $id.Replace('-', '')
@@ -198,22 +262,22 @@ SELECT i."Id", i."Codigo", i."Activo", count(u."Id") AS usuarios_catalogo
 FROM public."Institucion" i
 LEFT JOIN public."Usuario" u ON u."InstitucionId" = i."Id"
  AND u."Id" IN (
- '08000001-0000-4000-8000-000000000001','08000001-0000-4000-8000-000000000002',
- '08000001-0000-4000-8000-000000000003','08000001-0000-4000-8000-000000000004',
- '08000002-0000-4000-8000-000000000001','08000002-0000-4000-8000-000000000002',
- '08000002-0000-4000-8000-000000000003','08000002-0000-4000-8000-000000000004')
-WHERE i."Id" IN ('08000000-0000-4000-8000-000000000001','08000000-0000-4000-8000-000000000002')
+ '08000001-0000-4000-8000-000000000001','11111111-0000-0000-0000-000000000002',
+ '11111111-0000-0000-0000-000000000003','11111111-0000-0000-0000-000000000004',
+ '08000002-0000-4000-8000-000000000001','22222222-0000-0000-0000-000000000002',
+ '22222222-0000-0000-0000-000000000003','22222222-0000-0000-0000-000000000004')
+WHERE i."Id" IN ('11111111-1111-1111-1111-111111111111','22222222-2222-2222-2222-222222222222')
 GROUP BY i."Id", i."Codigo", i."Activo" ORDER BY i."Codigo";
 SELECT "InstitucionId", "Rol", count(*) FROM public."Usuario"
 WHERE "Id" IN (
- '08000001-0000-4000-8000-000000000001','08000001-0000-4000-8000-000000000002',
- '08000001-0000-4000-8000-000000000003','08000001-0000-4000-8000-000000000004',
- '08000002-0000-4000-8000-000000000001','08000002-0000-4000-8000-000000000002',
- '08000002-0000-4000-8000-000000000003','08000002-0000-4000-8000-000000000004')
+ '08000001-0000-4000-8000-000000000001','11111111-0000-0000-0000-000000000002',
+ '11111111-0000-0000-0000-000000000003','11111111-0000-0000-0000-000000000004',
+ '08000002-0000-4000-8000-000000000001','22222222-0000-0000-0000-000000000002',
+ '22222222-0000-0000-0000-000000000003','22222222-0000-0000-0000-000000000004')
 GROUP BY "InstitucionId", "Rol" ORDER BY "InstitucionId", "Rol";
 COMMIT;
 '@
-    psql -X -v ON_ERROR_STOP=1 -h localhost -p 5541 -U $pgOperator -d pei_identidad_db -c $query
+    psql -X -v ON_ERROR_STOP=1 -h localhost -p 5441 -U $pgOperator -d pei_identidad_db -c $query
     if ($LASTEXITCODE -ne 0) { throw 'Falló la verificación de solo lectura.' }
 }
 finally { Remove-Item Env:PGPASSWORD -ErrorAction SilentlyContinue }
@@ -344,3 +408,32 @@ Riesgos operativos: detener tráfico local durante los locks; revisar manualment
 borrar reservas; proteger y retirar las variables de entorno; confirmar que el contenedor local es
 realmente de desarrollo. La autorización adicional está deshabilitada por defecto y no sustituye
 el control del operador sobre las credenciales y la configuración.
+
+## Corrección de compatibilidad de ID-08 — 2026-10-22
+
+Rama del PR #77: feature/ID-08-datos-semilla-identidad, base de esta corrección 7bcdd16.
+Referencia de comparación: origin/main f1ef6b79e34f985d2a1df56f1a56ebbbec34a21e.
+Esta sección reemplaza los resultados históricos anteriores para los cambios de catálogo v2 y puerto.
+
+- Se alinean las dos instituciones y seis usuarios de referencia con Cursos; Evaluaciones confirma
+  institución A y cohorte A. Los dos administradores mantienen sus UUID por falta de referencia externa.
+- El catálogo se identifica como ID08-v2. No hay migración ni reconciliación automática de v1.
+- Development, incluido public, se limita al destino estándar localhost:5441/pei_identidad_db;
+  public conserva su habilitación adicional. Testing mantiene pei_identidad_tests local:5541.
+- Compilación completa de PEI.sln: 0 errores y 0 advertencias.
+- Unitarias de ID-08: 43 aprobadas, 0 fallidas, 0 omitidas. Cubren los diez IDs y sus relaciones,
+  roles, cantidades, administradores conservados, destino estándar y rechazos de destinos/entornos.
+- Comparación adicional sin base de datos: reflexión del catálogo compilado frente a las constantes
+  de Cursos y Evaluaciones leídas con git show origin/main. Las ocho correspondencias coinciden;
+  la cohorte compartida coincide y los dos administradores permanecen sin cambio de UUID.
+
+No se ejecutaron el cargador, migraciones ni pruebas de integración PostgreSQL. No existen dobles
+de persistencia del cargador: su idempotencia real se prueba con PostgreSQL, por lo que no se
+revalida aquí ni se declara aprobada por las unitarias. IdentitySeedRunner y sus operaciones de
+inserción, transacción, locks y detección de conflictos no cambian. Los tests de integración usan
+SeedCatalog, sin literales de UUID antiguos que requieran actualización.
+
+Solo se modifican SeedCatalog.cs, SeedOptions.cs, las unitarias IdentitySeedTests.cs y este documento.
+No se modifican otros tickets, contenedores, datos ni secretos. Los cambios quedan sin staging,
+commit o push para revisión previa a actualizar el PR. Si ya existe una carga v1 o el contenedor
+local usa 5541, detenerse y pedir una decisión separada; no adaptar ni borrar datos automáticamente.
