@@ -34,6 +34,7 @@ public static class DependencyInjection
         // Registrar Handlers de Cohortes
         services.AddScoped<IRequestHandler<CrearCohorteCommand, CohorteDto>, CrearCohorteCommandHandler>();
         services.AddScoped<IRequestHandler<GetCohortesByCursoQuery, IReadOnlyList<CohorteDto>?>, GetCohortesByCursoQueryHandler>();
+        services.AddScoped<IRequestHandler<ValidarCohorteQuery, CohorteValidacionDto?>, ValidarCohorteQueryHandler>();
 
         // Registrar Handlers de Matriculaciones (Caso de Uso CU-04)
         services.AddScoped<IRequestHandler<MatricularAlumnoCommand, MatriculacionDto>, MatricularAlumnoCommandHandler>();
