@@ -217,7 +217,7 @@ public sealed partial class TenantIsolationTests
         var entrega = await db.Set<EntregaInvitacion>().SingleAsync();
         Assert.Null(entrega.Entregada); Assert.Equal(1, entrega.Intentos); Assert.NotEmpty(entrega.ContenidoProtegido);
         sender.Fallar = false;
-        await db.Database.ExecuteSqlRawAsync("UPDATE \"EntregaInvitacion\" SET \"Creada\" = \"Creada\" - interval '2 minutes'");
+        await db.Database.ExecuteSqlRawAsync("UPDATE \"EntregaInvitacion\" SET \"ProximoIntento\" = clock_timestamp() - interval '1 second'");
         db.ChangeTracker.Clear();
         Assert.True(await outbox.ProcesarUnaAsync(default)); Assert.Single(sender.Enviados);
         Assert.False(await outbox.ProcesarUnaAsync(default));
