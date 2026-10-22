@@ -1,0 +1,267 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "PEI Tiza — Servicio de Inteligencia Artificial",
+    "description": "Endpoints internos de corrección automatizada de respuestas abiertas usando modelos de IA y herramientas MCP.",
+    "contact": {
+      "name": "Equipo 404 Found",
+      "email": "equipo404found@tiza.pei.edu.ar"
+    },
+    "version": "v1"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5105",
+      "description": "Servidor de desarrollo local"
+    }
+  ],
+  "paths": {
+    "/api/v1/Correcciones": {
+      "post": {
+        "tags": [
+          "Correcciones"
+        ],
+        "summary": "Solicita la corrección automatizada de una respuesta abierta basada en la rúbrica del docente.",
+        "operationId": "CorregirRespuesta",
+        "requestBody": {
+          "description": "Datos de la respuesta del alumno a corregir con rúbrica y puntaje máximo.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorregirRespuestaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Corrección completada exitosamente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorregirRespuestaResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos de entrada inválidos (ProblemDetails RFC 9457).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servicio de IA.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/Correcciones/health": {
+      "get": {
+        "tags": [
+          "Correcciones"
+        ],
+        "summary": "Health check del servicio de IA.",
+        "operationId": "HealthCheck",
+        "responses": {
+          "200": {
+            "description": "Servicio saludable y operativo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthCheckResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CorregirRespuestaRequest": {
+        "required": [
+          "preguntaEnunciado",
+          "puntajeMaximo",
+          "respuestaTexto",
+          "rubricaJson"
+        ],
+        "type": "object",
+        "properties": {
+          "respuestaTexto": {
+            "maxLength": 10000,
+            "minLength": 1,
+            "type": "string",
+            "description": "Texto de la respuesta del alumno a corregir."
+          },
+          "preguntaEnunciado": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "type": "string",
+            "description": "Enunciado de la consigna evaluada."
+          },
+          "rubricaJson": {
+            "minLength": 1,
+            "type": "string",
+            "description": "Rúbrica oficial del docente en formato JSON."
+          },
+          "puntajeMaximo": {
+            "maximum": 100,
+            "minimum": 0.1,
+            "type": "number",
+            "format": "double",
+            "description": "Puntaje máximo posible de la consigna."
+          },
+          "institucionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Identificador único de la institución (Tenant)."
+          },
+          "evaluacionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Identificador opcional de la evaluación en curso."
+          },
+          "preguntaId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Identificador opcional de la pregunta evaluada."
+          }
+        }
+      },
+      "CorregirRespuestaResponse": {
+        "type": "object",
+        "properties": {
+          "solicitudId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identificador único de la solicitud de corrección."
+          },
+          "notaSugerida": {
+            "type": "number",
+            "format": "double",
+            "description": "Calificación numérica sugerida por el modelo pedagógico."
+          },
+          "justificacion": {
+            "type": "string",
+            "description": "Justificación pedagógica detallada de la calificación."
+          },
+          "desglosePorCriterio": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DesgloseCriterio"
+            },
+            "nullable": true,
+            "description": "Desglose por criterio de rúbrica."
+          },
+          "proveedor": {
+            "type": "string",
+            "description": "Nombre del proveedor LLM utilizado."
+          },
+          "modelo": {
+            "type": "string",
+            "description": "Nombre del modelo específico utilizado."
+          },
+          "tokensEntrada": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Tokens de entrada consumidos por la llamada."
+          },
+          "tokensSalida": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Tokens de salida generados por el modelo."
+          },
+          "latenciaMs": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Latencia de la inferencia en milisegundos."
+          }
+        }
+      },
+      "DesgloseCriterio": {
+        "type": "object",
+        "properties": {
+          "criterio": {
+            "type": "string",
+            "description": "Descripción o nombre del criterio evaluado."
+          },
+          "puntajeMaximo": {
+            "type": "number",
+            "format": "double",
+            "description": "Puntaje máximo asignado a este criterio."
+          },
+          "puntajeOtorgado": {
+            "type": "number",
+            "format": "double",
+            "description": "Puntaje otorgado por el modelo."
+          },
+          "comentario": {
+            "type": "string",
+            "description": "Comentario pedagógico justificativo del criterio."
+          }
+        }
+      },
+      "HealthCheckResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "healthy"
+          },
+          "service": {
+            "type": "string",
+            "example": "PEI.IA"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "instance": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": {}
+      }
+    }
+  }
+}

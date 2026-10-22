@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw';
 import { usuarios, cursos } from './datos';
 import { crearTokenFalso } from './token';
+import { handlersMatriculas } from './matriculas';
 
 export const handlers = [
   // Ruta provisional: va bajo el prefijo que el gateway reserva para Identidad
@@ -17,6 +18,7 @@ export const handlers = [
 
   http.post('*/api/v1/cursos', async ({ request }) => {
     const { nombre } = (await request.json()) as { nombre: string };
+
     // Truco para probar cómo se ve un conflicto en la pantalla
     if (nombre.toLowerCase() === 'conflicto') {
       return HttpResponse.json({ title: 'Conflicto', status: 409 }, { status: 409 });
@@ -28,4 +30,5 @@ export const handlers = [
       headers: { Location: `/api/v1/cursos/${nuevo.id}` },
     });
   }),
+  ...handlersMatriculas,
 ];
