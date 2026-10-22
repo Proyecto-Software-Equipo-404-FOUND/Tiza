@@ -2,6 +2,7 @@ import { http, HttpResponse } from 'msw';
 import { usuarios, cursos } from './datos';
 import { crearTokenFalso } from './token';
 import { handlersMatriculas } from './matriculas';
+import { handlersCohortes } from './cohortes';
 
 export const handlers = [
   // Ruta provisional: va bajo el prefijo que el gateway reserva para Identidad
@@ -31,4 +32,5 @@ export const handlers = [
     });
   }),
   ...handlersMatriculas,
+  ...handlersCohortes,
 ];

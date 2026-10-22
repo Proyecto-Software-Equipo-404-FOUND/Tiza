@@ -72,10 +72,12 @@ docker compose up -d
 
 ### 3. Tabla de Puertos y Cadenas de Conexión
 
-| Componente | Puerto Local | Cadena de Conexión (`appsettings.Development.json`) |
+Para Identidad, seguí la [guía de configuración de desarrollo (ID-09)](services/identidad/docs/ID-09-configuracion-desarrollo.md): conexión y clave JWT mediante User Secrets o variables de entorno, migraciones y Swagger. No guardes sus secretos en archivos versionados.
+
+| Componente | Puerto Local | Conexión / Configuración local |
 | :--- | :--- | :--- |
 | **API Gateway (YARP)** | `8080` | Enrutador principal a todos los servicios |
-| **Identidad API** | `5101` | BD: `Host=localhost;Port=5441;Database=pei_identidad_db;Username=postgres;Password=postgres` |
+| **Identidad API** | HTTP `5293`; HTTPS `7270` | PostgreSQL `localhost:5441/pei_identidad_db`. Configuración externa: [ID-09](services/identidad/docs/ID-09-configuracion-desarrollo.md). El Gateway espera `5101`; requiere arranque explícito en ese puerto. |
 | **Cursos API** | `5102` | BD: `Host=localhost;Port=5442;Database=pei_cursos_db;Username=postgres;Password=postgres` |
 | **Evaluaciones API** | `5103` | BD: `Host=localhost;Port=5443;Database=pei_evaluaciones_db;Username=postgres;Password=postgres` |
 | **Sala en Vivo API** | `5104` | BD: `Host=localhost;Port=5444;Database=pei_sala_db;Username=postgres;Password=postgres` |

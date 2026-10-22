@@ -220,14 +220,6 @@ public class AuthHandlerTests
             _usuarios.Add(usuario);
         }
 
-        public Task<Usuario?> GetByEmailAsync(string email)
-        {
-            Usuario? usuario = _usuarios.FirstOrDefault(
-                u => u.Email == email);
-
-            return Task.FromResult(usuario);
-        }
-
         public Task<bool> PuedeRegistrarAsync(
             Guid institucionId)
         {
@@ -239,7 +231,6 @@ public class AuthHandlerTests
         public Task<bool> ExisteEmailAsync(string email) => Task.FromResult(_usuarios.Any(u => string.Equals(u.Email.Trim(), email.Trim(), StringComparison.OrdinalIgnoreCase)));
         public Task<Usuario?> BuscarUsuarioParaLoginAsync(string email, CancellationToken cancellationToken = default) =>
             Task.FromResult(_usuarios.FirstOrDefault(u => u.Activo && u.Institucion.Activo && string.Equals(u.Email.Trim(), email.Trim(), StringComparison.OrdinalIgnoreCase)));
-        public Task<RefreshToken?> BuscarRefreshTokenAsync(string hash, CancellationToken cancellationToken = default) => Task.FromResult<RefreshToken?>(null);
         public Task<RefreshIdentity?> BuscarIdentidadParaRenovacionAsync(string hash, CancellationToken cancellationToken = default) => Task.FromResult<RefreshIdentity?>(null);
 
         public Task AddAsync(Usuario usuario)
