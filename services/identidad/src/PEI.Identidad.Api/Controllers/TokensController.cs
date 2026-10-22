@@ -40,7 +40,7 @@ public class TokensController : ControllerBase
             });
         }
 
-        var secret = _configuration["Jwt:Secret"];
+        var secret = _configuration["Jwt:SecretKey"];
         var issuer = _configuration["Jwt:Issuer"];
         var audience = _configuration["Jwt:Audience"];
 
