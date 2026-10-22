@@ -1,4 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Npgsql;
 using PEI.Identidad.Application.Exceptions;
 using PEI.Identidad.DevelopmentSeed;
@@ -22,6 +27,41 @@ public sealed partial class TenantIsolationTests
     {
         await using var platform = PlatformContext();
         await platform.Database.MigrateAsync();
+    }
+
+    [DatabaseFact]
+    public async Task ID08_PublicNoPermiteRedirigirCargaDeDevelopmentALaBaseDeTests()
+    {
+        await PrepareSeedSchema();
+        var before = await SeedSnapshot();
+        // Se conserva el servidor/base de tests. La excepción public no admite otra base,
+        // aunque el operador la incorpore a la lista y habilite ambas autorizaciones.
+        var options = new SeedOptions
+        {
+            EnvironmentName = "Development", Enabled = true, AllowDevelopmentPublic = true,
+            Operator = "ID08-test", ConnectionString = connection, Schema = "public",
+            AllowedDestinations = [new("localhost", 5541, "pei_identidad_tests", "public")]
+        };
+        await Assert.ThrowsAsync<SeedRejectedException>(() => new IdentitySeedRunner(new BCryptPasswordHasher()).RunAsync(options));
+        Assert.Equal(before, await SeedSnapshot());
+    }
+
+    [DatabaseFact]
+    public async Task ID08_ApiConsultaLasOchoIdentidadesSembradasSinCambiarAutenticacion()
+    {
+        await PrepareSeedSchema(); await Seed();
+        using var factory = new PostgresHttpFactory(connection, schema);
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
+        foreach (var user in SeedCatalog.Users)
+        {
+            using var response = await client.PostAsJsonAsync("/api/auth/login", new { Email = user.Email, Password = seedPassword });
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var session = await response.Content.ReadFromJsonAsync<JsonElement>();
+            var jwt = new JwtSecurityTokenHandler().ReadJwtToken(session.GetProperty("accessToken").GetString());
+            Assert.Contains(jwt.Claims, c => c.Type == "sub" && c.Value == user.Id.ToString());
+            Assert.Contains(jwt.Claims, c => c.Type == "institucion_id" && c.Value == user.InstitucionId.ToString());
+            Assert.Contains(jwt.Claims, c => c.Type == "role" && c.Value == user.Rol);
+        }
     }
     private Task<SeedReport> Seed(bool credentials = true) => new IdentitySeedRunner(new BCryptPasswordHasher()).RunAsync(SeedConfiguration(credentials));
 

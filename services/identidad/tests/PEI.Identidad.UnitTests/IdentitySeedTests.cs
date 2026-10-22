@@ -52,9 +52,45 @@ public sealed class IdentitySeedTests
         Assert.Empty(options.Passwords);
     }
 
-    private static SeedOptions Options(string environment, bool enabled, string schema, string host, int port, string database, bool authorized) => new()
+    [Fact]
+    public void PublicDevelopmentExactoConAutorizacionExplicita()
     {
-        EnvironmentName = environment, Enabled = enabled, Schema = schema, Operator = "operador-unit",
+        // Solo se valida configuración; no se abre una conexión a desarrollo.
+        var options = Options("Development", true, "public", "localhost", 5541, "pei_identidad_db", true, allowPublic: true);
+        var connection = options.Validate();
+        Assert.Equal("public", connection.SearchPath);
+        Assert.Equal("pei_identidad_db", connection.Database);
+        Assert.False(connection.Pooling);
+        Assert.False(connection.IncludeErrorDetail);
+        Assert.False(connection.LogParameters);
+    }
+
+    [Theory]
+    [InlineData("Development", true, "localhost", 5541, "pei_identidad_db", true, false, "operador")]
+    [InlineData("Development", true, "localhost", 5541, "pei_identidad_db", false, true, "operador")]
+    [InlineData("Development", false, "localhost", 5541, "pei_identidad_db", true, true, "operador")]
+    [InlineData("Production", true, "localhost", 5541, "pei_identidad_db", true, true, "operador")]
+    [InlineData("Staging", true, "localhost", 5541, "pei_identidad_db", true, true, "operador")]
+    [InlineData("Testing", true, "localhost", 5541, "pei_identidad_db", true, true, "operador")]
+    [InlineData("Testing", true, "localhost", 5541, "pei_identidad_tests", true, true, "operador")]
+    [InlineData("Development", true, "remote", 5541, "pei_identidad_db", true, true, "operador")]
+    [InlineData("Development", true, "127.0.0.1", 5541, "pei_identidad_db", true, true, "operador")]
+    [InlineData("Development", true, "localhost", 5432, "pei_identidad_db", true, true, "operador")]
+    [InlineData("Development", true, "localhost", 5541, "otra_base", true, true, "operador")]
+    [InlineData("Development", true, "localhost", 5541, "pei_identidad_db", true, true, "")]
+    [InlineData("Development", true, "localhost", 5541, "pei_identidad_db", true, true, " \t ")]
+    [InlineData("Development", true, "localhost", 5541, "pei_identidad_db", true, true, "operador\nno-valido")]
+    public void PublicRechazaDestinoEntornoOHabilitacionIncorrectos(string environment, bool enabled, string host,
+        int port, string database, bool authorized, bool allowPublic, string actor)
+    {
+        var options = Options(environment, enabled, "public", host, port, database, authorized, allowPublic, actor);
+        Assert.Throws<SeedRejectedException>(() => options.Validate());
+    }
+
+    private static SeedOptions Options(string environment, bool enabled, string schema, string host, int port, string database,
+        bool authorized, bool allowPublic = false, string actor = "operador-unit") => new()
+    {
+        EnvironmentName = environment, Enabled = enabled, Schema = schema, Operator = actor, AllowDevelopmentPublic = allowPublic,
         ConnectionString = $"Host={host};Port={port};Database={database}",
         AllowedDestinations = authorized ? [new(host, port, database, schema)] : []
     };

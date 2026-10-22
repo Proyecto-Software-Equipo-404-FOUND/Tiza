@@ -8,6 +8,7 @@ public sealed class SeedOptions
 {
     public required string EnvironmentName { get; init; }
     public required bool Enabled { get; init; }
+    public bool AllowDevelopmentPublic { get; init; }
     public required string ConnectionString { get; init; }
     public required string Schema { get; init; }
     public required string Operator { get; init; }
@@ -19,13 +20,16 @@ public sealed class SeedOptions
         if (EnvironmentName is not ("Development" or "Testing") || !Enabled ||
             string.IsNullOrWhiteSpace(Operator) || Operator.Length > 150 || Operator.Any(char.IsControl))
             throw new SeedRejectedException("Entorno, habilitación u operador no autorizados.");
-        // Identificador simple y sin resolución a public ni esquemas del sistema.
+        // Identificador simple: public tiene una excepción acotada y explícita más abajo.
         if (!System.Text.RegularExpressions.Regex.IsMatch(Schema, "^[a-z][a-z0-9_]{0,62}$") ||
-            Schema == "public" || Schema.StartsWith("pg_", StringComparison.Ordinal) || Schema == "information_schema")
+            Schema.StartsWith("pg_", StringComparison.Ordinal) || Schema == "information_schema")
             throw new SeedRejectedException("Esquema dedicado no autorizado.");
         NpgsqlConnectionStringBuilder connection;
         try { connection = new(ConnectionString); }
         catch (ArgumentException) { throw new SeedRejectedException("Configuración de conexión inválida."); }
+        if (Schema == "public" && (!AllowDevelopmentPublic || EnvironmentName != "Development" ||
+            connection.Host != "localhost" || connection.Port != 5541 || connection.Database != "pei_identidad_db"))
+            throw new SeedRejectedException("public requiere autorización explícita para Development en localhost:5541/pei_identidad_db.");
         if (!AllowedDestinations.Contains(new SeedDestination(connection.Host ?? "", connection.Port, connection.Database ?? "", Schema)))
             throw new SeedRejectedException("Destino fuera de la lista autorizada.");
         if (EnvironmentName == "Testing" &&

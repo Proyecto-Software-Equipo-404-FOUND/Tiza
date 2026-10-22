@@ -16,6 +16,7 @@ try
     {
         EnvironmentName = environment,
         Enabled = Read("ENABLED") == "true",
+        AllowDevelopmentPublic = Read("ALLOW_DEVELOPMENT_PUBLIC") == "true",
         Operator = Read("OPERATOR"), Schema = Read("SCHEMA"),
         ConnectionString = environment == "Testing"
             ? Environment.GetEnvironmentVariable("PEI_IDENTIDAD_TEST_CONNECTION") ?? ""
