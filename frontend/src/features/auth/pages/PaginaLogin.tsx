@@ -29,6 +29,10 @@ export function PaginaLogin() {
 
   const enviar = async (evento: FormEvent) => {
     evento.preventDefault();
+    // Se limpia antes de validar: si no, el error de un intento anterior
+    // convive con los errores de validación del intento actual
+    setErrorGeneral(null);
+
     const resultado = esquema.safeParse({ correo, contrasena });
     if (!resultado.success) {
       const campos = resultado.error.flatten().fieldErrors;
@@ -37,7 +41,6 @@ export function PaginaLogin() {
     }
 
     setErrores({});
-    setErrorGeneral(null);
     setCargando(true);
     try {
       const { accessToken } = await iniciarSesion(resultado.data.correo, resultado.data.contrasena);
@@ -64,7 +67,10 @@ export function PaginaLogin() {
             type='email'
             autoComplete='email'
             value={correo}
-            onChange={(e) => setCorreo(e.target.value)}
+            onChange={(e) => {
+              setCorreo(e.target.value);
+              setErrorGeneral(null);
+            }}
             error={errores.correo}
             disabled={cargando}
           />
@@ -73,7 +79,10 @@ export function PaginaLogin() {
             type='password'
             autoComplete='current-password'
             value={contrasena}
-            onChange={(e) => setContrasena(e.target.value)}
+            onChange={(e) => {
+              setContrasena(e.target.value);
+              setErrorGeneral(null);
+            }}
             error={errores.contrasena}
             disabled={cargando}
           />
