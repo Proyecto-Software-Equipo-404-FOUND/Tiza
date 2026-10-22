@@ -23,6 +23,7 @@ public static class DependencyInjection
         // Registro de abstracciones de persistencia (SOLID: Dependency Inversion)
         services.AddScoped<ICursoRepository, Persistence.Repositories.CursoRepository>();
         services.AddScoped<ICohorteRepository, Persistence.Repositories.CohorteRepository>();
+        services.AddScoped<IMatriculacionRepository, Persistence.Repositories.MatriculacionRepository>();
         services.AddScoped<Application.Interfaces.IUnitOfWork, Persistence.UnitOfWork>();
 
         return services;
