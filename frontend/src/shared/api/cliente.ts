@@ -34,6 +34,11 @@ export async function pedir<T>(ruta: string, opciones: RequestInit = {}): Promis
   });
 
   if (!respuesta.ok) {
+    // Con un token guardado, un 401 significa que la sesión venció
+    if (respuesta.status === 401 && token) {
+      guardarToken(null);
+      window.location.assign('/login');
+    }
     const detalle = await respuesta.json().catch(() => null);
     throw new ApiError(respuesta.status, detalle);
   }

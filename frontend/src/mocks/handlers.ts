@@ -1,6 +1,8 @@
 import { http, HttpResponse } from 'msw';
 import { usuarios, cursos } from './datos';
+import { crearTokenFalso } from './token';
 import { handlersMatriculas } from './matriculas';
+import { handlersCohortes } from './cohortes';
 
 export const handlers = [
   // Ruta provisional: va bajo el prefijo que el gateway reserva para Identidad
@@ -10,7 +12,7 @@ export const handlers = [
     if (!usuario) {
       return HttpResponse.json({ title: 'Credenciales inválidas', status: 401 }, { status: 401 });
     }
-    return HttpResponse.json({ accessToken: `token-falso-${usuario.id}`, usuario });
+    return HttpResponse.json({ accessToken: crearTokenFalso(usuario), tokenType: 'Bearer' });
   }),
 
   http.get('*/api/v1/cursos', () => HttpResponse.json(cursos)),
@@ -30,4 +32,5 @@ export const handlers = [
     });
   }),
   ...handlersMatriculas,
+  ...handlersCohortes,
 ];
