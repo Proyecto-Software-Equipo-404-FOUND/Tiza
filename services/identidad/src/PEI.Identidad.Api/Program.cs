@@ -1,15 +1,26 @@
+using Microsoft.EntityFrameworkCore;
+using PEI.Identidad.Infrastructure.Persistence;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Conexion a PostgreSQL
+var connectionString = builder.Configuration
+    .GetConnectionString("IdentidadDb")
+    ?? throw new InvalidOperationException(
+        "No se configuro la conexion IdentidadDb.");
 
+builder.Services.AddDbContext<IdentidadDbContext>(options =>
+    options.UseNpgsql(connectionString));
+
+// Servicios de la API
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Construccion de la aplicacion
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configuracion del pipeline HTTP
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
