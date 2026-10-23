@@ -127,10 +127,10 @@ public sealed class FakeIdentityStore : IAuthenticationDataAccess, IRegistration
             return Task.FromResult(true);
         }
     }
-    public Task<bool> PuedeRegistrarAsync(Guid institucion) => Task.FromResult(InstitutionActive && institucion == Admin.InstitucionId && Admin.Activo);
-    public Task<bool> ExisteEmailAsync(string email) => Task.FromResult(Users.Values.Any(u => string.Equals(u.Email, email.Trim(), StringComparison.OrdinalIgnoreCase)));
-    public Task AddAsync(Usuario usuario) { Users[usuario.Id] = usuario; return Task.CompletedTask; }
-    public Task SaveChangesAsync() => Task.CompletedTask;
+    public Task<bool> PuedeRegistrarAsync(Guid institucion, CancellationToken cancellationToken = default) => Task.FromResult(InstitutionActive && institucion == Admin.InstitucionId && Admin.Activo);
+    public Task<bool> ExisteEmailAsync(string email, CancellationToken cancellationToken = default) => Task.FromResult(Users.Values.Any(u => string.Equals(u.Email, email.Trim(), StringComparison.OrdinalIgnoreCase)));
+    public Task AddAsync(Usuario usuario, CancellationToken cancellationToken = default) { Users[usuario.Id] = usuario; return Task.CompletedTask; }
+    public Task SaveChangesAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task<bool> IsActiveAsync(Guid usuario, Guid institucion, string role, CancellationToken cancellationToken) =>
         Task.FromResult(InstitutionActive && Users.TryGetValue(usuario, out var u) && u.Activo && u.InstitucionId == institucion && u.Rol == role);
 }
