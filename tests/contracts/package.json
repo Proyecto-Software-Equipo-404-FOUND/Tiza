@@ -1,0 +1,15 @@
+{
+  "name": "tiza-qa06-contracts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test contracts.test.mjs",
+    "capture": "node capture.mjs",
+    "compare": "node compare.mjs"
+  },
+  "devDependencies": {
+    "@apidevtools/swagger-parser": "10.1.0",
+    "ajv": "8.17.1",
+    "ajv-formats": "3.0.1"
+  }
+}

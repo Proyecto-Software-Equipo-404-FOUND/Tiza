@@ -1,0 +1,668 @@
+[
+  {
+    "service": "cursos",
+    "method": "GET",
+    "route": "/api/v1/cursos/{cursoId}/cohortes",
+    "frozen": [
+      "200",
+      "401",
+      "404"
+    ],
+    "swagger": [
+      "200",
+      "404"
+    ],
+    "request": null,
+    "security": [
+      {
+        "Bearer": []
+      }
+    ],
+    "result": "RUTA PRESENTE; REQUIERE REVISION SEMANTICA"
+  },
+  {
+    "service": "cursos",
+    "method": "POST",
+    "route": "/api/v1/cursos/{cursoId}/cohortes",
+    "frozen": [
+      "201",
+      "400",
+      "401",
+      "404",
+      "409"
+    ],
+    "swagger": [
+      "201",
+      "400",
+      "404",
+      "409"
+    ],
+    "request": {
+      "$ref": "#/components/schemas/CrearCohorteDto"
+    },
+    "security": [
+      {
+        "Bearer": []
+      }
+    ],
+    "result": "RUTA PRESENTE; REQUIERE REVISION SEMANTICA"
+  },
+  {
+    "service": "cursos",
+    "method": "PUT",
+    "route": "/api/v1/cursos/{cursoId}/cohortes/{id}",
+    "frozen": [
+      "200",
+      "400",
+      "401",
+      "404",
+      "409"
+    ],
+    "swagger": [
+      "200",
+      "400",
+      "404",
+      "409"
+    ],
+    "request": {
+      "$ref": "#/components/schemas/ActualizarCohorteDto"
+    },
+    "security": [
+      {
+        "Bearer": []
+      }
+    ],
+    "result": "RUTA PRESENTE; REQUIERE REVISION SEMANTICA"
+  },
+  {
+    "service": "cursos",
+    "method": "DELETE",
+    "route": "/api/v1/cursos/{cursoId}/cohortes/{id}",
+    "frozen": [
+      "204",
+      "400",
+      "401",
+      "404"
+    ],
+    "swagger": [
+      "204",
+      "400",
+      "404"
+    ],
+    "request": null,
+    "security": [
+      {
+        "Bearer": []
+      }
+    ],
+    "result": "RUTA PRESENTE; REQUIERE REVISION SEMANTICA"
+  },
+  {
+    "service": "cursos",
+    "method": "GET",
+    "route": "/api/v1/cohortes/{id}/validacion",
+    "frozen": [
+      "200",
+      "401",
+      "404"
+    ],
+    "swagger": [
+      "200",
+      "404"
+    ],
+    "request": null,
+    "security": [
+      {
+        "Bearer": []
+      }
+    ],
+    "result": "RUTA PRESENTE; REQUIERE REVISION SEMANTICA"
+  },
+  {
+    "service": "cursos",
+    "method": "GET",
+    "route": "/api/v1/cursos/{id}",
+    "frozen": [
+      "200",
+      "401",
+      "404"
+    ],
+    "swagger": [
+      "200",
+      "404"
+    ],
+    "request": null,
+    "security": [
+      {
+        "Bearer": []
+      }
+    ],
+    "result": "RUTA PRESENTE; REQUIERE REVISION SEMANTICA"
+  },
+  {
+    "service": "cursos",
+    "method": "PUT",
+    "route": "/api/v1/cursos/{id}",
+    "frozen": [
+      "200",
+      "400",
+      "401",
+      "404",
+      "409"
+    ],
+    "swagger": [
+      "200",
+      "400",
+      "404",
+      "409"
+    ],
+    "request": {
+      "$ref": "#/components/schemas/ActualizarCursoDto"
+    },
+    "security": [
+      {
+        "Bearer": []
+      }
+    ],
+    "result": "RUTA PRESENTE; REQUIERE REVISION SEMANTICA"
+  },
+  {
+    "service": "cursos",
+    "method": "DELETE",
+    "route": "/api/v1/cursos/{id}",
+    "frozen": [
+      "204",
+      "401",
+      "404"
+    ],
+    "swagger": [
+      "204",
+      "400",
+      "404"
+    ],
+    "request": null,
+    "security": [
+      {
+        "Bearer": []
+      }
+    ],
+    "result": "RUTA PRESENTE; REQUIERE REVISION SEMANTICA"
+  },
+  {
+    "service": "cursos",
+    "method": "GET",
+    "route": "/api/v1/cursos",
+    "frozen": [
+      "200",
+      "401"
+    ],
+    "swagger": [
+      "200"
+    ],
+    "request": null,
+    "security": [
+      {
+        "Bearer": []
+      }
+    ],
+    "result": "RUTA PRESENTE; REQUIERE REVISION SEMANTICA"
+  },
+  {
+    "service": "cursos",
+    "method": "POST",
+    "route": "/api/v1/cursos",
+    "frozen": [
+      "201",
+      "400",
+      "401",
+      "409"
+    ],
+    "swagger": [
+      "201",
+      "400",
+      "409"
+    ],
+    "request": {
+      "$ref": "#/components/schemas/CrearCursoDto"
+    },
+    "security": [
+      {
+        "Bearer": []
+      }
+    ],
+    "result": "RUTA PRESENTE; REQUIERE REVISION SEMANTICA"
+  },
+  {
+    "service": "cursos",
+    "method": "GET",
+    "route": "/api/v1/cohortes/{cohorteId}/matriculas/{id}",
+    "frozen": [
+      "200",
+      "401",
+      "404"
+    ],
+    "swagger": [
+      "200",
+      "404"
+    ],
+    "request": null,
+    "security": [
+      {
+        "Bearer": []
+      }
+    ],
+    "result": "RUTA PRESENTE; REQUIERE REVISION SEMANTICA"
+  },
+  {
+    "service": "cursos",
+    "method": "POST",
+    "route": "/api/v1/cohortes/{cohorteId}/matriculas",
+    "frozen": [
+      "201",
+      "400",
+      "401",
+      "404",
+      "409"
+    ],
+    "swagger": [
+      "201",
+      "400",
+      "404",
+      "409"
+    ],
+    "request": {
+      "$ref": "#/components/schemas/MatricularAlumnoDto"
+    },
+    "security": [
+      {
+        "Bearer": []
+      }
+    ],
+    "result": "RUTA PRESENTE; REQUIERE REVISION SEMANTICA"
+  },
+  {
+    "service": "identidad",
+    "method": "POST",
+    "route": "/api/auth/login",
+    "frozen": null,
+    "swagger": [
+      "200",
+      "400",
+      "401",
+      "415",
+      "429",
+      "500"
+    ],
+    "request": {
+      "$ref": "#/components/schemas/LoginCommand"
+    },
+    "security": [],
+    "result": "SIN CONTRATO VERSIONADO"
+  },
+  {
+    "service": "identidad",
+    "method": "POST",
+    "route": "/api/auth/register",
+    "frozen": null,
+    "swagger": [
+      "201",
+      "400",
+      "401",
+      "403",
+      "409",
+      "415",
+      "500"
+    ],
+    "request": {
+      "$ref": "#/components/schemas/RegisterCommand"
+    },
+    "security": [
+      {
+        "Bearer": []
+      }
+    ],
+    "result": "SIN CONTRATO VERSIONADO"
+  },
+  {
+    "service": "identidad",
+    "method": "POST",
+    "route": "/api/auth/refresh",
+    "frozen": null,
+    "swagger": [
+      "200",
+      "400",
+      "401",
+      "415",
+      "429",
+      "500"
+    ],
+    "request": {
+      "$ref": "#/components/schemas/RefreshCommand"
+    },
+    "security": [],
+    "result": "SIN CONTRATO VERSIONADO"
+  },
+  {
+    "service": "identidad",
+    "method": "POST",
+    "route": "/api/auth/logout",
+    "frozen": null,
+    "swagger": [
+      "204",
+      "400",
+      "415",
+      "429",
+      "500"
+    ],
+    "request": {
+      "$ref": "#/components/schemas/LogoutCommand"
+    },
+    "security": [],
+    "result": "SIN CONTRATO VERSIONADO"
+  },
+  {
+    "service": "identidad",
+    "method": "GET",
+    "route": "/api/auth/administrador",
+    "frozen": null,
+    "swagger": [
+      "200",
+      "401",
+      "403",
+      "500"
+    ],
+    "request": null,
+    "security": [
+      {
+        "Bearer": []
+      }
+    ],
+    "result": "SIN CONTRATO VERSIONADO"
+  },
+  {
+    "service": "identidad",
+    "method": "GET",
+    "route": "/api/auth/docente",
+    "frozen": null,
+    "swagger": [
+      "200",
+      "401",
+      "403",
+      "500"
+    ],
+    "request": null,
+    "security": [
+      {
+        "Bearer": []
+      }
+    ],
+    "result": "SIN CONTRATO VERSIONADO"
+  },
+  {
+    "service": "identidad",
+    "method": "GET",
+    "route": "/api/auth/alumno",
+    "frozen": null,
+    "swagger": [
+      "200",
+      "401",
+      "403",
+      "500"
+    ],
+    "request": null,
+    "security": [
+      {
+        "Bearer": []
+      }
+    ],
+    "result": "SIN CONTRATO VERSIONADO"
+  },
+  {
+    "service": "identidad",
+    "method": "POST",
+    "route": "/api/plataforma/auth/login",
+    "frozen": null,
+    "swagger": [
+      "200",
+      "400",
+      "401",
+      "404",
+      "415",
+      "429",
+      "500"
+    ],
+    "request": {
+      "$ref": "#/components/schemas/LoginCommand"
+    },
+    "security": [],
+    "result": "SIN CONTRATO VERSIONADO"
+  },
+  {
+    "service": "identidad",
+    "method": "GET",
+    "route": "/api/plataforma/instituciones",
+    "frozen": null,
+    "swagger": [
+      "200",
+      "400",
+      "401",
+      "403",
+      "404",
+      "500"
+    ],
+    "request": null,
+    "security": [
+      {
+        "PlatformBearer": []
+      }
+    ],
+    "result": "SIN CONTRATO VERSIONADO"
+  },
+  {
+    "service": "identidad",
+    "method": "POST",
+    "route": "/api/plataforma/instituciones",
+    "frozen": null,
+    "swagger": [
+      "201",
+      "400",
+      "401",
+      "403",
+      "404",
+      "409",
+      "415",
+      "500"
+    ],
+    "request": {
+      "$ref": "#/components/schemas/CrearInstitucionCommand"
+    },
+    "security": [
+      {
+        "PlatformBearer": []
+      }
+    ],
+    "result": "SIN CONTRATO VERSIONADO"
+  },
+  {
+    "service": "identidad",
+    "method": "POST",
+    "route": "/api/plataforma/invitaciones/activar",
+    "frozen": null,
+    "swagger": [
+      "204",
+      "400",
+      "401",
+      "404",
+      "415",
+      "429",
+      "500"
+    ],
+    "request": {
+      "$ref": "#/components/schemas/ActivarAdministradorCommand"
+    },
+    "security": [],
+    "result": "SIN CONTRATO VERSIONADO"
+  },
+  {
+    "service": "identidad",
+    "method": "GET",
+    "route": "/WeatherForecast",
+    "frozen": null,
+    "swagger": [
+      "200"
+    ],
+    "request": null,
+    "security": [],
+    "result": "SIN CONTRATO VERSIONADO"
+  },
+  {
+    "service": "ia",
+    "method": "POST",
+    "route": "/api/v1/Correcciones",
+    "frozen": [
+      "200",
+      "400",
+      "500"
+    ],
+    "swagger": [
+      "200",
+      "400",
+      "500"
+    ],
+    "request": {
+      "$ref": "#/components/schemas/CorregirRespuestaRequest"
+    },
+    "security": [],
+    "result": "RUTA PRESENTE; REQUIERE REVISION SEMANTICA"
+  },
+  {
+    "service": "ia",
+    "method": "GET",
+    "route": "/api/v1/Correcciones/health",
+    "frozen": [
+      "200"
+    ],
+    "swagger": [
+      "200"
+    ],
+    "request": null,
+    "security": [],
+    "result": "RUTA PRESENTE; REQUIERE REVISION SEMANTICA"
+  },
+  {
+    "service": "evaluaciones",
+    "method": "GET",
+    "route": "/api/v1/evaluaciones",
+    "frozen": null,
+    "swagger": [
+      "200"
+    ],
+    "request": null,
+    "security": [],
+    "result": "SIN CONTRATO VERSIONADO"
+  },
+  {
+    "service": "evaluaciones",
+    "method": "POST",
+    "route": "/api/v1/evaluaciones",
+    "frozen": null,
+    "swagger": [
+      "200"
+    ],
+    "request": {
+      "$ref": "#/components/schemas/EvaluacionRequest"
+    },
+    "security": [],
+    "result": "SIN CONTRATO VERSIONADO"
+  },
+  {
+    "service": "evaluaciones",
+    "method": "GET",
+    "route": "/api/v1/evaluaciones/{id}",
+    "frozen": null,
+    "swagger": [
+      "200"
+    ],
+    "request": null,
+    "security": [],
+    "result": "SIN CONTRATO VERSIONADO"
+  },
+  {
+    "service": "evaluaciones",
+    "method": "PUT",
+    "route": "/api/v1/evaluaciones/{id}",
+    "frozen": null,
+    "swagger": [
+      "200"
+    ],
+    "request": {
+      "$ref": "#/components/schemas/EvaluacionRequest"
+    },
+    "security": [],
+    "result": "SIN CONTRATO VERSIONADO"
+  },
+  {
+    "service": "evaluaciones",
+    "method": "DELETE",
+    "route": "/api/v1/evaluaciones/{id}",
+    "frozen": null,
+    "swagger": [
+      "200"
+    ],
+    "request": null,
+    "security": [],
+    "result": "SIN CONTRATO VERSIONADO"
+  },
+  {
+    "service": "evaluaciones",
+    "method": "POST",
+    "route": "/api/v1/evaluaciones/{id}/publicar",
+    "frozen": null,
+    "swagger": [
+      "200"
+    ],
+    "request": {
+      "$ref": "#/components/schemas/PublicarEvaluacionRequest"
+    },
+    "security": [],
+    "result": "SIN CONTRATO VERSIONADO"
+  },
+  {
+    "service": "evaluaciones",
+    "method": "GET",
+    "route": "/WeatherForecast",
+    "frozen": null,
+    "swagger": [
+      "200"
+    ],
+    "request": null,
+    "security": [],
+    "result": "SIN CONTRATO VERSIONADO"
+  },
+  {
+    "service": "sala-en-vivo",
+    "method": "POST",
+    "route": "/api/v1/salas",
+    "frozen": null,
+    "swagger": [
+      "200"
+    ],
+    "request": {
+      "$ref": "#/components/schemas/CrearSalaCommand"
+    },
+    "security": [],
+    "result": "SIN CONTRATO VERSIONADO"
+  },
+  {
+    "service": "sala-en-vivo",
+    "method": "GET",
+    "route": "/WeatherForecast",
+    "frozen": null,
+    "swagger": [
+      "200"
+    ],
+    "request": null,
+    "security": [],
+    "result": "SIN CONTRATO VERSIONADO"
+  }
+]
