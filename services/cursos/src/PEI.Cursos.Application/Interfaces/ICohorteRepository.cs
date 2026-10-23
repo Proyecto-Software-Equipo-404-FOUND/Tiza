@@ -14,4 +14,5 @@ public interface ICohorteRepository
     Task<IReadOnlyList<Cohorte>> GetByCursoIdAsync(Guid cursoId, CancellationToken cancellationToken = default);
     Task AddAsync(Cohorte cohorte, CancellationToken cancellationToken = default);
     Task<bool> ExisteNombreEnPeriodoAsync(Guid cursoId, string periodo, string nombre, CancellationToken cancellationToken = default);
+    Task<bool> ExisteNombreEnPeriodoAsync(Guid cursoId, string periodo, string nombre, Guid cohorteIdExcluir, CancellationToken cancellationToken = default);
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PEI.Cursos.Application.DTOs.Matriculaciones;
@@ -12,6 +13,7 @@ namespace PEI.Cursos.Api.Controllers;
 
 /* Controlador REST Nivel 2 dedicado a la matriculación e inscripciones formales (Caso de Uso CU-04).
 Aplica el principio de Responsabilidad Única (SRP) bajo la sub-ruta anidada api/v1/cohortes/{cohorteId}/matriculas. */
+[Authorize]
 [ApiController]
 [Route("api/v1/cohortes/{cohorteId:guid}/matriculas")]
 public class MatriculacionesController : ControllerBase

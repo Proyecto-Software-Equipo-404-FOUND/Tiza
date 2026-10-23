@@ -1,0 +1,592 @@
+{
+  "info": {
+    "name": "PEI - Microservicio Cursos",
+    "_postman_id": "a953e5e4-2391-49fa-9486-cursos-v1-postman",
+    "description": "Colección oficial de pruebas de integración para el microservicio de Cursos (PEI / Tiza).\nCubre CRUD de materias, comisiones (cohortes), consultas inter-servicio (CU-05), matriculaciones (CU-04) y seguridad JWT (H2/H7).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5102",
+      "type": "string"
+    },
+    {
+      "key": "bearer_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "institucionId",
+      "value": "11111111-1111-1111-1111-111111111111",
+      "type": "string"
+    },
+    {
+      "key": "docenteId",
+      "value": "11111111-0000-0000-0000-000000000002",
+      "type": "string"
+    },
+    {
+      "key": "alumnoId",
+      "value": "11111111-0000-0000-0000-000000000003",
+      "type": "string"
+    },
+    {
+      "key": "cursoId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cohorteId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "matriculacionId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{bearer_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "01 - Listar Cursos (Paginado)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cursos?pagina=1&tamanoPagina=10",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "cursos"
+          ],
+          "query": [
+            {
+              "key": "pagina",
+              "value": "1"
+            },
+            {
+              "key": "tamanoPagina",
+              "value": "10"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Respuesta contiene estructura paginada', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('items');",
+              "    pm.expect(jsonData).to.have.property('totalItems');",
+              "    pm.expect(jsonData).to.have.property('pagina', 1);",
+              "    pm.expect(jsonData).to.have.property('tamanoPagina', 10);",
+              "    pm.expect(Array.isArray(jsonData.items)).to.be.true;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Crear Curso",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Arquitectura de Sistemas Distribuidos\",\n  \"area\": \"Sistemas\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cursos",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "cursos"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 201 Created', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('Cabecera Location presente', function () {",
+              "    pm.response.to.have.header('Location');",
+              "});",
+              "",
+              "pm.test('Retorna Curso creado y guarda cursoId', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('id');",
+              "    pm.expect(jsonData.nombre).to.eql('Arquitectura de Sistemas Distribuidos');",
+              "    pm.collectionVariables.set('cursoId', jsonData.id);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Obtener Curso por ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cursos/{{cursoId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "cursos",
+            "{{cursoId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('El id retornado coincide con el solicitado', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.id).to.eql(pm.collectionVariables.get('cursoId'));",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Crear Cohorte",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Comisión 1A - Turno Tarde\",\n  \"periodo\": \"2026-2C\",\n  \"docenteId\": \"{{docenteId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cursos/{{cursoId}}/cohortes",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "cursos",
+            "{{cursoId}}",
+            "cohortes"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 201 Created', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('Cabecera Location presente', function () {",
+              "    pm.response.to.have.header('Location');",
+              "});",
+              "",
+              "pm.test('Retorna Cohorte creada y guarda cohorteId', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('id');",
+              "    pm.expect(jsonData.nombre).to.eql('Comisión 1A - Turno Tarde');",
+              "    pm.expect(jsonData.periodo).to.eql('2026-2C');",
+              "    pm.collectionVariables.set('cohorteId', jsonData.id);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Listar Cohortes de un Curso",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cursos/{{cursoId}}/cohortes",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "cursos",
+            "{{cursoId}}",
+            "cohortes"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna listado no vacio de cohortes', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(Array.isArray(jsonData)).to.be.true;",
+              "    pm.expect(jsonData.length).to.be.above(0);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "05b - Modificar Cohorte (PUT)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Comisión 1A - Turno Noche (Modificada)\",\n  \"periodo\": \"2026-2C\",\n  \"docenteId\": \"{{docenteId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cursos/{{cursoId}}/cohortes/{{cohorteId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "cursos",
+            "{{cursoId}}",
+            "cohortes",
+            "{{cohorteId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 OK tras actualizar', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna cohorte con datos actualizados', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.nombre).to.eql('Comisión 1A - Turno Noche (Modificada)');",
+              "    pm.expect(jsonData.id).to.eql(pm.collectionVariables.get('cohorteId'));",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Consulta Inter-servicio Cohorte (CU-05)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cohortes/{{cohorteId}}/validacion",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "cohortes",
+            "{{cohorteId}}",
+            "validacion"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Valida datos de cohorte activa para Evaluaciones', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('cohorteId', pm.collectionVariables.get('cohorteId'));",
+              "    pm.expect(jsonData).to.have.property('activa', true);",
+              "    pm.expect(jsonData).to.have.property('docenteId', pm.collectionVariables.get('docenteId'));",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Matricular Alumno (CU-04)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"alumnoId\": \"{{alumnoId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cohortes/{{cohorteId}}/matriculas",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "cohortes",
+            "{{cohorteId}}",
+            "matriculas"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 201 Created', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('Cabecera Location presente tras matricular', function () {",
+              "    pm.response.to.have.header('Location');",
+              "});",
+              "",
+              "pm.test('Retorna inscripcion activa y guarda matriculacionId', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('id');",
+              "    pm.expect(jsonData.estado).to.eql('Activa');",
+              "    pm.collectionVariables.set('matriculacionId', jsonData.id);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Consultar Detalle Matrícula (CU-04)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cohortes/{{cohorteId}}/matriculas/{{matriculacionId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "cohortes",
+            "{{cohorteId}}",
+            "matriculas",
+            "{{matriculacionId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Detalle de matricula coincide con alumno y estado', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.id).to.eql(pm.collectionVariables.get('matriculacionId'));",
+              "    pm.expect(jsonData.alumnoId).to.eql(pm.collectionVariables.get('alumnoId'));",
+              "    pm.expect(jsonData.estado).to.eql('Activa');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "08b - Desactivar Cohorte (DELETE - Baja Logica)",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cursos/{{cursoId}}/cohortes/{{cohorteId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "cursos",
+            "{{cursoId}}",
+            "cohortes",
+            "{{cohorteId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 204 No Content tras baja logica', function () {",
+              "    pm.response.to.have.status(204);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 - Intento de Doble Matrícula (CU-04 Conflicto)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"alumnoId\": \"{{alumnoId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cohortes/{{cohorteId}}/matriculas",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "cohortes",
+            "{{cohorteId}}",
+            "matriculas"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 409 Conflict', function () {",
+              "    pm.response.to.have.status(409);",
+              "});",
+              "",
+              "pm.test('Retorna ProblemDetails estandar RFC 9457', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('status', 409);",
+              "    pm.expect(jsonData).to.have.property('title');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 - Seguridad: Acceso Anónimo Sin Token (H2 Negativo)",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cursos",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "cursos"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 401 Unauthorized sin JWT', function () {",
+              "    pm.response.to.have.status(401);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+}
