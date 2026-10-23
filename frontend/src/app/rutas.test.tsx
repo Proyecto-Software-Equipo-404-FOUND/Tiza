@@ -9,7 +9,21 @@ import { Proveedores } from './Proveedores';
 import { rutas } from './rutas';
 
 vi.mock('@/features/cursos/api/cursos', () => ({
-  listarCursos: vi.fn().mockResolvedValue([]),
+  listarCursos: vi.fn().mockResolvedValue({
+    items: [],
+    totalItems: 0,
+    pagina: 1,
+    tamanoPagina: 10,
+    totalPaginas: 1,
+  }),
+  obtenerCurso: vi.fn().mockResolvedValue({
+    id: 'c-1',
+    institucionId: 'institucion-a',
+    nombre: 'Programación I',
+    area: 'Sistemas',
+    activo: true,
+    fechaCreacionUtc: '2026-10-09T12:00:00Z',
+  }),
   crearCurso: vi.fn(),
 }));
 
