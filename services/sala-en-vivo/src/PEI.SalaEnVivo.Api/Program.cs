@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using MediatR;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,8 +17,13 @@ builder.Services.AddDbContext<pei_sala_db>(options =>
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<ISalaRepository, SalaRepository>();
+builder.Services.AddScoped<IParticipanteSalaRepository, ParticipanteSalaRepository>();
 
 builder.Services.AddScoped<CrearSalaCommandHandler>();
+
+builder.Services.AddMediatR(cfg =>
+    cfg.RegisterServicesFromAssembly(
+        typeof(UnirseASalaPorPINCommandHandler).Assembly));
 
 // Add services to the container.
 
@@ -38,7 +44,7 @@ if (string.IsNullOrWhiteSpace(jwtIssuer) ||
 {
     throw new InvalidOperationException(
         "JWT configuration is missing. Configure Jwt:Issuer, " +
-        "Jwt:Audience, and Jwt:Secret.");
+        "Jwt:Audience, and Jwt:SecretKey.");
 }
 
 

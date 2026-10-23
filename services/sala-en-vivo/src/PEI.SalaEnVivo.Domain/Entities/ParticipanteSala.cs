@@ -4,7 +4,7 @@ namespace PEI.SalaEnVivo.Domain.Entities
     {
         public Guid Id { get; set; }
         public Guid SalaId { get; set; }
-
+        public Guid AlumnoId { get; set; }
         public Sala? Sala { get; set; }
     }
 }
