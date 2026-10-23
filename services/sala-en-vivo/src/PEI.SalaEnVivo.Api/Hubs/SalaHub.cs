@@ -1,47 +1,62 @@
-/*
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using MediatR;
+using System.Security.Claims;
+using PEI.SalaEnVivo.Application.UseCases.Salas.Commands;
 
-namespace PEI.SalaEnVivo.Api.Hubs;
-
-[Authorize]
-public sealed class SalaHub : Hub
+namespace PEI.SalaEnVivo.Api.Hubs
 {
-    private readonly ISender _sender;
-
-    public SalaHub(ISender sender)
+    [Authorize]
+    public sealed class SalaHub : Hub
     {
-        _sender = sender;
-    }
+        private readonly ISender _sender;
 
-    public async Task JoinSala(Guid salaId)
-    {
-        var userId = Context.UserIdentifier;
+        public SalaHub(ISender sender)
+        {
+            _sender = sender;
+        }
 
-        if (string.IsNullOrWhiteSpace(userId))
-            throw new HubException("Usuario no identificado.");
+        public async Task UnirseASala(int pin)
+        {
+            var user = Context.User;
 
-        await _sender.Send(
-            new JoinSalaCommand(salaId, userId));
+            if (!Guid.TryParse(
+                user?.FindFirst(ClaimTypes.NameIdentifier)?.Value,
+                out var alumnoId))
+            {
+                throw new HubException("Alumno no identificado.");
+            }
 
-        await Groups.AddToGroupAsync(
-            Context.ConnectionId,
-            salaId.ToString());
-    }
-}
-*/
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.SignalR;
+            if (!Guid.TryParse(
+                user?.FindFirst("InstitucionId")?.Value,
+                out var institucionId))
+            {
+                throw new HubException("Institución no válida.");
+            }
 
-namespace PEI.SalaEnVivo.Api.Hubs;
+            try
+            {
+                var salaId = await _sender.Send(
+                    new UnirseASalaPorPINCommand(
+                        pin,
+                        alumnoId,
+                        institucionId),
+                    Context.ConnectionAborted);
 
-[Authorize]
-public sealed class SalaHub : Hub
-{
-    public async Task Ping()
-    {
-        await Clients.Caller.SendAsync(
-            "Pong",
-            "SignalR connection works");
+                await Groups.AddToGroupAsync(
+                    Context.ConnectionId,
+                    salaId.ToString(),
+                    Context.ConnectionAborted);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                throw new HubException(
+                    "No tienes permiso para ingresar a esta sala.");
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new HubException(ex.Message);
+            }
+        }
     }
 }
