@@ -8,7 +8,7 @@ using PEI.Identidad.Application.Plataforma;
 
 namespace PEI.Identidad.Api.Security;
 
-// Solo modifica el documento OpenAPI; no interviene en la ejecuciÃ³n HTTP.
+// Solo modifica el documento OpenAPI; no interviene en la ejecución HTTP.
 public sealed class IdentitySecurityOperationFilter : IOperationFilter
 {
     public void Apply(OpenApiOperation operation, OperationFilterContext context)
@@ -30,7 +30,7 @@ public sealed class IdentitySecurityOperationFilter : IOperationFilter
             });
 
         operation.Description = platform
-            ? "Requiere Platform:Enabled. Si estÃ¡ deshabilitada, las acciones devuelven 404 cuando se alcanzan; autenticaciÃ³n y autorizaciÃ³n pueden rechazar antes. JWT global separado del institucional."
+            ? "Requiere Platform:Enabled. Si está deshabilitada, las acciones devuelven 404 cuando se alcanzan; autenticación y autorización pueden rechazar antes. JWT global separado del institucional."
             : "Identidad institucional; los JWT globales no habilitan operaciones institucionales protegidas.";
         if (!anonymous)
         {
@@ -43,11 +43,11 @@ public sealed class IdentitySecurityOperationFilter : IOperationFilter
         if (!platform && method is "Refresh" or "Logout")
             operation.Description += " No requiere access token: recibe refreshToken en el cuerpo. Logout es idempotente; refresh rota y consume el token anterior.";
         if (!platform && method == "Register")
-            operation.Description += " Solo crea Docente o Alumno en la instituciÃ³n del administrador. No admite institucionId enviado por el cliente.";
+            operation.Description += " Solo crea Docente o Alumno en la institución del administrador. No admite institucionId enviado por el cliente.";
         if (platform && method == "Listar")
-            operation.Description += " pagina entre 1 y 1000000; hasta 50 instituciones por pÃ¡gina, ordenadas por Id.";
+            operation.Description += " pagina entre 1 y 1000000; hasta 50 instituciones por página, ordenadas por Id.";
 
-        // Los IActionResult sin tipo no permiten inferir el esquema de Ã©xito.
+        // Los IActionResult sin tipo no permiten inferir el esquema de éxito.
         var (status, success) = (platform, method) switch
         {
             (false, "Login" or "Refresh") => ("200", typeof(SessionResponse)),
@@ -60,17 +60,17 @@ public sealed class IdentitySecurityOperationFilter : IOperationFilter
             _ => ("204", (Type?)null)
         };
         operation.Responses.Clear();
-        operation.Responses[status] = success is null ? new OpenApiResponse { Description = "OperaciÃ³n completada sin cuerpo." }
-            : Response("OperaciÃ³n completada.", success, "application/json");
+        operation.Responses[status] = success is null ? new OpenApiResponse { Description = "Operación completada sin cuerpo." }
+            : Response("Operación completada.", success, "application/json");
         var post = context.ApiDescription.HttpMethod == "POST";
-        if (post || method == "Listar") Error("400", "Solicitud invÃ¡lida. La validaciÃ³n automÃ¡tica puede incluir errors.");
-        if (!anonymous || method is "Login" or "Refresh" or "Activar") Error("401", "Credenciales o token invÃ¡lidos.");
-        if (!anonymous) Error("403", "Rol o polÃ­tica no autorizados.");
-        if (platform) Error("404", "Plataforma deshabilitada, si la solicitud alcanza la acciÃ³n.");
+        if (post || method == "Listar") Error("400", "Solicitud inválida. La validación automática puede incluir errors.");
+        if (!anonymous || method is "Login" or "Refresh" or "Activar") Error("401", "Credenciales o token inválidos.");
+        if (!anonymous) Error("403", "Rol o política no autorizados.");
+        if (platform) Error("404", "Plataforma deshabilitada, si la solicitud alcanza la acción.");
         if (method is "Register" or "Crear") Error("409", "Conflicto de datos; no revela el propietario del correo.");
         if (post) Error("415", "Tipo de contenido no admitido.");
-        if (anonymous) Error("429", "LÃ­mite de solicitudes excedido.");
-        Error("500", "Error tÃ©cnico.");
+        if (anonymous) Error("429", "Límite de solicitudes excedido.");
+        Error("500", "Error técnico.");
 
         // PlatformBearer conserva el Content-Type application/json de sus challenges actuales.
         if (platform && !anonymous)
@@ -89,7 +89,7 @@ public sealed class IdentitySecurityOperationFilter : IOperationFilter
             operation.Responses[code] = Response(description, typeof(ProblemDetails), "application/problem+json");
             if (code == "400")
             {
-                // ValidationProblemDetails aÃ±ade errors; otros 400 usan ProblemDetails simple.
+                // ValidationProblemDetails añade errors; otros 400 usan ProblemDetails simple.
                 operation.Responses[code].Content["application/problem+json"].Schema = new OpenApiSchema
                 {
                     AnyOf = new List<OpenApiSchema>
