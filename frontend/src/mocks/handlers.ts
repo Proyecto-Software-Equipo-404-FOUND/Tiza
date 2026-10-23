@@ -5,14 +5,21 @@ import { handlersMatriculas } from './matriculas';
 import { handlersCohortes } from './cohortes';
 
 export const handlers = [
-  // Ruta provisional: va bajo el prefijo que el gateway reserva para Identidad
-  http.post('*/api/v1/identidad/sesiones', async ({ request }) => {
+  // Ruta real por el gateway: el transform la entrega a Identidad como /api/auth/login
+  http.post('*/api/v1/identidad/auth/login', async ({ request }) => {
     const { email } = (await request.json()) as { email: string; password: string };
     const usuario = usuarios.find((u) => u.email === email);
     if (!usuario) {
       return HttpResponse.json({ title: 'Credenciales inválidas', status: 401 }, { status: 401 });
     }
-    return HttpResponse.json({ accessToken: crearTokenFalso(usuario), tokenType: 'Bearer' });
+    const ahora = Date.now();
+    return HttpResponse.json({
+      accessToken: crearTokenFalso(usuario),
+      refreshToken: crypto.randomUUID(),
+      tokenType: 'Bearer',
+      accessTokenExpiresAt: new Date(ahora + 15 * 60 * 1000).toISOString(),
+      refreshTokenExpiresAt: new Date(ahora + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    });
   }),
 
   // El backend real devuelve un objeto paginado (10 por página por defecto)
