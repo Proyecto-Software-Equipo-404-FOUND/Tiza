@@ -18,3 +18,11 @@ export function iniciarSesion(correo: string, contrasena: string) {
     body: JSON.stringify({ email: correo, password: contrasena }),
   });
 }
+
+// Avisa al servidor que el refreshToken ya no se usa (POST /api/auth/logout, responde 204)
+export function cerrarSesionEnServidor(refreshToken: string) {
+  return pedir<void>('/api/v1/identidad/auth/logout', {
+    method: 'POST',
+    body: JSON.stringify({ refreshToken }),
+  });
+}
