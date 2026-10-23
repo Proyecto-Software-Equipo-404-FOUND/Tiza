@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -42,6 +42,27 @@ beforeEach(() => {
 });
 
 describe('PaginaMatriculas', () => {
+  it('muestra el título y el enlace para volver a los cursos', async () => {
+    vi.mocked(api.listarMatriculas).mockResolvedValue([]);
+    mostrarPagina();
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Matrícula' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '← Volver a cursos' })).toHaveAttribute('href', '/cursos');
+  });
+
+  it('no envía dos veces mientras hay un envío en curso', async () => {
+    vi.mocked(api.listarMatriculas).mockResolvedValue([]);
+    vi.mocked(api.matricularAlumno).mockReturnValue(new Promise(() => {}));
+    mostrarPagina();
+
+    await userEvent.selectOptions(await screen.findByLabelText('Alumno'), 'a2');
+    const formulario = screen.getByRole('button', { name: 'Matricular' }).closest('form')!;
+    fireEvent.submit(formulario);
+    fireEvent.submit(formulario);
+
+    await waitFor(() => expect(api.matricularAlumno).toHaveBeenCalledTimes(1));
+  });
+
   it('lista los matriculados y no ofrece a los que ya lo están', async () => {
     vi.mocked(api.listarMatriculas).mockResolvedValue([matricula]);
     mostrarPagina();
