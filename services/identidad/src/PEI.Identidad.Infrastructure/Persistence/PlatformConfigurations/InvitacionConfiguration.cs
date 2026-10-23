@@ -21,6 +21,7 @@ public sealed class EntregaConfiguration : IEntityTypeConfiguration<EntregaInvit
         b.ToTable("EntregaInvitacion"); b.HasKey(x => x.Id);
         b.Property(x => x.Destinatario).HasMaxLength(150).IsRequired();
         b.Property(x => x.ContenidoProtegido).IsRequired();
+        b.Property(x => x.ProximoIntento).HasColumnType("timestamp with time zone");
         b.HasOne<InvitacionAdministrador>().WithMany().HasForeignKey(x => x.InvitacionId).OnDelete(DeleteBehavior.Restrict);
         b.HasIndex(x => x.InvitacionId).IsUnique();
     }
