@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from 'react';
-import { useParams } from 'react-router-dom';
+import { useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { mensajeDeError } from '@/shared/api/errores';
 import { Boton } from '@/shared/components/Boton';
@@ -15,12 +15,27 @@ const columnas: Columna<Matricula>[] = [
   { titulo: 'Estado', celda: (m) => m.estado },
 ];
 
+// Marco común de la pantalla: así «cargando» y «error» también quedan dentro de <main>
+function Marco({ children }: { children: ReactNode }) {
+  return (
+    <main className='mx-auto flex max-w-3xl flex-col gap-4 p-4'>
+      <Link to='/cursos' className='text-sm text-tiza-violeta underline'>
+        ← Volver a cursos
+      </Link>
+      <h1 className='text-2xl font-bold text-tiza-pizarra'>Matrícula</h1>
+      {children}
+    </main>
+  );
+}
+
 export function PaginaMatriculas() {
   const { cohorteId = '' } = useParams<{ cohorteId: string }>();
   const clienteQuery = useQueryClient();
   const { mostrar } = useAviso();
   const [alumnoId, setAlumnoId] = useState('');
   const [errorAlMatricular, setErrorAlMatricular] = useState<string | null>(null);
+  // Un ref se actualiza al instante; el estado de la mutación recién llega en el próximo render
+  const enviando = useRef(false);
 
   const matriculas = useQuery({
     queryKey: ['matriculas', cohorteId],
@@ -37,6 +52,9 @@ export function PaginaMatriculas() {
       void clienteQuery.invalidateQueries({ queryKey: ['matriculas', cohorteId] });
     },
     onError: (error) => setErrorAlMatricular(mensajeDeError(error)),
+    onSettled: () => {
+      enviando.current = false;
+    },
   });
 
   const recargar = () => {
@@ -45,10 +63,23 @@ export function PaginaMatriculas() {
     void alumnos.refetch();
   };
 
-  if (matriculas.isPending || alumnos.isPending) return <Spinner texto='Cargando matrícula…' />;
+  if (matriculas.isPending || alumnos.isPending) {
+    return (
+      <Marco>
+        <Spinner texto='Cargando matrícula…' />
+      </Marco>
+    );
+  }
 
   if (matriculas.isError || alumnos.isError) {
-    return <BannerError mensaje={mensajeDeError(matriculas.error ?? alumnos.error)} onReintentar={recargar} />;
+    return (
+      <Marco>
+        <BannerError
+          mensaje={mensajeDeError(matriculas.error ?? alumnos.error)}
+          onReintentar={recargar}
+        />
+      </Marco>
+    );
   }
 
   // No se ofrecen los alumnos que ya están matriculados en esta cohorte
@@ -58,11 +89,14 @@ export function PaginaMatriculas() {
 
   const enviar = (evento: FormEvent) => {
     evento.preventDefault();
-    if (alumnoId) matricular.mutate(alumnoId);
+    // Si ya hay un envío en curso (por ejemplo, Enter dos veces), no se envía de nuevo
+    if (!alumnoId || enviando.current) return;
+    enviando.current = true;
+    matricular.mutate(alumnoId);
   };
 
   return (
-    <div className='mx-auto flex max-w-3xl flex-col gap-4 p-4'>
+    <Marco>
       <Tarjeta titulo='Matricular un alumno'>
         <form onSubmit={enviar} className='flex flex-col gap-3 sm:flex-row sm:items-end'>
           <div className='flex flex-1 flex-col gap-1'>
@@ -103,6 +137,6 @@ export function PaginaMatriculas() {
           textoVacio='Todavía no hay alumnos matriculados en esta cohorte.'
         />
       </Tarjeta>
-    </div>
+    </Marco>
   );
 }

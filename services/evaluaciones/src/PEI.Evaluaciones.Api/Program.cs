@@ -16,6 +16,8 @@ builder.Services.AddScoped<
     PEI.Evaluaciones.Application.Evaluaciones.IEvaluacionRepositorio,
     PEI.Evaluaciones.Infrastructure.Persistence.EvaluacionRepositorio>();
 
+builder.Services.AddScoped<PEI.Evaluaciones.Application.Evaluaciones.ICursosClient, PEI.Evaluaciones.Infrastructure.Clientes.CursosClientProvisorio>();    
+
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
