@@ -8,4 +8,15 @@ export const usuarios = [
   { id: 'u-alumno2-a', nombre: 'Alumno 2 A', email: 'alumno2@a.test', rol: 'alumno', institucionId: INSTITUCION_A },
 ];
 
-export const cursos = [{ id: 'c-1', nombre: 'Programación I', institucionId: INSTITUCION_A }];
+export const CURSO_1_ID = '33333333-0000-0000-0000-000000000001';
+
+export const cursos = [
+  {
+    id: CURSO_1_ID,
+    institucionId: INSTITUCION_A,
+    nombre: 'Programación I',
+    area: 'Sistemas',
+    activo: true,
+    fechaCreacionUtc: '2026-10-09T12:00:00Z',
+  },
+];

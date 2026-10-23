@@ -5,7 +5,7 @@ import { Tabla, type Columna } from '@/shared/components/Tabla';
 import { Tarjeta } from '@/shared/components/Tarjeta';
 import { mensajeDeError } from '@/shared/api/errores';
 import type { Cohorte } from '@/shared/api/tipos';
-import { useCursos } from '../hooks/useCursos';
+import { useCurso } from '../hooks/useCurso';
 import { useCohortes } from '../hooks/useCohortes';
 import { FormularioCohorte } from '../components/FormularioCohorte';
 
@@ -23,10 +23,8 @@ const columnas: Columna<Cohorte>[] = [
 
 export function PaginaCohortes() {
   const { cursoId = '' } = useParams();
-  // No hay endpoint para un solo curso: se busca en la lista, que ya está en caché
-  const { data: cursos } = useCursos();
+  const { data: curso } = useCurso(cursoId);
   const { data: cohortes, isPending, isError, error, refetch } = useCohortes(cursoId);
-  const curso = cursos?.find((c) => c.id === cursoId);
 
   return (
     <main className='mx-auto flex max-w-4xl flex-col gap-4 p-6'>

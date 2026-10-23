@@ -8,14 +8,19 @@ import { useAviso } from '@/shared/components/Aviso';
 import { ApiError } from '@/shared/api/cliente';
 import { mensajeDeError } from '@/shared/api/errores';
 import { useCrearCurso } from '../hooks/useCrearCurso';
+import { AREAS_SUGERIDAS } from '../semillas';
 
 const esquema = z.object({
   nombre: z.string().trim().min(1, 'Ingresá un nombre').max(100, 'Máximo 100 caracteres'),
+  area: z.string().trim().min(1, 'Ingresá un área').max(50, 'Máximo 50 caracteres'),
 });
+
+type ErroresCampo = { nombre?: string; area?: string };
 
 export function FormularioCurso() {
   const [nombre, setNombre] = useState('');
-  const [errorCampo, setErrorCampo] = useState<string | undefined>();
+  const [area, setArea] = useState('');
+  const [errores, setErrores] = useState<ErroresCampo>({});
   const crear = useCrearCurso();
   const cliente = useQueryClient();
   const { mostrar } = useAviso();
@@ -24,16 +29,22 @@ export function FormularioCurso() {
     evento.preventDefault();
 
     // Se valida antes de enviar para no hacer pedidos inútiles
-    const resultado = esquema.safeParse({ nombre });
+    const resultado = esquema.safeParse({ nombre, area });
     if (!resultado.success) {
-      setErrorCampo(resultado.error.issues[0].message);
+      const nuevos: ErroresCampo = {};
+      for (const problema of resultado.error.issues) {
+        const campo = problema.path[0] as keyof ErroresCampo;
+        nuevos[campo] ??= problema.message;
+      }
+      setErrores(nuevos);
       return;
     }
 
-    setErrorCampo(undefined);
+    setErrores({});
     crear.mutate(resultado.data, {
       onSuccess: () => {
         setNombre('');
+        setArea('');
         mostrar('exito', 'Curso creado.');
       },
     });
@@ -53,9 +64,23 @@ export function FormularioCurso() {
         etiqueta='Nombre del curso'
         value={nombre}
         onChange={(evento) => setNombre(evento.target.value)}
-        error={errorCampo}
+        error={errores.nombre}
         disabled={crear.isPending}
       />
+
+      <Campo
+        etiqueta='Área'
+        value={area}
+        onChange={(evento) => setArea(evento.target.value)}
+        error={errores.area}
+        disabled={crear.isPending}
+        list='areas-sugeridas'
+      />
+      <datalist id='areas-sugeridas'>
+        {AREAS_SUGERIDAS.map((sugerida) => (
+          <option key={sugerida} value={sugerida} />
+        ))}
+      </datalist>
 
       {crear.isError && (
         <BannerError

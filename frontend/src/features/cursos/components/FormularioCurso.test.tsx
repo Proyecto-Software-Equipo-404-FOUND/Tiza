@@ -33,24 +33,40 @@ function mostrarFormulario() {
 }
 
 describe('FormularioCurso', () => {
-  it('no envía si el nombre está vacío', async () => {
+  it('no envía si el nombre y el área están vacíos', async () => {
     const mutate = simular();
     mostrarFormulario();
 
     await userEvent.click(screen.getByRole('button', { name: 'Crear curso' }));
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Ingresá un nombre');
+    expect(screen.getByText('Ingresá un nombre')).toBeInTheDocument();
+    expect(screen.getByText('Ingresá un área')).toBeInTheDocument();
     expect(mutate).not.toHaveBeenCalled();
   });
 
-  it('envía el nombre cuando es válido', async () => {
+  it('no envía si falta el área', async () => {
     const mutate = simular();
     mostrarFormulario();
 
     await userEvent.type(screen.getByLabelText('Nombre del curso'), 'Álgebra');
     await userEvent.click(screen.getByRole('button', { name: 'Crear curso' }));
 
-    expect(mutate).toHaveBeenCalledWith({ nombre: 'Álgebra' }, expect.anything());
+    expect(screen.getByRole('alert')).toHaveTextContent('Ingresá un área');
+    expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it('envía nombre y área cuando son válidos', async () => {
+    const mutate = simular();
+    mostrarFormulario();
+
+    await userEvent.type(screen.getByLabelText('Nombre del curso'), 'Álgebra');
+    await userEvent.type(screen.getByLabelText('Área'), 'Matemática');
+    await userEvent.click(screen.getByRole('button', { name: 'Crear curso' }));
+
+    expect(mutate).toHaveBeenCalledWith(
+      { nombre: 'Álgebra', area: 'Matemática' },
+      expect.anything(),
+    );
   });
 
   it('deshabilita el botón mientras envía', () => {

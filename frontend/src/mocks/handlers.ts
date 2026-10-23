@@ -15,16 +15,43 @@ export const handlers = [
     return HttpResponse.json({ accessToken: crearTokenFalso(usuario), tokenType: 'Bearer' });
   }),
 
-  http.get('*/api/v1/cursos', () => HttpResponse.json(cursos)),
+  // El backend real devuelve un objeto paginado (10 por página por defecto)
+  http.get('*/api/v1/cursos', ({ request }) => {
+    const url = new URL(request.url);
+    const pagina = Number(url.searchParams.get('pagina') ?? 1);
+    const tamanoPagina = Number(url.searchParams.get('tamanoPagina') ?? 10);
+    const inicio = (pagina - 1) * tamanoPagina;
+    return HttpResponse.json({
+      items: cursos.slice(inicio, inicio + tamanoPagina),
+      totalItems: cursos.length,
+      pagina,
+      tamanoPagina,
+      totalPaginas: Math.max(1, Math.ceil(cursos.length / tamanoPagina)),
+    });
+  }),
+
+  http.get('*/api/v1/cursos/:id', ({ params }) => {
+    const curso = cursos.find((c) => c.id === params.id);
+    return curso
+      ? HttpResponse.json(curso)
+      : HttpResponse.json({ error: 'Curso no encontrado' }, { status: 404 });
+  }),
 
   http.post('*/api/v1/cursos', async ({ request }) => {
-    const { nombre } = (await request.json()) as { nombre: string };
+    const { nombre, area } = (await request.json()) as { nombre: string; area: string };
 
     // Truco para probar cómo se ve un conflicto en la pantalla
     if (nombre.toLowerCase() === 'conflicto') {
       return HttpResponse.json({ title: 'Conflicto', status: 409 }, { status: 409 });
     }
-    const nuevo = { id: crypto.randomUUID(), nombre, institucionId: cursos[0].institucionId };
+    const nuevo = {
+      id: crypto.randomUUID(),
+      institucionId: cursos[0].institucionId,
+      nombre,
+      area,
+      activo: true,
+      fechaCreacionUtc: new Date().toISOString(),
+    };
     cursos.push(nuevo);
     return HttpResponse.json(nuevo, {
       status: 201,
