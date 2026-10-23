@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
-import { ApiError } from '@/shared/api/cliente';
+import { ApiError, guardarTokenRenovacion } from '@/shared/api/cliente';
 import { mensajeDeError } from '@/shared/api/errores';
 import { BannerError } from '@/shared/components/BannerError';
 import { Boton } from '@/shared/components/Boton';
@@ -43,8 +43,13 @@ export function PaginaLogin() {
     setErrores({});
     setCargando(true);
     try {
-      const { accessToken } = await iniciarSesion(resultado.data.correo, resultado.data.contrasena);
+      const { accessToken, refreshToken } = await iniciarSesion(
+        resultado.data.correo,
+        resultado.data.contrasena,
+      );
       const usuario = entrar(accessToken);
+      // Se guarda después de entrar: guardarToken(null) lo limpia, pero entrar no lo hace
+      if (refreshToken) guardarTokenRenovacion(refreshToken);
       navegar(rutaInicial(usuario.rol), { replace: true });
     } catch (error) {
       // Un 401 al iniciar sesión no dice cuál de los dos datos falló

@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
-import { guardarToken, obtenerToken } from '@/shared/api/cliente';
+import { guardarToken, obtenerToken, obtenerTokenRenovacion } from '@/shared/api/cliente';
 import type { Usuario } from '@/shared/api/tipos';
+import { cerrarSesionEnServidor } from './api/auth';
 import { tokenVencido, usuarioDesdeToken } from './jwt';
 
 type Sesion = {
@@ -16,7 +17,8 @@ function recuperarUsuario(): Usuario | null {
   const token = obtenerToken();
   if (!token) return null;
   try {
-    if (tokenVencido(token)) throw new Error('Token vencido');
+    // Con refreshToken, un accessToken vencido se renueva en el primer pedido
+    if (tokenVencido(token) && !obtenerTokenRenovacion()) throw new Error('Token vencido');
     return usuarioDesdeToken(token);
   } catch {
     guardarToken(null);
@@ -35,6 +37,9 @@ export function SesionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const salir = useCallback(() => {
+    const tokenRenovacion = obtenerTokenRenovacion();
+    // Se avisa al servidor sin esperar la respuesta: la sesión local se cierra igual
+    if (tokenRenovacion) void cerrarSesionEnServidor(tokenRenovacion).catch(() => undefined);
     guardarToken(null);
     setUsuario(null);
   }, []);

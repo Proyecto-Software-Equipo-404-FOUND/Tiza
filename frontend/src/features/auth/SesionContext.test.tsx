@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { act, renderHook } from '@testing-library/react';
 import { crearTokenFalso } from '@/mocks/token';
-import { guardarToken, obtenerToken } from '@/shared/api/cliente';
+import { guardarToken, guardarTokenRenovacion, obtenerToken } from '@/shared/api/cliente';
 import { SesionProvider, useSesion } from './SesionContext';
 
 const docente = {
@@ -54,4 +54,12 @@ describe('SesionContext', () => {
     expect(result.current.usuario).toBeNull();
     expect(obtenerToken()).toBeNull();
   });
+
+  it('conserva un token vencido si hay refreshToken (se renueva en el primer pedido)', () => {
+  guardarToken(crearTokenFalso(docente, { exp: 1 }));
+  guardarTokenRenovacion('r1');
+  const { result } = renderHook(() => useSesion(), { wrapper: envoltorio });
+  expect(result.current.usuario?.rol).toBe('docente');
+  });
+
 });

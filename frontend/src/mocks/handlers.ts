@@ -22,6 +22,26 @@ export const handlers = [
     });
   }),
 
+  // Renovación: devuelve un accessToken nuevo y rota el refreshToken (como el login).
+  // El mock no recuerda a quién pertenece cada refreshToken: usa el docente A.
+  http.post('*/api/v1/identidad/auth/refresh', async ({ request }) => {
+    const { refreshToken } = (await request.json()) as { refreshToken?: string };
+    if (!refreshToken) {
+      return HttpResponse.json({ title: 'Token inválido', status: 401 }, { status: 401 });
+    }
+    const ahora = Date.now();
+    return HttpResponse.json({
+      accessToken: crearTokenFalso(usuarios[1]),
+      refreshToken: crypto.randomUUID(),
+      tokenType: 'Bearer',
+      accessTokenExpiresAt: new Date(ahora + 15 * 60 * 1000).toISOString(),
+      refreshTokenExpiresAt: new Date(ahora + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    });
+  }),
+
+  // Cerrar sesión: el backend real responde 204 sin contenido
+  http.post('*/api/v1/identidad/auth/logout', () => new HttpResponse(null, { status: 204 })),
+
   // El backend real devuelve un objeto paginado (10 por página por defecto)
   http.get('*/api/v1/cursos', ({ request }) => {
     const url = new URL(request.url);
