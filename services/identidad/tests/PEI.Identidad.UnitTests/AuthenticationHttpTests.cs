@@ -101,6 +101,33 @@ public sealed class FakeIdentityStore : IAuthenticationDataAccess, IRegistration
         Task.FromResult(sessions.TryGetValue(hash, out var t) && !t.Revocado && t.Expira > DateTime.UtcNow &&
             InstitutionActive && Users.TryGetValue(t.Usuario, out var u) && u.Activo
             ? new RefreshIdentity(u.Id, u.InstitucionId, u.Email, u.Rol) : null);
+    public Task<T> ConfirmarLoginAsync<T>(Usuario autenticado, string nuevo, DateTime vence,
+        Func<RefreshIdentity, T> emitir, CancellationToken ct = default)
+    {
+        lock (sessionLock)
+        {
+            if (!InstitutionActive || !Users.TryGetValue(autenticado.Id, out var u) || !u.Activo ||
+                u.InstitucionId != autenticado.InstitucionId || u.PasswordHash != autenticado.PasswordHash || u.Email != autenticado.Email)
+                throw new AuthenticationIdentityUnavailableException();
+            var result = emitir(new(u.Id, u.InstitucionId, u.Email, u.Rol));
+            if (!sessions.TryAdd(nuevo, new(u.Id, vence, false))) throw new InvalidOperationException();
+            return Task.FromResult(result);
+        }
+    }
+    public Task<T> ConfirmarRefreshAsync<T>(string anterior, string nuevo, DateTime vence,
+        Func<RefreshIdentity, T> emitir, CancellationToken ct = default)
+    {
+        lock (sessionLock)
+        {
+            if (!sessions.TryGetValue(anterior, out var t) || t.Revocado || t.Expira <= DateTime.UtcNow ||
+                !InstitutionActive || !Users.TryGetValue(t.Usuario, out var u) || !u.Activo)
+                throw new AuthenticationIdentityUnavailableException();
+            var result = emitir(new(u.Id, u.InstitucionId, u.Email, u.Rol));
+            if (sessions.ContainsKey(nuevo)) throw new InvalidOperationException();
+            sessions[anterior] = t with { Revocado = true }; sessions[nuevo] = new(t.Usuario, vence, false);
+            return Task.FromResult(result);
+        }
+    }
     public Task CrearRefreshTokenAsync(Guid usuarioId, string hash, DateTime expira, CancellationToken cancellationToken = default)
     {
         if (!InstitutionActive || !Users.TryGetValue(usuarioId, out var u) || !u.Activo)
