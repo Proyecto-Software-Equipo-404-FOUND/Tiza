@@ -1,13 +1,10 @@
 import { http, HttpResponse } from 'msw';
 import type { Cohorte } from '@/shared/api/tipos';
-import { cursos, CURSO_1_ID } from './datos';
-
-// Mismo UUID que DOCENTES_SEMILLA: docente@a.test en la matriz canónica (ID-08)
-const DOCENTE_A_ID = '11111111-0000-0000-0000-000000000002';
+import { cursos, CURSO_1_ID, COHORTE_1_ID, DOCENTE_A_ID } from './datos';
 
 const cohortes: Cohorte[] = [
   {
-    id: 'co-1',
+    id: COHORTE_1_ID,
     cursoId: CURSO_1_ID,
     docenteId: DOCENTE_A_ID,
     nombre: 'Cohorte 2026 - Mañana',

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { RouterProvider, createMemoryRouter } from 'react-router-dom';
 import { SesionProvider } from '@/features/auth/SesionContext';
 import { crearTokenFalso } from '@/mocks/token';
+import { CURSO_1_ID, DOCENTE_A_ID, INSTITUCION_A } from '@/mocks/datos';
 import { guardarToken } from '@/shared/api/cliente';
 import type { Rol } from '@/shared/api/tipos';
 import { Proveedores } from './Proveedores';
@@ -34,7 +35,12 @@ vi.mock('@/features/cursos/api/cohortes', () => ({
 
 const iniciarComo = (rol: Rol) =>
   guardarToken(
-    crearTokenFalso({ id: `u-${rol}`, nombre: `Usuario ${rol}`, rol, institucionId: 'institucion-a' }),
+    crearTokenFalso({
+      id: DOCENTE_A_ID,
+      nombre: `Usuario ${rol}`,
+      rol,
+      institucionId: INSTITUCION_A,
+    }),
   );
 
 function mostrar(ruta: string) {
@@ -71,13 +77,13 @@ describe('rutas de la aplicación', () => {
 
   it('un docente entra a las cohortes de un curso', () => {
     iniciarComo('docente');
-    mostrar('/cursos/c-1/cohortes');
+    mostrar(`/cursos/${CURSO_1_ID}/cohortes`);
     expect(screen.getByRole('heading', { name: 'Cohortes' })).toBeInTheDocument();
   });
 
   it('un alumno no entra a las cohortes de un curso', () => {
     iniciarComo('alumno');
-    mostrar('/cursos/c-1/cohortes');
+    mostrar(`/cursos/${CURSO_1_ID}/cohortes`);
     expect(screen.getByText('No tenés permiso para ver esta página.')).toBeInTheDocument();
   });
 

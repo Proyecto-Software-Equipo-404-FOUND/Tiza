@@ -5,7 +5,7 @@ import { PaginaCohortes } from './PaginaCohortes';
 import { useCurso } from '../hooks/useCurso';
 import { useCohortes } from '../hooks/useCohortes';
 import { ApiError } from '@/shared/api/cliente';
-import { CURSO_1_ID, INSTITUCION_A } from '@/mocks/datos';
+import { CURSO_1_ID, COHORTE_1_ID, DOCENTE_A_ID, INSTITUCION_A } from '@/mocks/datos';
 
 vi.mock('../hooks/useCurso', () => ({ useCurso: vi.fn() }));
 vi.mock('../hooks/useCohortes', () => ({ useCohortes: vi.fn() }));
@@ -71,9 +71,9 @@ describe('PaginaCohortes', () => {
     simular({
       data: [
         {
-          id: 'co-1',
+          id: COHORTE_1_ID,
           cursoId: CURSO_1_ID,
-          docenteId: '11111111-0000-0000-0000-000000000002',
+          docenteId: DOCENTE_A_ID,
           nombre: 'Cohorte 2026 - Mañana',
           periodo: '2026-1C',
           activo: true,
@@ -87,7 +87,7 @@ describe('PaginaCohortes', () => {
     expect(screen.getByText('2026-1C')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Ver matrícula' })).toHaveAttribute(
       'href',
-      '/cohortes/co-1/matriculas',
+      `/cohortes/${COHORTE_1_ID}/matriculas`,
     );
   });
 });
