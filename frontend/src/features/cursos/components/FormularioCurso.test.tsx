@@ -2,69 +2,72 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, it, expect, vi } from 'vitest';
-import { FormularioCurso } from './FormularioCurso';
-import { useCrearCurso } from '../hooks/useCrearCurso';
+import { FormularioCohorte } from './FormularioCohorte';
+import { useCrearCohorte } from '../hooks/useCrearCohorte';
+import { DOCENTE_A_ID } from '../semillas';
 import { ApiError } from '@/shared/api/cliente';
+import { CURSO_1_ID } from '@/mocks/datos';
 
-vi.mock('../hooks/useCrearCurso', () => ({ useCrearCurso: vi.fn() }));
+vi.mock('../hooks/useCrearCohorte', () => ({ useCrearCohorte: vi.fn() }));
 vi.mock('@/shared/components/Aviso', () => ({
   useAviso: () => ({ mostrar: vi.fn() }),
 }));
 
 function simular(estado: Record<string, unknown> = {}) {
   const mutate = vi.fn();
-  vi.mocked(useCrearCurso).mockReturnValue({
+  vi.mocked(useCrearCohorte).mockReturnValue({
     mutate,
     reset: vi.fn(),
     isPending: false,
     isError: false,
     error: null,
     ...estado,
-  } as unknown as ReturnType<typeof useCrearCurso>);
+  } as unknown as ReturnType<typeof useCrearCohorte>);
   return mutate;
 }
 
 function mostrarFormulario() {
   render(
     <QueryClientProvider client={new QueryClient()}>
-      <FormularioCurso />
+      <FormularioCohorte cursoId={CURSO_1_ID} />
     </QueryClientProvider>,
   );
 }
 
-describe('FormularioCurso', () => {
-  it('no envía si el nombre y el área están vacíos', async () => {
+describe('FormularioCohorte', () => {
+  it('no envía si el nombre y el período están vacíos', async () => {
     const mutate = simular();
     mostrarFormulario();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Crear curso' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Crear cohorte' }));
 
     expect(screen.getByText('Ingresá un nombre')).toBeInTheDocument();
-    expect(screen.getByText('Ingresá un área')).toBeInTheDocument();
+    expect(screen.getByText('Ingresá un período')).toBeInTheDocument();
     expect(mutate).not.toHaveBeenCalled();
   });
 
-  it('no envía si falta el área', async () => {
+  it('no envía si el período supera los 30 caracteres', async () => {
     const mutate = simular();
     mostrarFormulario();
 
-    await userEvent.type(screen.getByLabelText('Nombre del curso'), 'Álgebra');
-    await userEvent.click(screen.getByRole('button', { name: 'Crear curso' }));
+    await userEvent.type(screen.getByLabelText('Nombre de la cohorte'), 'Cohorte Noche');
+    await userEvent.type(screen.getByLabelText('Período'), 'x'.repeat(31));
+    await userEvent.click(screen.getByRole('button', { name: 'Crear cohorte' }));
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Ingresá un área');
+    expect(screen.getByText('Máximo 30 caracteres')).toBeInTheDocument();
     expect(mutate).not.toHaveBeenCalled();
   });
 
-  it('envía nombre y área cuando son válidos', async () => {
+  it('envía nombre, período y docente cuando es válido', async () => {
     const mutate = simular();
     mostrarFormulario();
 
-    await userEvent.type(screen.getByLabelText('Nombre del curso'), 'Álgebra');
-    await userEvent.type(screen.getByLabelText('Área'), 'Matemática');
-    await userEvent.click(screen.getByRole('button', { name: 'Crear curso' }));
+    await userEvent.type(screen.getByLabelText('Nombre de la cohorte'), 'Cohorte 2026 - Noche');
+    await userEvent.type(screen.getByLabelText('Período'), '2026-1C');
+    await userEvent.click(screen.getByRole('button', { name: 'Crear cohorte' }));
 
     expect(mutate).toHaveBeenCalledWith(
-      { nombre: 'Álgebra', area: 'Matemática' },
+      { nombre: 'Cohorte 2026 - Noche', periodo: '2026-1C', docenteId: DOCENTE_A_ID },
       expect.anything(),
     );
   });
