@@ -76,6 +76,17 @@ No borrar volúmenes, ejecutar `down -v` ni reinicializar la base para resolverl
 
 ## 3. Configuración local y secretos
 
+> **Clave JWT compartida (ID-11).** En desarrollo, `Jwt:SecretKey` ya viene en
+> `appsettings.Development.json` y es **la misma en todos los servicios** (Identidad, Cursos y los
+> que se sumen). Así los demás servicios pueden validar los tokens que emite Identidad.
+> **No generes una clave propia para `Jwt:SecretKey`.** Si ya cargaste una con User Secrets,
+> borrala, porque User Secrets pisa al archivo y Cursos rechazaría tus tokens con 401:
+>
+> `dotnet user-secrets remove Jwt:SecretKey --project .\services\identidad\src\PEI.Identidad.Api`
+>
+> Esa clave es **solo de desarrollo**: en cualquier otro entorno se configura con una clave
+> propia, fuera del repositorio. La cadena de conexión sigue configurándose como indica esta sección.
+
 La API lee `ConnectionStrings:IdentidadDb` y `Jwt:SecretKey`. En variables de entorno se escriben
 `ConnectionStrings__IdentidadDb` y `Jwt__SecretKey`. No usar el nombre antiguo `Jwt:Secret`.
 Las variables del proceso prevalecen sobre User Secrets y appsettings; revisar valores heredados
