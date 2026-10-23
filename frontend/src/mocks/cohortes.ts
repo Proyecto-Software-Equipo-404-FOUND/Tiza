@@ -1,9 +1,17 @@
 import { http, HttpResponse } from 'msw';
 import type { Cohorte } from '@/shared/api/tipos';
-import { cursos, CURSO_1_ID } from './datos';
+import { cursos, CURSO_1_ID, COHORTE_1_ID, DOCENTE_A_ID } from './datos';
 
 const cohortes: Cohorte[] = [
-  { id: 'co-1', cursoId: CURSO_1_ID, nombre: 'Cohorte 2026 - Mañana', docenteId: 'u-docente-a' },
+  {
+    id: COHORTE_1_ID,
+    cursoId: CURSO_1_ID,
+    docenteId: DOCENTE_A_ID,
+    nombre: 'Cohorte 2026 - Mañana',
+    periodo: '2026-1C',
+    activo: true,
+    fechaCreacionUtc: '2026-10-09T12:00:00Z',
+  },
 ];
 
 export const handlersCohortes = [
@@ -19,12 +27,24 @@ export const handlersCohortes = [
     if (!cursos.some((c) => c.id === cursoId)) {
       return HttpResponse.json({ error: 'Curso no encontrado' }, { status: 404 });
     }
-    const { nombre } = (await request.json()) as { nombre: string };
+    const { nombre, periodo, docenteId } = (await request.json()) as {
+      nombre: string;
+      periodo: string;
+      docenteId: string;
+    };
     // Mismo truco que en cursos: un nombre 'conflicto' simula el 409
     if (nombre.toLowerCase() === 'conflicto') {
       return HttpResponse.json({ title: 'Conflicto', status: 409 }, { status: 409 });
     }
-    const nueva: Cohorte = { id: crypto.randomUUID(), cursoId, nombre, docenteId: 'u-docente-a' };
+    const nueva: Cohorte = {
+      id: crypto.randomUUID(),
+      cursoId,
+      docenteId,
+      nombre,
+      periodo,
+      activo: true,
+      fechaCreacionUtc: new Date().toISOString(),
+    };
     cohortes.push(nueva);
     return HttpResponse.json(nueva, {
       status: 201,

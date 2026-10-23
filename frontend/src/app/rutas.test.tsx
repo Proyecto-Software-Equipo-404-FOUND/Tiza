@@ -7,6 +7,7 @@ import { guardarToken } from '@/shared/api/cliente';
 import type { Rol } from '@/shared/api/tipos';
 import { Proveedores } from './Proveedores';
 import { rutas } from './rutas';
+import { CURSO_1_ID, DOCENTE_A_ID, INSTITUCION_A } from '@/mocks/datos';
 
 vi.mock('@/features/cursos/api/cursos', () => ({
   listarCursos: vi.fn().mockResolvedValue({
