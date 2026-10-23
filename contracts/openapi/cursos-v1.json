@@ -1,0 +1,984 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "PEI Tiza — Microservicio Cursos",
+    "description": "API de gestión de materias, comisiones y matriculaciones con aislamiento multi-tenant estricto y autenticación JWT Bearer.",
+    "contact": {
+      "name": "Equipo 404 Found - Área Cursos",
+      "email": "equipo404found@tiza.pei.edu.ar"
+    },
+    "version": "v1"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5102",
+      "description": "Servidor de desarrollo local directo"
+    },
+    {
+      "url": "http://localhost:8080",
+      "description": "API Gateway YARP"
+    }
+  ],
+  "security": [
+    {
+      "Bearer": []
+    }
+  ],
+  "paths": {
+    "/api/v1/cursos": {
+      "get": {
+        "tags": [
+          "Cursos"
+        ],
+        "summary": "Obtiene la lista paginada de cursos para la institución del usuario autenticado.",
+        "operationId": "GetCursos",
+        "parameters": [
+          {
+            "name": "pagina",
+            "in": "query",
+            "description": "Número de página (base 1).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "tamanoPagina",
+            "in": "query",
+            "description": "Cantidad de elementos por página (máximo 50).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "area",
+            "in": "query",
+            "description": "Filtro opcional por área académica.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "busqueda",
+            "in": "query",
+            "description": "Término de búsqueda textual sobre el nombre del curso.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista paginada de cursos obtenida exitosamente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultadoPaginadoCursoDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autenticado o token JWT inválido/expirado.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Cursos"
+        ],
+        "summary": "Crea una nueva materia o espacio curricular en la institución autenticada.",
+        "operationId": "CrearCurso",
+        "requestBody": {
+          "description": "Datos del nuevo curso a crear.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearCursoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Curso creado exitosamente.",
+            "headers": {
+              "Location": {
+                "description": "URL del recurso recién creado (/api/v1/cursos/{id}).",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CursoDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos de entrada inválidos o faltantes.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autenticado.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicto: ya existe un curso con ese nombre en la institución.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cursos/{id}": {
+      "get": {
+        "tags": [
+          "Cursos"
+        ],
+        "summary": "Obtiene el detalle unitario de un curso por su identificador.",
+        "operationId": "GetCursoById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "UUID del curso.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalle del curso obtenido exitosamente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CursoDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autenticado.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Curso no encontrado o perteneciente a otra institución.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Cursos"
+        ],
+        "summary": "Actualiza la información descriptiva de un curso existente.",
+        "operationId": "ActualizarCurso",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "UUID del curso a modificar.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Nuevos datos para el curso.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarCursoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Curso actualizado exitosamente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CursoDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos de entrada inválidos.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autenticado.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Curso no encontrado.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicto de unicidad con otro curso del mismo inquilino.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Cursos"
+        ],
+        "summary": "Realiza la baja lógica de un curso.",
+        "operationId": "DesactivarCurso",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "UUID del curso a desactivar.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Curso desactivado correctamente (sin contenido)."
+          },
+          "401": {
+            "description": "No autenticado.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Curso no encontrado.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cursos/{cursoId}/cohortes": {
+      "get": {
+        "tags": [
+          "Cohortes"
+        ],
+        "summary": "Obtiene las comisiones o cohortes asociadas a un curso específico.",
+        "operationId": "GetCohortesByCurso",
+        "parameters": [
+          {
+            "name": "cursoId",
+            "in": "path",
+            "description": "UUID del curso contenedor.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de cohortes asociadas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CohorteDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autenticado.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El curso especificado no existe para la institución.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Cohortes"
+        ],
+        "summary": "Crea una nueva comisión o división dentro de un curso activo.",
+        "operationId": "CrearCohorte",
+        "parameters": [
+          {
+            "name": "cursoId",
+            "in": "path",
+            "description": "UUID del curso sobre el que se abre la comisión.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Datos de la cohorte a crear.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearCohorteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Cohorte creada exitosamente.",
+            "headers": {
+              "Location": {
+                "description": "URL del recurso cohorte.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CohorteDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos de entrada inválidos o curso padre inactivo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autenticado.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Curso contenedor inexistente en el inquilino.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicto: ya existe una cohorte con esa combinación de nombre y período en el curso.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cohortes/{id}/validacion": {
+      "get": {
+        "tags": [
+          "Cohortes"
+        ],
+        "summary": "Consulta inter-servicio (CU-05): Valida existencia y pertinencia de cohorte para Evaluaciones.",
+        "operationId": "ValidarCohorte",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "UUID de la cohorte a validar.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Metadatos mínimos de validación de la cohorte.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CohorteValidacionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autenticado.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Cohorte inexistente o perteneciente a otra institución.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cohortes/{cohorteId}/matriculas": {
+      "post": {
+        "tags": [
+          "Matriculaciones"
+        ],
+        "summary": "Matricula formalmente a un alumno en una comisión (CU-04).",
+        "operationId": "MatricularAlumno",
+        "parameters": [
+          {
+            "name": "cohorteId",
+            "in": "path",
+            "description": "UUID de la cohorte de destino.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Identificador del alumno a matricular.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MatricularAlumnoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Alumno matriculado exitosamente.",
+            "headers": {
+              "Location": {
+                "description": "URL del recurso matrícula generado.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatriculacionDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos o cohorte inactiva.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autenticado.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Cohorte inexistente en el inquilino.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicto: El alumno ya se encuentra matriculado en esta cohorte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cohortes/{cohorteId}/matriculas/{id}": {
+      "get": {
+        "tags": [
+          "Matriculaciones"
+        ],
+        "summary": "Obtiene el detalle de una matrícula individual por su ID (CU-04).",
+        "operationId": "GetMatriculacionById",
+        "parameters": [
+          {
+            "name": "cohorteId",
+            "in": "path",
+            "description": "UUID de la cohorte.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "UUID de la inscripción/matrícula.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalle de matrícula obtenido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatriculacionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autenticado.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Matrícula no encontrada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "Bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Token JWT emitido por PEI.Identidad conteniendo sub, institucion_id y role."
+      }
+    },
+    "schemas": {
+      "CursoDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "institucionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "area": {
+            "type": "string"
+          },
+          "activo": {
+            "type": "boolean"
+          },
+          "fechaCreacionUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "institucionId",
+          "nombre",
+          "area",
+          "activo",
+          "fechaCreacionUtc"
+        ]
+      },
+      "CrearCursoDto": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "maxLength": 150
+          },
+          "area": {
+            "type": "string",
+            "maxLength": 50
+          }
+        },
+        "required": [
+          "nombre",
+          "area"
+        ]
+      },
+      "ActualizarCursoDto": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "maxLength": 150
+          },
+          "area": {
+            "type": "string",
+            "maxLength": 50
+          }
+        },
+        "required": [
+          "nombre",
+          "area"
+        ]
+      },
+      "CohorteDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cursoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "docenteId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "periodo": {
+            "type": "string"
+          },
+          "activo": {
+            "type": "boolean"
+          },
+          "fechaCreacionUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "cursoId",
+          "docenteId",
+          "nombre",
+          "periodo",
+          "activo",
+          "fechaCreacionUtc"
+        ]
+      },
+      "CrearCohorteDto": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "periodo": {
+            "type": "string",
+            "maxLength": 30
+          },
+          "docenteId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "nombre",
+          "periodo",
+          "docenteId"
+        ]
+      },
+      "CohorteValidacionDto": {
+        "type": "object",
+        "properties": {
+          "cohorteId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "institucionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cursoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "docenteId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "activa": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "cohorteId",
+          "institucionId",
+          "cursoId",
+          "docenteId",
+          "nombre",
+          "activa"
+        ]
+      },
+      "MatricularAlumnoDto": {
+        "type": "object",
+        "properties": {
+          "alumnoId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "alumnoId"
+        ]
+      },
+      "MatriculacionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "institucionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cohorteId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "alumnoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fechaAlta": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "estado": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "institucionId",
+          "cohorteId",
+          "alumnoId",
+          "fechaAlta",
+          "estado"
+        ]
+      },
+      "ResultadoPaginadoCursoDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CursoDto"
+            }
+          },
+          "totalItems": {
+            "type": "integer"
+          },
+          "pagina": {
+            "type": "integer"
+          },
+          "tamanoPagina": {
+            "type": "integer"
+          },
+          "totalPaginas": {
+            "type": "integer"
+          },
+          "tienePaginaPrevia": {
+            "type": "boolean"
+          },
+          "tienePaginaSiguiente": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "totalItems",
+          "pagina",
+          "tamanoPagina",
+          "totalPaginas"
+        ]
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "correlationId": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
