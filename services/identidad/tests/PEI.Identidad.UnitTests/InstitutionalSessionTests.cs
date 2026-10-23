@@ -77,10 +77,10 @@ public sealed class InstitutionalSessionTests
         {
             var operation = paths.GetProperty(path).GetProperty("post");
             var responses = operation.GetProperty("responses");
-            Assert.Equal(new[] { "200", "400", "401", "429", "500" }, responses.EnumerateObject().Select(p => p.Name).OrderBy(x => x));
+            Assert.Equal(new[] { "200", "400", "401", "415", "429", "500" }, responses.EnumerateObject().Select(p => p.Name).OrderBy(x => x));
             var success = responses.GetProperty("200").GetProperty("content").GetProperty("application/json").GetProperty("schema");
             Assert.Equal("#/components/schemas/SessionResponse", success.GetProperty("$ref").GetString());
-            foreach (var status in new[] { "400", "401", "429", "500" })
+            foreach (var status in new[] { "401", "415", "429", "500" })
                 Assert.Equal("#/components/schemas/ProblemDetails", responses.GetProperty(status).GetProperty("content")
                     .GetProperty("application/problem+json").GetProperty("schema").GetProperty("$ref").GetString());
             Assert.False(operation.TryGetProperty("security", out var security) && security.GetArrayLength() > 0);
@@ -94,7 +94,7 @@ public sealed class InstitutionalSessionTests
         foreach (var name in new[] { "accessTokenExpiresAt", "refreshTokenExpiresAt" })
             Assert.Equal("date-time", properties.GetProperty(name).GetProperty("format").GetString());
         var logout = paths.GetProperty("/api/auth/logout").GetProperty("post");
-        Assert.Equal(new[] { "204", "400", "429", "500" }, logout.GetProperty("responses").EnumerateObject().Select(p => p.Name).OrderBy(x => x));
+        Assert.Equal(new[] { "204", "400", "415", "429", "500" }, logout.GetProperty("responses").EnumerateObject().Select(p => p.Name).OrderBy(x => x));
         var noContent = logout.GetProperty("responses").GetProperty("204");
         Assert.False(noContent.TryGetProperty("content", out var content) && content.EnumerateObject().Any());
         Assert.False(logout.TryGetProperty("security", out var logoutSecurity) && logoutSecurity.GetArrayLength() > 0);

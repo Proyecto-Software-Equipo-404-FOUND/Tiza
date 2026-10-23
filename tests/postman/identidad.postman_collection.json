@@ -1,0 +1,740 @@
+{
+  "info": {
+    "name": "Tiza — ID-07 Identidad (acceso directo)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Rutas actuales del microservicio, sin Gateway. No ejecutar toda la colección sobre datos persistentes. allowMutations=false omite operaciones de escritura y sesiones. WeatherForecast queda fuera del alcance."
+  },
+  "item": [
+    {
+      "name": "1. Sesiones institucionales — modifican sesiones",
+      "item": [
+        {
+          "name": "Login institucional",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "MODIFICA DATOS O SESIONES. Requiere autorización y entorno desechable. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{institutionalEmail}}\",\n  \"password\": \"{{institutionalPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.environment.get(\"allowMutations\") !== \"true\") { pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) { const data = pm.response.json(); pm.test(\"Sesión completa\", () => { [\"accessToken\",\"refreshToken\",\"tokenType\",\"accessTokenExpiresAt\",\"refreshTokenExpiresAt\"].forEach(k => pm.expect(data[k]).to.be.a(\"string\")); pm.expect(data.tokenType).to.equal(\"Bearer\"); }); pm.environment.set(\"institutionalToken\", data.accessToken); pm.environment.set(\"refreshToken\", data.refreshToken); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh — consume y reemplaza el anterior",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/api/auth/refresh",
+            "description": "MODIFICA DATOS O SESIONES. Requiere autorización y entorno desechable. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.environment.get(\"allowMutations\") !== \"true\") { pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) { const data = pm.response.json(); pm.test(\"Sesión completa\", () => { [\"accessToken\",\"refreshToken\",\"tokenType\",\"accessTokenExpiresAt\",\"refreshTokenExpiresAt\"].forEach(k => pm.expect(data[k]).to.be.a(\"string\")); pm.expect(data.tokenType).to.equal(\"Bearer\"); }); pm.environment.set(\"institutionalToken\", data.accessToken); pm.environment.set(\"refreshToken\", data.refreshToken); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout — ejecutar al finalizar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/api/auth/logout",
+            "description": "MODIFICA DATOS O SESIONES. Requiere autorización y entorno desechable. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.environment.get(\"allowMutations\") !== \"true\") { pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código HTTP 204\", () => pm.response.to.have.status(204));",
+                  "pm.test(\"Sin cuerpo\", () => pm.expect(pm.response.text()).to.equal(\"\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Registro de usuarios — modifica datos",
+      "item": [
+        {
+          "name": "Crear Docente o Alumno en institución propia",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{institutionalAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/auth/register",
+            "description": "MODIFICA DATOS O SESIONES. Requiere autorización y entorno desechable. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{newUserEmail}}\",\n  \"password\": \"{{newUserPassword}}\",\n  \"nombre\": \"{{newUserName}}\",\n  \"apellido\": \"{{newUserSurname}}\",\n  \"rol\": \"{{newUserRole}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.environment.get(\"allowMutations\") !== \"true\") { pm.execution.skipRequest(); }",
+                  "if (!pm.environment.get(\"institutionalAdminToken\")) { throw new Error(\"Configurar institutionalAdminToken con un token válido del rol y esquema indicados antes de ejecutar.\"); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código HTTP 201\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) { const data = pm.response.json(); pm.test(\"Usuario creado\", () => { pm.expect(data.id).to.be.a(\"string\"); pm.expect(data.message).to.be.a(\"string\"); }); pm.environment.set(\"createdUserId\", data.id); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Comprobación de roles — solo lectura",
+      "item": [
+        {
+          "name": "administrador",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{institutionalAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/auth/administrador",
+            "description": "Comprobación de lectura. "
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get(\"institutionalAdminToken\")) { throw new Error(\"Configurar institutionalAdminToken con un token válido del rol y esquema indicados antes de ejecutar.\"); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) { const data = pm.response.json(); pm.test(\"Mensaje\", () => pm.expect(data.mensaje).to.be.a(\"string\")); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "docente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{institutionalTeacherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/auth/docente",
+            "description": "Comprobación de lectura. "
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get(\"institutionalTeacherToken\")) { throw new Error(\"Configurar institutionalTeacherToken con un token válido del rol y esquema indicados antes de ejecutar.\"); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) { const data = pm.response.json(); pm.test(\"Mensaje\", () => pm.expect(data.mensaje).to.be.a(\"string\")); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "alumno",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{institutionalStudentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/auth/alumno",
+            "description": "Comprobación de lectura. "
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get(\"institutionalStudentToken\")) { throw new Error(\"Configurar institutionalStudentToken con un token válido del rol y esquema indicados antes de ejecutar.\"); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) { const data = pm.response.json(); pm.test(\"Mensaje\", () => pm.expect(data.mensaje).to.be.a(\"string\")); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Administración de Plataforma",
+      "item": [
+        {
+          "name": "Solo lectura",
+          "item": [
+            {
+              "name": "Listar instituciones",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{platformToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": "{{baseUrl}}/api/plataforma/instituciones?pagina={{page}}",
+                "description": "Comprobación de lectura. "
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get(\"platformToken\")) { throw new Error(\"Configurar platformToken con un token válido del rol y esquema indicados antes de ejecutar.\"); }"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Código HTTP 200\", () => pm.response.to.have.status(200));",
+                      "if (pm.response.code === 200) { const data = pm.response.json(); pm.test(\"Lista\", () => { pm.expect(data).to.be.an(\"array\"); data.forEach(i => { pm.expect(i.id).to.be.a(\"string\"); pm.expect(i.nombre).to.be.a(\"string\"); pm.expect(i.codigo).to.be.a(\"string\"); pm.expect(i.activo).to.be.a(\"boolean\"); }); }); }"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Modifican datos o emiten tokens — opt-in",
+          "item": [
+            {
+              "name": "Login global",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "noauth"
+                },
+                "url": "{{baseUrl}}/api/plataforma/auth/login",
+                "description": "MODIFICA DATOS O SESIONES. Requiere autorización y entorno desechable. ",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{platformEmail}}\",\n  \"password\": \"{{platformPassword}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.environment.get(\"allowMutations\") !== \"true\") { pm.execution.skipRequest(); }"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Código HTTP 200\", () => pm.response.to.have.status(200));",
+                      "if (pm.response.code === 200) { const data = pm.response.json(); pm.test(\"Token global\", () => { pm.expect(data.accessToken).to.be.a(\"string\"); pm.expect(data.tokenType).to.equal(\"Bearer\"); pm.expect(data).not.to.have.property(\"refreshToken\"); }); pm.environment.set(\"platformToken\", data.accessToken); }"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Crear institución e invitación",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{platformToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": "{{baseUrl}}/api/plataforma/instituciones",
+                "description": "MODIFICA DATOS O SESIONES. Requiere autorización y entorno desechable. ",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"{{institutionName}}\",\n  \"codigo\": \"{{institutionCode}}\",\n  \"emailAdministrador\": \"{{invitedAdminEmail}}\",\n  \"nombreAdministrador\": \"Prueba\",\n  \"apellidoAdministrador\": \"ID07\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.environment.get(\"allowMutations\") !== \"true\") { pm.execution.skipRequest(); }",
+                      "if (!pm.environment.get(\"platformToken\")) { throw new Error(\"Configurar platformToken con un token válido del rol y esquema indicados antes de ejecutar.\"); }"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Código HTTP 201\", () => pm.response.to.have.status(201));",
+                      "if (pm.response.code === 201) { const data = pm.response.json(); pm.test(\"Identificadores\", () => { pm.expect(data.institucionId).to.be.a(\"string\"); pm.expect(data.administradorId).to.be.a(\"string\"); }); pm.environment.set(\"createdInstitutionId\", data.institucionId); }"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Activar invitación — token obtenido por canal autorizado",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "noauth"
+                },
+                "url": "{{baseUrl}}/api/plataforma/invitaciones/activar",
+                "description": "MODIFICA DATOS O SESIONES. Requiere autorización y entorno desechable. ",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"token\": \"{{invitationToken}}\",\n  \"password\": \"{{invitedAdminPassword}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.environment.get(\"allowMutations\") !== \"true\") { pm.execution.skipRequest(); }"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Código HTTP 204\", () => pm.response.to.have.status(204));",
+                      "pm.test(\"Sin cuerpo\", () => pm.expect(pm.response.text()).to.equal(\"\"));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Casos negativos de autenticación y autorización — lectura",
+      "item": [
+        {
+          "name": "Administrador sin JWT",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/api/auth/administrador",
+            "description": "Comprobación de lectura. "
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": []
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código HTTP 401\", () => pm.response.to.have.status(401));",
+                  "if (pm.response.code === 401) { const data = pm.response.json(); pm.test(\"Error HTTP\", () => { pm.expect(data.status).to.equal(pm.response.code); pm.expect(data.title).to.be.a(\"string\"); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "JWT inválido",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{invalidToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/auth/administrador",
+            "description": "Comprobación de lectura. "
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get(\"invalidToken\")) { throw new Error(\"Configurar invalidToken con un token válido del rol y esquema indicados antes de ejecutar.\"); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código HTTP 401\", () => pm.response.to.have.status(401));",
+                  "if (pm.response.code === 401) { const data = pm.response.json(); pm.test(\"Error HTTP\", () => { pm.expect(data.status).to.equal(pm.response.code); pm.expect(data.title).to.be.a(\"string\"); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Docente no es Administrador",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{institutionalTeacherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/auth/administrador",
+            "description": "Comprobación de lectura. "
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get(\"institutionalTeacherToken\")) { throw new Error(\"Configurar institutionalTeacherToken con un token válido del rol y esquema indicados antes de ejecutar.\"); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código HTTP 403\", () => pm.response.to.have.status(403));",
+                  "if (pm.response.code === 403) { const data = pm.response.json(); pm.test(\"Error HTTP\", () => { pm.expect(data.status).to.equal(pm.response.code); pm.expect(data.title).to.be.a(\"string\"); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "JWT global no es institucional",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{platformToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/auth/administrador",
+            "description": "Comprobación de lectura. "
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get(\"platformToken\")) { throw new Error(\"Configurar platformToken con un token válido del rol y esquema indicados antes de ejecutar.\"); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código HTTP 401\", () => pm.response.to.have.status(401));",
+                  "if (pm.response.code === 401) { const data = pm.response.json(); pm.test(\"Error HTTP\", () => { pm.expect(data.status).to.equal(pm.response.code); pm.expect(data.title).to.be.a(\"string\"); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "JWT institucional no es global",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{institutionalAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/plataforma/instituciones",
+            "description": "Comprobación de lectura. "
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get(\"institutionalAdminToken\")) { throw new Error(\"Configurar institutionalAdminToken con un token válido del rol y esquema indicados antes de ejecutar.\"); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código HTTP 401\", () => pm.response.to.have.status(401));",
+                  "if (pm.response.code === 401) { const data = pm.response.json(); pm.test(\"Error HTTP\", () => { pm.expect(data.status).to.equal(pm.response.code); pm.expect(data.title).to.be.a(\"string\"); }); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
