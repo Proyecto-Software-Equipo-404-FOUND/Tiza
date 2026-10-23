@@ -57,4 +57,22 @@ public class CohorteRepository : ICohorteRepository
                         && c.Nombre.ToLower() == nombreNormalizado,
                       cancellationToken);
     }
+
+    public async Task<bool> ExisteNombreEnPeriodoAsync(
+        Guid cursoId,
+        string periodo,
+        string nombre,
+        Guid cohorteIdExcluir,
+        CancellationToken cancellationToken = default)
+    {
+        var periodoNormalizado = periodo.Trim().ToLower();
+        var nombreNormalizado = nombre.Trim().ToLower();
+
+        return await _context.Cohortes
+            .AnyAsync(c => c.CursoId == cursoId
+                        && c.Periodo.ToLower() == periodoNormalizado
+                        && c.Nombre.ToLower() == nombreNormalizado
+                        && c.Id != cohorteIdExcluir,
+                      cancellationToken);
+    }
 }
