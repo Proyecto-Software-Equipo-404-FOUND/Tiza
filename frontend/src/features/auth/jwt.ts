@@ -21,16 +21,17 @@ function leer(claims: Claims, ...nombres: string[]) {
   return undefined;
 }
 
-// Los nombres de los claims son provisorios hasta confirmarlos con Identidad
+// Claims reales de Identidad: sub, institucion_id y role (Docente, Alumno, Administrador).
+// Se aceptan también los nombres anteriores para no romper tokens de prueba.
 export function usuarioDesdeToken(token: string): Usuario {
   const claims = decodificar(token);
-  const id = leer(claims, 'UsuarioId', 'usuarioId', 'sub');
-  const institucionId = leer(claims, 'InstitucionId', 'institucionId');
+  const id = leer(claims, 'sub', 'UsuarioId', 'usuarioId');
+  const institucionId = leer(claims, 'institucion_id', 'InstitucionId', 'institucionId');
   const rol = leer(
     claims,
+    'role',
     'Rol',
     'rol',
-    'role',
     'http://schemas.microsoft.com/ws/2008/06/identity/claims/role',
   )?.toLowerCase();
 

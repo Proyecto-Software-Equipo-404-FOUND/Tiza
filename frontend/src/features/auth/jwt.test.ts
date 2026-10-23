@@ -3,13 +3,22 @@ import { tokenVencido, usuarioDesdeToken } from './jwt';
 const crear = (claims: Record<string, unknown>) => `cabecera.${btoa(JSON.stringify(claims))}.firma`;
 
 describe('usuarioDesdeToken', () => {
-  it('lee los claims de Identidad', () => {
-    const token = crear({ UsuarioId: 'u1', InstitucionId: 'i1', Rol: 'Docente' });
+  it('lee los claims reales de Identidad', () => {
+    const token = crear({ sub: 'u1', institucion_id: 'i1', role: 'Docente' });
     expect(usuarioDesdeToken(token)).toEqual({
       id: 'u1',
       institucionId: 'i1',
       rol: 'docente',
       nombre: '',
+    });
+  });
+
+  it('acepta los nombres de claim anteriores', () => {
+    const token = crear({ UsuarioId: 'u1', InstitucionId: 'i1', Rol: 'Docente' });
+    expect(usuarioDesdeToken(token)).toMatchObject({
+      id: 'u1',
+      institucionId: 'i1',
+      rol: 'docente',
     });
   });
 
