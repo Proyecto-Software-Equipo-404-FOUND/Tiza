@@ -121,6 +121,19 @@ public class FakeCohorteRepository : ICohorteRepository
         var existe = Items.Any(c => c.CursoId == cursoId && c.Periodo.ToLower() == pNorm && c.Nombre.ToLower() == nNorm);
         return Task.FromResult(existe);
     }
+
+    public Task<bool> ExisteNombreEnPeriodoAsync(
+        Guid cursoId,
+        string periodo,
+        string nombre,
+        Guid cohorteIdExcluir,
+        CancellationToken cancellationToken = default)
+    {
+        var pNorm = periodo.Trim().ToLower();
+        var nNorm = nombre.Trim().ToLower();
+        var existe = Items.Any(c => c.CursoId == cursoId && c.Periodo.ToLower() == pNorm && c.Nombre.ToLower() == nNorm && c.Id != cohorteIdExcluir);
+        return Task.FromResult(existe);
+    }
 }
 
 public class FakeMatriculacionRepository : IMatriculacionRepository
