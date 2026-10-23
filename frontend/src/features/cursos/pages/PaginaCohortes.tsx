@@ -11,6 +11,7 @@ import { FormularioCohorte } from '../components/FormularioCohorte';
 
 const columnas: Columna<Cohorte>[] = [
   { titulo: 'Nombre', celda: (cohorte) => cohorte.nombre },
+  { titulo: 'Período', celda: (cohorte) => cohorte.periodo },
   {
     titulo: 'Matrícula',
     celda: (cohorte) => (

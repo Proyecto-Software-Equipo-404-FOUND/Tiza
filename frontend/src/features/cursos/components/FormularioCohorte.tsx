@@ -8,14 +8,21 @@ import { useAviso } from '@/shared/components/Aviso';
 import { ApiError } from '@/shared/api/cliente';
 import { mensajeDeError } from '@/shared/api/errores';
 import { useCrearCohorte } from '../hooks/useCrearCohorte';
+import { DOCENTES_SEMILLA } from '../semillas';
 
 const esquema = z.object({
   nombre: z.string().trim().min(1, 'Ingresá un nombre').max(100, 'Máximo 100 caracteres'),
+  periodo: z.string().trim().min(1, 'Ingresá un período').max(30, 'Máximo 30 caracteres'),
+  docenteId: z.string().min(1, 'Elegí un docente'),
 });
+
+type ErroresCampo = { nombre?: string; periodo?: string; docenteId?: string };
 
 export function FormularioCohorte({ cursoId }: { cursoId: string }) {
   const [nombre, setNombre] = useState('');
-  const [errorCampo, setErrorCampo] = useState<string | undefined>();
+  const [periodo, setPeriodo] = useState('');
+  const [docenteId, setDocenteId] = useState(DOCENTES_SEMILLA[0].id);
+  const [errores, setErrores] = useState<ErroresCampo>({});
   const crear = useCrearCohorte(cursoId);
   const cliente = useQueryClient();
   const { mostrar } = useAviso();
@@ -24,16 +31,22 @@ export function FormularioCohorte({ cursoId }: { cursoId: string }) {
     evento.preventDefault();
 
     // Se valida antes de enviar para no hacer pedidos inútiles
-    const resultado = esquema.safeParse({ nombre });
+    const resultado = esquema.safeParse({ nombre, periodo, docenteId });
     if (!resultado.success) {
-      setErrorCampo(resultado.error.issues[0].message);
+      const nuevos: ErroresCampo = {};
+      for (const problema of resultado.error.issues) {
+        const campo = problema.path[0] as keyof ErroresCampo;
+        nuevos[campo] ??= problema.message;
+      }
+      setErrores(nuevos);
       return;
     }
 
-    setErrorCampo(undefined);
+    setErrores({});
     crear.mutate(resultado.data, {
       onSuccess: () => {
         setNombre('');
+        setPeriodo('');
         mostrar('exito', 'Cohorte creada.');
       },
     });
@@ -53,9 +66,42 @@ export function FormularioCohorte({ cursoId }: { cursoId: string }) {
         etiqueta='Nombre de la cohorte'
         value={nombre}
         onChange={(evento) => setNombre(evento.target.value)}
-        error={errorCampo}
+        error={errores.nombre}
         disabled={crear.isPending}
       />
+
+      <Campo
+        etiqueta='Período'
+        placeholder='2026-1C'
+        value={periodo}
+        onChange={(evento) => setPeriodo(evento.target.value)}
+        error={errores.periodo}
+        disabled={crear.isPending}
+      />
+
+      <div className='flex flex-col gap-1'>
+        <label htmlFor='docente-cohorte' className='font-bold text-tiza-pizarra'>
+          Docente
+        </label>
+        <select
+          id='docente-cohorte'
+          value={docenteId}
+          onChange={(evento) => setDocenteId(evento.target.value)}
+          disabled={crear.isPending}
+          className='rounded-md border border-tiza-pizarra px-3 py-2 text-tiza-pizarra disabled:cursor-not-allowed disabled:opacity-50'
+        >
+          {DOCENTES_SEMILLA.map((docente) => (
+            <option key={docente.id} value={docente.id}>
+              {docente.nombre}
+            </option>
+          ))}
+        </select>
+        {errores.docenteId && (
+          <p role='alert' className='text-sm text-tiza-coral'>
+            {errores.docenteId}
+          </p>
+        )}
+      </div>
 
       {crear.isError && (
         <BannerError

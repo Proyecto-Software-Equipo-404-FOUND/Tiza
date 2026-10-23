@@ -67,20 +67,24 @@ describe('PaginaCohortes', () => {
     expect(screen.getByText('Todavía no hay cohortes en este curso.')).toBeInTheDocument();
   });
 
-  it('lista las cohortes con el nombre del curso y el enlace a la matricula', () => {
+  it('lista las cohortes con el nombre del curso, el período y el enlace a la matricula', () => {
     simular({
       data: [
         {
           id: 'co-1',
           cursoId: CURSO_1_ID,
+          docenteId: '11111111-0000-0000-0000-000000000002',
           nombre: 'Cohorte 2026 - Mañana',
-          docenteId: 'u-docente-a',
+          periodo: '2026-1C',
+          activo: true,
+          fechaCreacionUtc: '2026-10-09T12:00:00Z',
         },
       ],
     });
     renderizar();
     expect(screen.getByRole('heading', { name: 'Cohortes de Programación I' })).toBeInTheDocument();
     expect(screen.getByText('Cohorte 2026 - Mañana')).toBeInTheDocument();
+    expect(screen.getByText('2026-1C')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Ver matrícula' })).toHaveAttribute(
       'href',
       '/cohortes/co-1/matriculas',
