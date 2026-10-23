@@ -33,6 +33,12 @@ vi.mock('@/features/cursos/api/cohortes', () => ({
   crearCohorte: vi.fn(),
 }));
 
+vi.mock('@/features/matriculas/api/matriculas', () => ({
+  listarAlumnos: vi.fn().mockResolvedValue([]),
+  listarMatriculas: vi.fn().mockResolvedValue([]),
+  matricularAlumno: vi.fn(),
+}));
+
 const iniciarComo = (rol: Rol) =>
   guardarToken(
     crearTokenFalso({
@@ -85,6 +91,19 @@ describe('rutas de la aplicación', () => {
     iniciarComo('alumno');
     mostrar(`/cursos/${CURSO_1_ID}/cohortes`);
     expect(screen.getByText('No tenés permiso para ver esta página.')).toBeInTheDocument();
+  });
+
+  it('un alumno no entra a la matrícula de una cohorte', () => {
+    iniciarComo('alumno');
+    mostrar('/cohortes/c1/matriculas');
+    expect(screen.getByText('No tenés permiso para ver esta página.')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Matrícula' })).not.toBeInTheDocument();
+  });
+
+  it('un administrador entra a la matrícula de una cohorte', async () => {
+    iniciarComo('administrador');
+    mostrar('/cohortes/c1/matriculas');
+    expect(await screen.findByRole('heading', { level: 1, name: 'Matrícula' })).toBeInTheDocument();
   });
 
   it('el alumno no ve el enlace a Cursos', () => {
