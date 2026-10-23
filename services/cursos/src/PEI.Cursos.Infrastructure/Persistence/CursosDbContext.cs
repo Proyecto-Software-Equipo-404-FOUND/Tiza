@@ -32,16 +32,17 @@ public class CursosDbContext : DbContext
         // Aplica todas las clases IEntityTypeConfiguration definidas en este ensamblado.
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(CursosDbContext).Assembly);
 
-        /* Filtros globales de consulta (Global Query Filters):
-        Garantizan que cualquier SELECT sobre Cursos, Cohortes o Matriculaciones filtre
-        automáticamente por el InstitucionId del token JWT actual, impidiendo fugas de datos. */
+        /* Hallazgo H7: Cursos permitia consultas globales sin aislamiento si el contexto tenant era nulo.
+        Se endurece el filtro global para que sea restrictivo y cerrado por defecto: si no existe un
+        contexto tenant autenticado con un InstitucionId valido, las consultas devuelven 0 registros
+        impidiendo cualquier fuga de informacion inadvertida entre inquilinos. */
         modelBuilder.Entity<Curso>()
-            .HasQueryFilter(c => _tenantContext == null || c.InstitucionId == _tenantContext.InstitucionId);
+            .HasQueryFilter(c => _tenantContext != null && _tenantContext.InstitucionId.HasValue && c.InstitucionId == _tenantContext.InstitucionId.Value);
 
         modelBuilder.Entity<Cohorte>()
-            .HasQueryFilter(c => _tenantContext == null || c.InstitucionId == _tenantContext.InstitucionId);
+            .HasQueryFilter(c => _tenantContext != null && _tenantContext.InstitucionId.HasValue && c.InstitucionId == _tenantContext.InstitucionId.Value);
 
         modelBuilder.Entity<Matriculacion>()
-            .HasQueryFilter(m => _tenantContext == null || m.InstitucionId == _tenantContext.InstitucionId);
+            .HasQueryFilter(m => _tenantContext != null && _tenantContext.InstitucionId.HasValue && m.InstitucionId == _tenantContext.InstitucionId.Value);
     }
 }

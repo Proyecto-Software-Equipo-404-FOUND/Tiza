@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PEI.Cursos.Application.DTOs.Cohortes;
@@ -13,6 +14,7 @@ namespace PEI.Cursos.Api.Controllers;
 
 /* Controlador REST Nivel 2 dedicado a la administracion de comisiones y divisiones (Cohorte).
 Aplica el principio de Responsabilidad Unica (SRP) bajo la sub-ruta anidada api/v1/cursos/{cursoId}/cohortes. */
+[Authorize]
 [ApiController]
 [Route("api/v1/cursos/{cursoId:guid}/cohortes")]
 public class CohortesController : ControllerBase

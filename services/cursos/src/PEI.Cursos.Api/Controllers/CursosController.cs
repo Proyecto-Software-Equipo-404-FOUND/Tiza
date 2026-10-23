@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PEI.Cursos.Application.Common.DTOs;
@@ -13,6 +14,7 @@ namespace PEI.Cursos.Api.Controllers;
 
 /* Controlador REST Nivel 2 para la gestion de materias y espacios curriculares (Curso).
 Delega la ejecucion de comandos y consultas al mediador liviano garantizando el aislamiento multi-tenant. */
+[Authorize]
 [ApiController]
 [Route("api/v1/cursos")]
 public class CursosController : ControllerBase
