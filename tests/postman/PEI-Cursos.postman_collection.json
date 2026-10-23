@@ -290,6 +290,55 @@
       ]
     },
     {
+      "name": "05b - Modificar Cohorte (PUT)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Comisión 1A - Turno Noche (Modificada)\",\n  \"periodo\": \"2026-2C\",\n  \"docenteId\": \"{{docenteId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cursos/{{cursoId}}/cohortes/{{cohorteId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "cursos",
+            "{{cursoId}}",
+            "cohortes",
+            "{{cohorteId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 OK tras actualizar', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna cohorte con datos actualizados', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.nombre).to.eql('Comisión 1A - Turno Noche (Modificada)');",
+              "    pm.expect(jsonData.id).to.eql(pm.collectionVariables.get('cohorteId'));",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
       "name": "06 - Consulta Inter-servicio Cohorte (CU-05)",
       "request": {
         "method": "GET",
@@ -416,6 +465,40 @@
               "    pm.expect(jsonData.id).to.eql(pm.collectionVariables.get('matriculacionId'));",
               "    pm.expect(jsonData.alumnoId).to.eql(pm.collectionVariables.get('alumnoId'));",
               "    pm.expect(jsonData.estado).to.eql('Activa');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "08b - Desactivar Cohorte (DELETE - Baja Logica)",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cursos/{{cursoId}}/cohortes/{{cohorteId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "cursos",
+            "{{cursoId}}",
+            "cohortes",
+            "{{cohorteId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 204 No Content tras baja logica', function () {",
+              "    pm.response.to.have.status(204);",
               "});"
             ],
             "type": "text/javascript"

@@ -489,6 +489,164 @@
         }
       }
     },
+    "/api/v1/cursos/{cursoId}/cohortes/{id}": {
+      "put": {
+        "tags": [
+          "Cohortes"
+        ],
+        "summary": "Actualiza los datos de una cohorte existente (nombre, período y docente responsable).",
+        "operationId": "ActualizarCohorte",
+        "parameters": [
+          {
+            "name": "cursoId",
+            "in": "path",
+            "description": "UUID del curso.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "UUID de la cohorte a modificar.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Nuevos datos para la cohorte.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarCohorteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cohorte actualizada exitosamente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CohorteDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos de entrada inválidos o cohorte inactiva.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autenticado.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Cohorte no encontrada o no perteneciente al curso.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicto: ya existe otra cohorte con esa combinación de nombre y período en el curso.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Cohortes"
+        ],
+        "summary": "Realiza la baja lógica de una cohorte (cierre de comisión).",
+        "operationId": "DesactivarCohorte",
+        "parameters": [
+          {
+            "name": "cursoId",
+            "in": "path",
+            "description": "UUID del curso.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "UUID de la cohorte a dar de baja.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Cohorte desactivada exitosamente (sin contenido)."
+          },
+          "400": {
+            "description": "La cohorte ya se encuentra inactiva.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autenticado.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Cohorte no encontrada o no perteneciente al curso.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/cohortes/{id}/validacion": {
       "get": {
         "tags": [
@@ -816,6 +974,28 @@
         ]
       },
       "CrearCohorteDto": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "periodo": {
+            "type": "string",
+            "maxLength": 30
+          },
+          "docenteId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "nombre",
+          "periodo",
+          "docenteId"
+        ]
+      },
+      "ActualizarCohorteDto": {
         "type": "object",
         "properties": {
           "nombre": {
