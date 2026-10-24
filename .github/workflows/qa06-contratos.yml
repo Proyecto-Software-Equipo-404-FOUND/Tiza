@@ -1,0 +1,31 @@
+name: QA-06 - Contratos
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: tests/contracts/package-lock.json
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - run: npm ci --prefix tests/contracts
+      - run: npm test --prefix tests/contracts
+      - run: dotnet build PEI.sln --nologo
+      - run: dotnet test services/evaluaciones/tests/PEI.Evaluaciones.UnitTests --no-build --logger trx --results-directory TestResults/qa06
+      - run: npm run capture --prefix tests/contracts
+      - run: npm run compare --prefix tests/contracts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qa06-contracts
+          path: |
+            tests/contracts/results/
+            TestResults/qa06/
