@@ -1,0 +1,696 @@
+{
+  "utc": "2026-10-24T17:24:02.6081906+00:00",
+  "failures": 0,
+  "runs": [
+    {
+      "iteration": 1,
+      "id": "71c3b446-279e-4a02-b2a2-2f2ef7ba7768",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u002271c3b446-279e-4a02-b2a2-2f2ef7ba7768\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 13aa9faf-5b93-45b2-ba86-eb3d8c59a395\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:01.362175\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:01.885726\u002B00:00\u0022,\u0022version\u0022:2}"
+        },
+        {
+          "request": "B",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 2,
+      "id": "fa571515-ef93-404c-83cc-940239f304b3",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        },
+        {
+          "request": "B",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u0022fa571515-ef93-404c-83cc-940239f304b3\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 748b5c27-4999-4e1c-ae6c-934ffdd9b3e7\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:01.937216\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:01.9512458\u002B00:00\u0022,\u0022version\u0022:2}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 3,
+      "id": "e0da8470-7194-486e-9129-3bc6d7d3e2f4",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        },
+        {
+          "request": "B",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u0022e0da8470-7194-486e-9129-3bc6d7d3e2f4\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 72432e35-a2da-4e3e-a09d-de402ca1179a\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:01.971122\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:01.9839503\u002B00:00\u0022,\u0022version\u0022:2}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 4,
+      "id": "62dcdff2-69cd-4652-8504-bb601ecc6053",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        },
+        {
+          "request": "B",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u002262dcdff2-69cd-4652-8504-bb601ecc6053\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 e973d217-9560-4723-b7e6-a24d7742fa70\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:01.996269\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:02.0079181\u002B00:00\u0022,\u0022version\u0022:2}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 5,
+      "id": "5241e758-5329-468a-9176-e519b3c11e98",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u00225241e758-5329-468a-9176-e519b3c11e98\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 91f93241-80db-4625-aaad-265c9bcd08e2\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:02.019254\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:02.0318725\u002B00:00\u0022,\u0022version\u0022:2}"
+        },
+        {
+          "request": "B",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 6,
+      "id": "bf6cd911-f04d-4a9d-b3a9-3224ba8abd1d",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u0022bf6cd911-f04d-4a9d-b3a9-3224ba8abd1d\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 4ff9c1fe-ae5d-4b14-97f7-6410d8ff061e\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:02.042752\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:02.05457\u002B00:00\u0022,\u0022version\u0022:2}"
+        },
+        {
+          "request": "B",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 7,
+      "id": "3b636d19-13bb-446c-8afc-6db1f05b4eaa",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u00223b636d19-13bb-446c-8afc-6db1f05b4eaa\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 5b2ae90c-f58a-4c79-a43b-ec8fe7b39961\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:02.065073\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:02.0767577\u002B00:00\u0022,\u0022version\u0022:2}"
+        },
+        {
+          "request": "B",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 8,
+      "id": "5fa57b65-cf9e-421b-9176-94ea5a40cef9",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        },
+        {
+          "request": "B",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u00225fa57b65-cf9e-421b-9176-94ea5a40cef9\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 6b9b21b4-4906-4716-8a3f-b9ed61909b09\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:02.086965\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:02.1007753\u002B00:00\u0022,\u0022version\u0022:2}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 9,
+      "id": "a78b5278-5136-4755-a598-85319ada76b4",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u0022a78b5278-5136-4755-a598-85319ada76b4\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 2ea1d716-2637-4625-876e-2abdff74921e\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:02.112325\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:02.1238409\u002B00:00\u0022,\u0022version\u0022:2}"
+        },
+        {
+          "request": "B",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 10,
+      "id": "fe57b0c2-90fb-4857-8f0a-3c483e023e16",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u0022fe57b0c2-90fb-4857-8f0a-3c483e023e16\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 093a0ed9-ad98-4a26-8c19-d79a7aa914be\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:02.155462\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:02.1664102\u002B00:00\u0022,\u0022version\u0022:2}"
+        },
+        {
+          "request": "B",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 11,
+      "id": "ca177ae0-b88a-40b8-a72d-6a8caab6ca5d",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        },
+        {
+          "request": "B",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u0022ca177ae0-b88a-40b8-a72d-6a8caab6ca5d\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 b10c0d49-ab6a-4064-845b-ca0dbb6b1462\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:02.178443\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:02.1998676\u002B00:00\u0022,\u0022version\u0022:2}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 12,
+      "id": "84eecaa8-76fe-43f0-b2b3-ac96ec018257",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        },
+        {
+          "request": "B",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u002284eecaa8-76fe-43f0-b2b3-ac96ec018257\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 1b090230-b97f-4159-95bc-3294cd20091b\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:02.211702\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:02.222633\u002B00:00\u0022,\u0022version\u0022:2}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 13,
+      "id": "2901acf5-dc6f-45d2-bc06-497baec0823b",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        },
+        {
+          "request": "B",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u00222901acf5-dc6f-45d2-bc06-497baec0823b\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 03cb2dde-dc87-412d-8638-ce6b29ef4a4b\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:02.23336\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:02.2437326\u002B00:00\u0022,\u0022version\u0022:2}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 14,
+      "id": "e6e7a344-ead0-458a-bbb7-6dbb7ba982ba",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        },
+        {
+          "request": "B",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u0022e6e7a344-ead0-458a-bbb7-6dbb7ba982ba\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 cf09fdc1-65ca-418d-8ae0-c77ffae10041\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:02.25345\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:02.2638464\u002B00:00\u0022,\u0022version\u0022:2}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 15,
+      "id": "ddc42b36-543c-4ed8-9a83-eb3110a19204",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        },
+        {
+          "request": "B",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u0022ddc42b36-543c-4ed8-9a83-eb3110a19204\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 838dc1d9-2a58-4bfd-b549-ec29a7c33ff8\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:02.274696\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:02.2851759\u002B00:00\u0022,\u0022version\u0022:2}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 16,
+      "id": "6b1af7f4-aefb-4352-ae42-94d2fbf633f1",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        },
+        {
+          "request": "B",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u00226b1af7f4-aefb-4352-ae42-94d2fbf633f1\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 bad4017f-e141-4a0e-8480-09d45274e723\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:02.295606\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:02.3085447\u002B00:00\u0022,\u0022version\u0022:2}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 17,
+      "id": "4527f619-ac2b-46f6-af76-f21ac25c1ba0",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        },
+        {
+          "request": "B",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u00224527f619-ac2b-46f6-af76-f21ac25c1ba0\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 52fedf54-9d60-4a92-bda5-72d474b82f80\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:02.321457\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:02.3339032\u002B00:00\u0022,\u0022version\u0022:2}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 18,
+      "id": "7d9c1a25-a4ee-401e-82e0-28245d941888",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        },
+        {
+          "request": "B",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u00227d9c1a25-a4ee-401e-82e0-28245d941888\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 42d4ef46-242b-4108-825b-f827b5d81f98\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:02.345461\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:02.3572417\u002B00:00\u0022,\u0022version\u0022:2}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 19,
+      "id": "c31def9e-dfaf-4563-84ec-64bbf4e0a027",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        },
+        {
+          "request": "B",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u0022c31def9e-dfaf-4563-84ec-64bbf4e0a027\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 870d4141-c8a6-41ac-b2b0-8115c0320f87\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:02.36867\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:02.3781437\u002B00:00\u0022,\u0022version\u0022:2}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 20,
+      "id": "958da8d2-814a-4b91-af92-4f4568c77eb4",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        },
+        {
+          "request": "B",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u0022958da8d2-814a-4b91-af92-4f4568c77eb4\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 28ca8ee3-d3e8-4978-8a27-e8cc362dafd2\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:02.387135\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:02.3963679\u002B00:00\u0022,\u0022version\u0022:2}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 21,
+      "id": "c8402b5f-eac3-46d3-a517-eadde75a61e5",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u0022c8402b5f-eac3-46d3-a517-eadde75a61e5\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 1cb019ae-3368-4ac3-b66a-6f3816643a61\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:02.406706\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:02.4165081\u002B00:00\u0022,\u0022version\u0022:2}"
+        },
+        {
+          "request": "B",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 22,
+      "id": "1f673f42-44c8-4ef4-aaec-7b45a9a3e977",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u00221f673f42-44c8-4ef4-aaec-7b45a9a3e977\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 36fcf38a-d012-47c5-aa99-20f59e5ea8e8\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:02.425718\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:02.4355737\u002B00:00\u0022,\u0022version\u0022:2}"
+        },
+        {
+          "request": "B",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 23,
+      "id": "8500eab5-4bc5-47f7-9c0b-e8c5af05a5c0",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        },
+        {
+          "request": "B",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u00228500eab5-4bc5-47f7-9c0b-e8c5af05a5c0\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 550a2f72-bf4a-4d0f-82c1-f946a79bd624\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:02.444688\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:02.4545653\u002B00:00\u0022,\u0022version\u0022:2}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 24,
+      "id": "9a87d911-98f3-49c7-93c5-f6636365bf65",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u00229a87d911-98f3-49c7-93c5-f6636365bf65\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 809cd5bc-8e9e-4149-9cbf-833870b0b037\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:02.464177\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:02.4748139\u002B00:00\u0022,\u0022version\u0022:2}"
+        },
+        {
+          "request": "B",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 25,
+      "id": "575fdb00-4941-4b74-b320-6c118c1fb881",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u0022575fdb00-4941-4b74-b320-6c118c1fb881\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 7161442c-37bd-4b95-ad33-4e2c833ac044\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:02.484995\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:02.4945884\u002B00:00\u0022,\u0022version\u0022:2}"
+        },
+        {
+          "request": "B",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 26,
+      "id": "4022ddc5-38c5-426a-a6d3-6f385417a1a8",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        },
+        {
+          "request": "B",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u00224022ddc5-38c5-426a-a6d3-6f385417a1a8\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 b19d040b-573f-4920-b418-a46c843dcb13\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:02.504414\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:02.5159614\u002B00:00\u0022,\u0022version\u0022:2}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 27,
+      "id": "23e48881-be05-4745-84c2-9f3be0ed0a9d",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        },
+        {
+          "request": "B",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u002223e48881-be05-4745-84c2-9f3be0ed0a9d\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 64753740-7feb-405e-85c0-c642d089122e\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:02.525519\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:02.5350248\u002B00:00\u0022,\u0022version\u0022:2}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 28,
+      "id": "8edcb2dc-252f-4ac9-93b4-62a4d6cb018a",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        },
+        {
+          "request": "B",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u00228edcb2dc-252f-4ac9-93b4-62a4d6cb018a\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 95e748af-d21b-4afd-8959-a2db16a20f21\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:02.543969\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:02.5532438\u002B00:00\u0022,\u0022version\u0022:2}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 29,
+      "id": "c9ca4910-a934-47ba-b834-e96c6a798bee",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        },
+        {
+          "request": "B",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u0022c9ca4910-a934-47ba-b834-e96c6a798bee\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 ffda07d1-c8e6-47bf-a0b4-2c515764c5fe\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:02.561718\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:02.5733137\u002B00:00\u0022,\u0022version\u0022:2}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 30,
+      "id": "c20053d7-298b-486f-b687-b3a068059f88",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        },
+        {
+          "request": "B",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u0022c20053d7-298b-486f-b687-b3a068059f88\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 1e5b0d5c-796a-4aa5-80d0-33048a25bfca\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:24:02.583615\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:24:02.5928989\u002B00:00\u0022,\u0022version\u0022:2}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    }
+  ]
+}

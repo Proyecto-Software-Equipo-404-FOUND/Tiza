@@ -24,6 +24,8 @@ título `QA-07 <UUID>`, pregunta Abierta con rúbrica válida según JSON Schema
 | QA07-13 | Runner con base no QA | Salida 1 antes de escritura | BLOCKED y salida 1, rechazo esperado | PASS | `qa07-reject-database.json` |
 | QA07-14 | Runner con UUID ya publicado | Salida 1 sin publicar otra vez | FAIL de precondición y salida 1, rechazo esperado | PASS | `qa07-reject-published.json` |
 | QA07-15 | Integración real con Cursos | Servicio real valide pertenencia | Cliente provisional sigue devolviendo true | BLOCKED | `CursosClientProvisorio.cs` |
+| QA07-16 | Job QA-07 en GitHub Actions Ubuntu | Docker, xUnit y HTTP reales aprobados | 30/30 carreras, 3 unitarios y 1 integración PASS | PASS | `qa07-ci-http.json`, `ci-xunit.json`, run 40115871072 |
+| QA07-17 | Integración sin QA07_CONNECTION | Omisión explícita, no falso PASS | 0 aprobados, 1 omitido con motivo BLOCKED | PASS (guarda); integración SKIPPED | TRX local `TestResults/qa07-without-db.trx` |
 
 Los JSON están en `docs/qa/evidencias/QA-07/`. Un FAIL/BLOCKED dentro de la evidencia
 de las guardas QA07-13/14 es intencional: el caso exige ese rechazo. Los FAIL anteriores

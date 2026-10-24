@@ -119,12 +119,22 @@ conserva los registros de evidencia. No se cambió el valor esperado para conseg
 Durante el trabajo apareció `tests/identity-negative/` como directorio no versionado;
 se preservó y excluyó de QA-07.
 
-## 9. Pendientes
+## 9. GitHub Actions y pendientes
+
+PR: https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/pull/109.
+Commit de implementación: `47641b1`. Ejecución remota verificada:
+https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/actions/runs/40115871072.
+Los tres jobs finalizaron **success**: Backend Build & Test, Frontend Lint & Check
+y QA-07 PostgreSQL y concurrencia 200/409. Se descargó el artefacto `qa07-evidencias`
+y se verificaron 30 carreras adicionales sin fallos, 3 unitarios y 1 integración
+aprobados en Ubuntu. Evidencia: `qa07-ci-http.json` y `ci-xunit.json`.
+Total posterior al arreglo: **70/70 carreras HTTP PASS** (40 locales + 30 CI).
+También se comprobó localmente la omisión explícita del test de integración al
+retirar `QA07_CONNECTION`: 0 aprobados, 1 SKIPPED, nunca un falso PASS.
 
 Cursos sigue siendo provisional: su integración real está BLOCKED para este alcance.
 El perfil original sigue en 5104; el procedimiento y CI fijan 5103 explícitamente.
-El estado remoto de CI y la URL del PR se informan al publicar; no se confunde un
-job configurado con uno ejecutado. Se requiere revisión del responsable de Evaluaciones
+Se requiere revisión del responsable de Evaluaciones
 y de Candela antes de fusionar. No se hará merge automático.
 
 ## 10. Conclusión
@@ -132,5 +142,6 @@ y de Candela antes de fusionar. No se hará merge automático.
 Implementación y validación local de QA-07 completas: PostgreSQL Docker, 200/409,
 única transición, consistencia, ausencia de 500 después del arreglo y colisión
 determinista verificadas. La aprobación del equipo y los checks remotos son el cierre
-de integración del PR. La validación de pertenencia de cohorte en Cursos es una
+de integración del PR; los checks del commit de implementación ya están aprobados.
+La validación de pertenencia de cohorte en Cursos es una
 dependencia externa que esta prueba no pretende dar por terminada.
