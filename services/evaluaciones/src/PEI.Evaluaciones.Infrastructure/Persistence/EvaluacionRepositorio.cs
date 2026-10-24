@@ -38,8 +38,17 @@ public class EvaluacionRepositorio : IEvaluacionRepositorio
         _contexto.Evaluaciones.Remove(evaluacion);
     }
 
-    public Task GuardarCambiosAsync(CancellationToken ct)
+    public async Task GuardarCambiosAsync(CancellationToken ct)
     {
-        return _contexto.SaveChangesAsync(ct);
+        try
+        {
+            await _contexto.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            // No reintentar una escritura perdedora con su estado local modificado.
+            foreach (var entry in ex.Entries) entry.State = EntityState.Detached;
+            throw new ConflictoConcurrenciaException(ex);
+        }
     }
 }
