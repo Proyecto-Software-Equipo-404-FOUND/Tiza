@@ -1,73 +1,24 @@
-
-using PEI.Identidad.Application.Interfaces.Repositories;
+using PEI.Identidad.Application.Abstractions;
 using PEI.Identidad.Application.Interfaces.Security;
 using PEI.Identidad.Application.Interfaces.Service;
+using PEI.Identidad.Domain.Security;
 using PEI.Identidad.Domain.Entities;
-
 namespace PEI.Identidad.Application.UseCases.Auth.Login;
-
-public class LoginHandler
+public sealed class LoginHandler(IAuthenticationDataAccess data, IPasswordHasher hasher, ITokenService tokens)
 {
-    private readonly IUsuarioRepository _usuarioRepository;
-    private readonly IPasswordHasher _passwordHasher;
-    private readonly ITokenService _tokenService;
-    private readonly IRefreshTokenRepository _refreshTokenRepository;
-    private readonly IRefreshTokenService _refreshTokenService;
-    private readonly IRefreshTokenHasher _refreshTokenHasher;
+    public async Task<string> HandleAsync(LoginCommand command) => tokens.GenerateToken(await AuthenticateAsync(command));
 
-    public LoginHandler(
-        IUsuarioRepository usuarioRepository,
-        IPasswordHasher passwordHasher,
-        ITokenService tokenService,
-        IRefreshTokenRepository refreshTokenRepository,
-        IRefreshTokenService refreshTokenService,
-        IRefreshTokenHasher refreshTokenHasher)
+    public async Task<Usuario> AuthenticateAsync(LoginCommand command, CancellationToken cancellationToken = default)
     {
-        _usuarioRepository = usuarioRepository;
-        _passwordHasher = passwordHasher;
-        _tokenService = tokenService;
-        _refreshTokenRepository = refreshTokenRepository;
-        _refreshTokenService = refreshTokenService;
-        _refreshTokenHasher = refreshTokenHasher;
-    }
-
-    public async Task<LoginResult> HandleAsync(LoginCommand command)
-    {
-        var email = command.Email.Trim().ToLowerInvariant();
-
-        var usuario = await _usuarioRepository.GetByEmailAsync(email);
-
-        if (usuario is null ||
-            !usuario.Activo ||
-            !usuario.Institucion.Activo ||
-            !_passwordHasher.Verify(command.Password, usuario.PasswordHash))
+        var usuario = await data.BuscarUsuarioParaLoginAsync(command.Email, cancellationToken);
+        if (usuario is null)
         {
-            throw new UnauthorizedAccessException("Credenciales inválidas.");
+            hasher.VerifyDummy(command.Password);
+            throw new UnauthorizedAccessException("Credenciales invalidas.");
         }
-
-        var accessToken = _tokenService.GenerateToken(usuario);
-        var refreshToken = _refreshTokenService.GenerateToken();
-        var refreshTokenHash = _refreshTokenHasher.Hash(refreshToken);
-
-        var ahora = DateTime.UtcNow;
-        var accessTokenExpiresAt = ahora.AddMinutes(60);
-        var refreshTokenExpiresAt = ahora.AddDays(7);
-
-        var entidad = new RefreshToken
-        {
-            UsuarioId = usuario.Id,
-            Token = refreshTokenHash,
-            FechaExpiracion = refreshTokenExpiresAt,
-            Revocado = false
-        };
-
-        await _refreshTokenRepository.AddAsync(entidad);
-        await _refreshTokenRepository.SaveChangesAsync();
-
-        return new LoginResult(
-            accessToken,
-            refreshToken,
-            accessTokenExpiresAt,
-            refreshTokenExpiresAt);
+        // El acceso acotado garantiza actividad del usuario y de su institucion; no depende de navegaciones cargadas.
+        var valido = hasher.Verify(command.Password, usuario.PasswordHash);
+        if (!valido || !IdentityRoles.IsCanonical(usuario.Rol)) throw new UnauthorizedAccessException("Credenciales invalidas.");
+        return usuario;
     }
 }

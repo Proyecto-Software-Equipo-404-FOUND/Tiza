@@ -4,11 +4,14 @@ using PEI.Cursos.Application.Common;
 using PEI.Cursos.Application.Common.DTOs;
 using PEI.Cursos.Application.DTOs.Cohortes;
 using PEI.Cursos.Application.DTOs.Cursos;
+using PEI.Cursos.Application.DTOs.Matriculaciones;
 using PEI.Cursos.Application.Interfaces;
 using PEI.Cursos.Application.UseCases.Cohortes.Commands;
 using PEI.Cursos.Application.UseCases.Cohortes.Queries;
 using PEI.Cursos.Application.UseCases.Cursos.Commands;
 using PEI.Cursos.Application.UseCases.Cursos.Queries;
+using PEI.Cursos.Application.UseCases.Matriculaciones.Commands;
+using PEI.Cursos.Application.UseCases.Matriculaciones.Queries;
 
 namespace PEI.Cursos.Application;
 
@@ -30,7 +33,14 @@ public static class DependencyInjection
 
         // Registrar Handlers de Cohortes
         services.AddScoped<IRequestHandler<CrearCohorteCommand, CohorteDto>, CrearCohorteCommandHandler>();
+        services.AddScoped<IRequestHandler<ActualizarCohorteCommand, CohorteDto?>, ActualizarCohorteCommandHandler>();
+        services.AddScoped<IRequestHandler<DesactivarCohorteCommand, bool>, DesactivarCohorteCommandHandler>();
         services.AddScoped<IRequestHandler<GetCohortesByCursoQuery, IReadOnlyList<CohorteDto>?>, GetCohortesByCursoQueryHandler>();
+        services.AddScoped<IRequestHandler<ValidarCohorteQuery, CohorteValidacionDto?>, ValidarCohorteQueryHandler>();
+
+        // Registrar Handlers de Matriculaciones (Caso de Uso CU-04)
+        services.AddScoped<IRequestHandler<MatricularAlumnoCommand, MatriculacionDto>, MatricularAlumnoCommandHandler>();
+        services.AddScoped<IRequestHandler<GetMatriculacionByIdQuery, MatriculacionDto?>, GetMatriculacionByIdQueryHandler>();
 
         return services;
     }

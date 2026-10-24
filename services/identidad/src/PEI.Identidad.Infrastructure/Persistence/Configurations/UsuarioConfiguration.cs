@@ -25,7 +25,12 @@ public class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
             .HasMaxLength(150)
             .IsRequired();
 
-        builder.HasIndex(u => u.Email)
+        builder.Property<string>("EmailNormalizado")
+            .HasMaxLength(150)
+            .IsRequired()
+            .HasComputedColumnSql("pei_normalize_email(\"Email\")", stored: true);
+
+        builder.HasIndex("EmailNormalizado")
             .IsUnique();
 
         builder.Property(u => u.PasswordHash)

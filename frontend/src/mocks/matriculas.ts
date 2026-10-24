@@ -1,11 +1,11 @@
 import { http, HttpResponse } from 'msw';
+import { usuarios } from './datos';
 
 // Datos falsos de matrícula. Provisorio hasta que exista CU-04.
-const alumnos = [
-  { id: 'u-alumno1-a', nombre: 'Alumno 1 A' },
-  { id: 'u-alumno2-a', nombre: 'Alumno 2 A' },
-  { id: 'u-alumno3-a', nombre: 'Alumno 3 A' },
-];
+// Los alumnos salen de datos.ts, así los ids coinciden con las semillas de Identidad (ID-08).
+const alumnos = usuarios
+  .filter((u) => u.rol === 'alumno')
+  .map(({ id, nombre }) => ({ id, nombre }));
 
 const matriculas: Array<{
   id: string;
