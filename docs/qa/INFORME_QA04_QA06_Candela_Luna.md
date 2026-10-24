@@ -4,7 +4,7 @@ Fecha de presentación: 24/10/2026. Repositorio: Proyecto-Software-Equipo-404-FO
 
 ## A. Resumen ejecutivo
 
-Se actualizó main mediante fetch y pull fast-forward, sin cambios locales previos que sobrescribir. Se revisaron arquitectura, backlog y ramas/PR relacionados (incluidos contratos CU-07 y semillas CU-06), sin encontrar entregas previas QA-04/QA-06. Se crearon dos ramas independientes desde la misma base.
+Se leyó el backlog `D:/Downloads/Backlog Completo y Plan de Sprints - PEI (Tiza) - 404 Found.xlsx`, sin modificarlo. Se actualizó main mediante fetch y pull fast-forward, sin cambios locales previos que sobrescribir. Se revisaron arquitectura, backlog y ramas/PR relacionados (incluidos contratos CU-07 y semillas CU-06), sin encontrar entregas previas QA-04/QA-06. Se crearon dos ramas independientes desde la misma base.
 
 QA-06 incorpora validación de OpenAPI y JSON Schema, pruebas del validador real de Evaluaciones, cinco Swagger capturados y matriz de35 operaciones. Quedan decisiones funcionales, acceso a requisitos externos y aprobación del PO pendientes. QA-04 reutiliza las semillas CU-06/ID-08 y prueba APIs reales con PostgreSQL descartable; los JWT positivos son emitidos por Identidad. La primera ejecución descubrió dos defectos reproducibles, corregidos sin alterar las expectativas: filtro sin tenant que arrojaba excepciones y creación de cohorte en curso ajeno que respondía400 en vez del404 documentado.
 
@@ -109,10 +109,10 @@ La prueba es directa a los servicios locales, no una prueba del gateway, fronten
 
 | Tarea | Rama | Commit de implementación | PR a main | Integración |
 |---|---|---|---|---|
-| QA-06 |feature/QA-06-revision-contratos|9af913c|[PR106](https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/pull/106)|borrador, sin merge; CI contracts/backend/frontend PASS en revisión inicial|
-| QA-04 |feature/QA-04-tests-aislamiento|a082827|[PR107](https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/pull/107)|sin merge|
+| QA-06 |feature/QA-06-revision-contratos|9af913c; a611b86 (documentación)|[PR106](https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/pull/106)|borrador, sin merge; CI contracts/backend/frontend PASS en revisión inicial|
+| QA-04 |feature/QA-04-tests-aislamiento|a082827; 3a9d7cc (enlaces)|[PR107](https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/pull/107)|sin merge|
 
-La simulación `git merge-tree --write-tree feature/QA-04-tests-aislamiento feature/QA-06-revision-contratos` terminó sin conflictos; no modifica ramas ni integra los PR. No se hizo force-push ni se modificó main directamente. Los PR contienen sólo sus cambios de tarea; el informe consolidado se aloja en QA-04. La condición de mergeable de GitHub sólo expresa ausencia de conflictos, no aprobación funcional.
+La simulación `git merge-tree --write-tree feature/QA-04-tests-aislamiento feature/QA-06-revision-contratos` terminó sin conflictos; no modifica ramas ni integra los PR. No se hizo force-push ni se modificó main directamente. Las actualizaciones finales de este mismo informe son commits documentales posteriores, visibles en el historial de cada PR. Tras el último cambio documental, CI vuelve a ejecutarse; los checks del HEAD actual se consultan en los PR y no se infiere PASS de una ejecución anterior. Los PR contienen sólo sus cambios de tarea; el informe consolidado se aloja en QA-04. La condición de mergeable de GitHub sólo expresa ausencia de conflictos, no aprobación funcional.
 
 ## H. Conclusión
 
@@ -121,7 +121,7 @@ La simulación `git merge-tree --write-tree feature/QA-04-tests-aislamiento feat
 3. **Porcentajes:** QA-04 se calcula sobre los10 escenarios identificados QA04-01…10; 10/10 PASS = 100% en el alcance declarado, sin extrapolar a roles no ensayados ni otros servicios. QA-06:5/6 criterios técnicos verificables=83,3% (inventario, comparación35 operaciones, ejemplos schema, matriz, hallazgos/evidencia; falta acceso a requisitos completos). Aprobación PO es un criterio adicional separado:0/1. La coincidencia14/14 de rutas congeladas no equivale a100% de conformidad funcional.
 4. **Pruebas:** se conservan fallos iniciales y evidencia posterior; resultado final PASS: 54/54 aserciones Newman y 317/317 casos xUnit en QA-04, sin omisiones; QA-06 229/229 casos, con las salvedades documentadas. Identidad169 se repite entre etapas, no sumar como pruebas distintas.
 5. **Defectos pendientes:** sí, los ocho hallazgos QA-06 con estados detallados; no se ocultan tras los PASS técnicos.
-6. **Integración:** revisar PR de pruebas/documentación QA-06 y correcciones acotadas QA-04. No se certifica producción ni seguridad de toda la plataforma. Merge requiere revisión humana; no se realizó automáticamente.
+6. **Integración:** técnicamente viable y sin conflictos en la simulación; las pruebas locales pasan. No se considera aprobada todavía la integración de ambos PR: falta revisión del equipo y validación del PO para cerrar QA-06. No se certifica producción ni seguridad de toda la plataforma. No se realizó merge.
 7. **Acción manual de Candela:** coordinar validación con Nicolás, recuperar los requisitos externos, revisar los PR y solicitar integración al equipo. No necesita editar contraseñas ni bases reales para reproducir la suite.
 
 ## Anexo — archivos y rutas completas
