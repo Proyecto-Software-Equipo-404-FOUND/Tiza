@@ -63,9 +63,9 @@ Todos los endpoints Cursos requieren autenticación, no políticas de rol. Su fi
 | QA06-H05 | MEDIO | Swagger Evaluaciones/Sala publica200 sin respuestas tipadas para acciones que devuelven201/204/400/404/409; IA health sin body; sin snapshot congelado para Identidad/Evaluaciones/Sala. Cursos dominio tiene longitudes no expresadas por DTO y DELETE400 no congelado. | ABIERTO: responsables de contratos actualizar anotaciones y snapshots; diff estructural guarda campos/tipos/required para revisión. Ausencia de snapshot no equivale a funcionalidad rota. |
 | QA06-H06 | BAJO | Tres WeatherForecast de plantilla sin requisito identificado. | PENDIENTE POR ALCANCE: evaluar retirar al preparar despliegue; no crear tareas funcionales inexistentes. |
 | QA06-H07 | MEDIO | Cohorte201 Location apunta a lista; Sala201 apunta a GET que no existe en main. | ABIERTO: acordar URI de recurso y alcance de GET; no implementar endpoint futuro desde QA. |
-| QA06-H08 | ALTO, alcance por confirmar | Cohorte acepta docenteId no vacío sin verificar su institución en Identidad; matrículas usan integración provisional de usuarios. | PENDIENTE POR ALCANCE: verificar contrato interservicio y pertenencia antes de certificar integridad referencial global. QA-04 prueba acceso a registros existentes, no la validez de cualquier referencia externa. |
+| QA06-H08 | ALTO, alcance por confirmar | Cohorte acepta docenteId no vacío sin verificar su institución en Identidad; matrículas tampoco consultan en Identidad la pertenencia del alumno. | PENDIENTE POR ALCANCE: verificar contrato interservicio y pertenencia antes de certificar integridad referencial global. QA-04 prueba acceso a registros existentes, no la validez de cualquier referencia externa. |
 
-No se cambió código de producción ni los contratos congelados. No se corrigieron por conjetura reglas de negocio. Sí se agregaron validación automática y evidencia reproducible.
+En esta rama QA-06 no se cambió código de producción ni los contratos congelados. No se corrigieron por conjetura reglas de negocio. Sí se agregaron validación automática y evidencia reproducible.
 
 ## JSON Schema y pruebas
 
@@ -82,8 +82,19 @@ Draft2020-12 compilado por AJV con formatos UUID. Dos preguntas soportadas: Abie
 
 ## Criterios de entrega y aprobación
 
-6 criterios técnicos definidos: (1) inventario de contratos, (2) comparación de las 35 operaciones, (3) ejemplos schema válidos/ inválidos, (4) matriz trazable, (5) hallazgos priorizados y evidencia, (6) consulta de requisitos externos completos. Verificados5/6 =83,3%; el sexto está bloqueado por acceso. Aprobación humana es criterio adicional:0/1. No se declara100% ni cierre de QA-06. Newman/aislamiento y reporte consolidado continúan en la rama QA-04.
+6 criterios técnicos definidos: (1) inventario de contratos, (2) comparación de las 35 operaciones, (3) ejemplos schema válidos/ inválidos, (4) matriz trazable, (5) hallazgos priorizados y evidencia, (6) consulta de requisitos externos completos. Verificados5/6 =83,3%; el sexto está bloqueado por acceso. Aprobación humana es criterio adicional:0/1. No se declara100% ni cierre de QA-06. Newman/aislamiento y el reporte consolidado se entregan en el PR107 de QA-04.
 
 **PENDIENTE DE VALIDACIÓN POR PRODUCT OWNER**
 
-Nicolás Monasterio debe revisar: matriz de roles, reglas mínimas de preguntas, contrato de errores, frontera de confianza de servicios, alcance de integraciones y documentos externos. Evidencia de aprobación: ninguna al23/10/2026. Firma/fecha/enlace de aprobación: pendientes. La incorporación de pruebas/documentación puede revisarse independientemente del cierre funcional; no autoriza producción ni merge automático.
+Nicolás Monasterio debe revisar: matriz de roles, reglas mínimas de preguntas, contrato de errores, frontera de confianza de servicios, alcance de integraciones y documentos externos. Evidencia de aprobación: ninguna al 24/10/2026. Firma/fecha/enlace de aprobación: pendientes. La incorporación de pruebas/documentación puede revisarse independientemente del cierre funcional; no autoriza producción ni merge automático.
+
+## Actualización con evidencia QA-04 — 24/10/2026
+
+El [PR107](https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/pull/107) verifica los diez casos de aislamiento: 39 solicitudes HTTP, 54 aserciones Newman y 317 casos xUnit, todos PASS y sin omisiones. La ejecución inicial conservada encontró dos diferencias que la revisión estática no detectó completamente:
+
+- QA04-H01: la intención del filtro cerrado era lista vacía/detalle404, pero EF evaluaba Nullable.Value anticipadamente y devolvía409 sin tenant; con contexto nulo arrojaba NullReferenceException. Se corrige en QA-04, con seis regresiones de traducción y verificación HTTP de las tres entidades. La descripción anterior es la intención contractual, no una afirmación de que el main original pasara QA04-09.
+- QA04-H02: POST cohorte bajo curso ajeno devolvía400 pese al404 explícito del contrato. QA-04 cambia únicamente esa excepción y conserva400 para curso propio inactivo.
+
+La matriz anterior documenta la base853f3f6. Los casos marcados “previsto/pendiente en QA-04” ahora tienen evidencia PASS en ese PR; no se atribuye el comportamiento corregido al main original. Ninguno de estos dos arreglos está incluido en QA-06. Ambos PR permanecen sin merge.
+
+[Informe consolidado de Candela Luna](https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/blob/feature/QA-04-tests-aislamiento/docs/qa/INFORME_QA04_QA06_Candela_Luna.md). La recuperación web alternativa de los enlaces externos tampoco pudo acceder a su contenido. La validación del PO continúa pendiente.
