@@ -110,9 +110,9 @@ La prueba es directa a los servicios locales, no una prueba del gateway, fronten
 | Tarea | Rama | Commit de implementación | PR a main | Integración |
 |---|---|---|---|---|
 | QA-06 |feature/QA-06-revision-contratos|9af913c|[PR106](https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/pull/106)|borrador, sin merge; CI contracts/backend/frontend PASS en revisión inicial|
-| QA-04 |feature/QA-04-tests-aislamiento|PENDIENTE_COMMIT|PENDIENTE_PR|sin merge|
+| QA-04 |feature/QA-04-tests-aislamiento|a082827|[PR107](https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/pull/107)|sin merge|
 
-No se hizo force-push ni se modificó main directamente. Los PR contienen sólo sus cambios de tarea; el informe consolidado se aloja en QA-04. La condición de mergeable de GitHub sólo expresa ausencia de conflictos, no aprobación funcional.
+La simulación `git merge-tree --write-tree feature/QA-04-tests-aislamiento feature/QA-06-revision-contratos` terminó sin conflictos; no modifica ramas ni integra los PR. No se hizo force-push ni se modificó main directamente. Los PR contienen sólo sus cambios de tarea; el informe consolidado se aloja en QA-04. La condición de mergeable de GitHub sólo expresa ausencia de conflictos, no aprobación funcional.
 
 ## H. Conclusión
 
