@@ -1,0 +1,20 @@
+{
+  "runId": "598f8636-e4a1-4ceb-9846-16a1386f6de9",
+  "timestamp": "2026-10-24T03:39:03.990Z",
+  "baseCommit": "853f3f6c829e20b1a02e217a388344a9ff6359c9",
+  "environment": ".NET 8; Node 20; PostgreSQL 16; APIs loopback; datos CU06/ID08",
+  "requests": [],
+  "regression": [],
+  "collections": [],
+  "completed": false,
+  "sourceHashes": {
+    "services/cursos/src/PEI.Cursos.Infrastructure/Persistence/CursosDbContext.cs": "ff6d58938ae034c7dd544d5e6f9df62abf18555a8dc99369b1981ae72381693e",
+    "services/cursos/src/PEI.Cursos.Application/UseCases/Cohortes/Commands/CrearCohorteCommandHandler.cs": "7f8702c38bc24bfae8eb7a6145c1fdaef4ec5797ebee5fe23eeb6f4bc573864b",
+    "services/cursos/tests/PEI.Cursos.UnitTests/Infrastructure/TenantQueryTranslationTests.cs": "7dcf301663b534368c4a092be9d2efa45a29fa4c15bc5a0b3bcc5cf40ac6c6e0",
+    "tests/postman/PEI-QA04-Aislamiento.postman_collection.json": "fd09384f8376b4ddcac10999500a4335da91016b872d2ea3d3fe63fc13cb5147",
+    "tests/tenant-isolation/run.mjs": "5dfd23f5f86dd533a79f0351580a27907d6e0d1086f5402de8c0966f01e4f7ad",
+    "tests/tenant-isolation/package-lock.json": "9b3c3a93c7f53fb08f1b9cc68800c27f0ffab7b4d1add888c8222bfb5cc13d11"
+  },
+  "error": "Crear esquema sintético: salida 2\npsql: error: connection to server on socket \"/var/run/postgresql/.s.PGSQL.5432\" failed: FATAL:  the database system is shutting down\n",
+  "cleanedUp": true
+}

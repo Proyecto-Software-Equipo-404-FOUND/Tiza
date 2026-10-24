@@ -1,0 +1,751 @@
+{
+  "runId": "d1c820ce-2c50-4d35-8f43-5ba8b8c9a396",
+  "timestamp": "2026-10-24T03:40:37.359Z",
+  "baseCommit": "853f3f6c829e20b1a02e217a388344a9ff6359c9",
+  "environment": ".NET 8; Node 20; PostgreSQL 16; APIs loopback; datos CU06/ID08",
+  "requests": [
+    {
+      "scenario": "SETUP Login Docente A",
+      "method": "POST",
+      "endpoint": "/api/auth/login",
+      "tenant": "sin JWT",
+      "role": "anónimo",
+      "expected": 200,
+      "actual": 200,
+      "assertions": [
+        {
+          "name": "HTTP esperado 200",
+          "passed": true
+        },
+        {
+          "name": "Sesión institucional A",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "SETUP Login Docente B",
+      "method": "POST",
+      "endpoint": "/api/auth/login",
+      "tenant": "sin JWT",
+      "role": "anónimo",
+      "expected": 200,
+      "actual": 200,
+      "assertions": [
+        {
+          "name": "HTTP esperado 200",
+          "passed": true
+        },
+        {
+          "name": "Sesión institucional B",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "QA04-01 A lista sólo sus cursos",
+      "method": "GET",
+      "endpoint": "/api/v1/cursos",
+      "tenant": "11111111-1111-1111-1111-111111111111",
+      "role": "Docente",
+      "expected": 200,
+      "actual": 200,
+      "assertions": [
+        {
+          "name": "HTTP esperado 200",
+          "passed": true
+        },
+        {
+          "name": "Exactamente los dos cursos A, ninguno B",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "QA04-02 A no lee curso B",
+      "method": "GET",
+      "endpoint": "/api/v1/cursos/cccccccc-0000-0000-0000-000000000002",
+      "tenant": "11111111-1111-1111-1111-111111111111",
+      "role": "Docente",
+      "expected": 404,
+      "actual": 404,
+      "assertions": [
+        {
+          "name": "HTTP esperado 404",
+          "passed": true
+        },
+        {
+          "name": "No filtra atributos B",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "QA04-03 A no lista cohortes B",
+      "method": "GET",
+      "endpoint": "/api/v1/cursos/cccccccc-0000-0000-0000-000000000002/cohortes",
+      "tenant": "11111111-1111-1111-1111-111111111111",
+      "role": "Docente",
+      "expected": 404,
+      "actual": 404,
+      "assertions": [
+        {
+          "name": "HTTP esperado 404",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "QA04-04 A no modifica curso B",
+      "method": "PUT",
+      "endpoint": "/api/v1/cursos/cccccccc-0000-0000-0000-000000000002",
+      "tenant": "11111111-1111-1111-1111-111111111111",
+      "role": "Docente",
+      "expected": 404,
+      "actual": 404,
+      "assertions": [
+        {
+          "name": "HTTP esperado 404",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "QA04-05 A no modifica cohorte B",
+      "method": "PUT",
+      "endpoint": "/api/v1/cursos/cccccccc-0000-0000-0000-000000000002/cohortes/44444444-4444-4444-4444-444444444444",
+      "tenant": "11111111-1111-1111-1111-111111111111",
+      "role": "Docente",
+      "expected": 404,
+      "actual": 404,
+      "assertions": [
+        {
+          "name": "HTTP esperado 404",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "QA04-06 B no lee curso A",
+      "method": "GET",
+      "endpoint": "/api/v1/cursos/cccccccc-0000-0000-0000-000000000001",
+      "tenant": "22222222-2222-2222-2222-222222222222",
+      "role": "Docente",
+      "expected": 404,
+      "actual": 404,
+      "assertions": [
+        {
+          "name": "HTTP esperado 404",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "QA04-06 B no lista cohortes A",
+      "method": "GET",
+      "endpoint": "/api/v1/cursos/cccccccc-0000-0000-0000-000000000001/cohortes",
+      "tenant": "22222222-2222-2222-2222-222222222222",
+      "role": "Docente",
+      "expected": 404,
+      "actual": 404,
+      "assertions": [
+        {
+          "name": "HTTP esperado 404",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "QA04-07 sin JWT",
+      "method": "GET",
+      "endpoint": "/api/v1/cursos",
+      "tenant": "sin JWT",
+      "role": "anónimo",
+      "expected": 401,
+      "actual": 401,
+      "assertions": [
+        {
+          "name": "HTTP esperado 401",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "QA04-08 JWT firma inválida",
+      "method": "GET",
+      "endpoint": "/api/v1/cursos",
+      "tenant": "11111111-1111-1111-1111-111111111111",
+      "role": "Docente",
+      "expected": 401,
+      "actual": 401,
+      "assertions": [
+        {
+          "name": "HTTP esperado 401",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "QA04-09 missingTenantToken lista vacía",
+      "method": "GET",
+      "endpoint": "/api/v1/cursos",
+      "tenant": "ausente",
+      "role": "Docente",
+      "expected": 200,
+      "actual": 200,
+      "assertions": [
+        {
+          "name": "HTTP esperado 200",
+          "passed": true
+        },
+        {
+          "name": "Sin contexto no hay registros",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "QA04-09 missingTenantToken detalle rechazado",
+      "method": "GET",
+      "endpoint": "/api/v1/cursos/cccccccc-0000-0000-0000-000000000001",
+      "tenant": "ausente",
+      "role": "Docente",
+      "expected": 404,
+      "actual": 404,
+      "assertions": [
+        {
+          "name": "HTTP esperado 404",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "QA04-09 missingTenantToken cohorte rechazada",
+      "method": "GET",
+      "endpoint": "/api/v1/cohortes/44444444-4444-4444-4444-444444444444/validacion",
+      "tenant": "ausente",
+      "role": "Docente",
+      "expected": 404,
+      "actual": 404,
+      "assertions": [
+        {
+          "name": "HTTP esperado 404",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "QA04-09 missingTenantToken matrícula rechazada",
+      "method": "GET",
+      "endpoint": "/api/v1/cohortes/44444444-4444-4444-4444-444444444444/matriculas/bbbbbbbb-0000-0000-0002-000000000001",
+      "tenant": "ausente",
+      "role": "Docente",
+      "expected": 404,
+      "actual": 404,
+      "assertions": [
+        {
+          "name": "HTTP esperado 404",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "QA04-09 missingTenantToken escritura rechazada",
+      "method": "POST",
+      "endpoint": "/api/v1/cursos",
+      "tenant": "ausente",
+      "role": "Docente",
+      "expected": 400,
+      "actual": 400,
+      "assertions": [
+        {
+          "name": "HTTP esperado 400",
+          "passed": true
+        },
+        {
+          "name": "Error de dominio ProblemDetails",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "QA04-09 malformedTenantToken lista vacía",
+      "method": "GET",
+      "endpoint": "/api/v1/cursos",
+      "tenant": "invalido",
+      "role": "Docente",
+      "expected": 200,
+      "actual": 200,
+      "assertions": [
+        {
+          "name": "HTTP esperado 200",
+          "passed": true
+        },
+        {
+          "name": "Sin contexto no hay registros",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "QA04-09 malformedTenantToken detalle rechazado",
+      "method": "GET",
+      "endpoint": "/api/v1/cursos/cccccccc-0000-0000-0000-000000000001",
+      "tenant": "invalido",
+      "role": "Docente",
+      "expected": 404,
+      "actual": 404,
+      "assertions": [
+        {
+          "name": "HTTP esperado 404",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "QA04-09 malformedTenantToken cohorte rechazada",
+      "method": "GET",
+      "endpoint": "/api/v1/cohortes/44444444-4444-4444-4444-444444444444/validacion",
+      "tenant": "invalido",
+      "role": "Docente",
+      "expected": 404,
+      "actual": 404,
+      "assertions": [
+        {
+          "name": "HTTP esperado 404",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "QA04-09 malformedTenantToken matrícula rechazada",
+      "method": "GET",
+      "endpoint": "/api/v1/cohortes/44444444-4444-4444-4444-444444444444/matriculas/bbbbbbbb-0000-0000-0002-000000000001",
+      "tenant": "invalido",
+      "role": "Docente",
+      "expected": 404,
+      "actual": 404,
+      "assertions": [
+        {
+          "name": "HTTP esperado 404",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "QA04-09 malformedTenantToken escritura rechazada",
+      "method": "POST",
+      "endpoint": "/api/v1/cursos",
+      "tenant": "invalido",
+      "role": "Docente",
+      "expected": 400,
+      "actual": 400,
+      "assertions": [
+        {
+          "name": "HTTP esperado 400",
+          "passed": true
+        },
+        {
+          "name": "Error de dominio ProblemDetails",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "QA04-09 emptyTenantToken lista vacía",
+      "method": "GET",
+      "endpoint": "/api/v1/cursos",
+      "tenant": "00000000-0000-0000-0000-000000000000",
+      "role": "Docente",
+      "expected": 200,
+      "actual": 200,
+      "assertions": [
+        {
+          "name": "HTTP esperado 200",
+          "passed": true
+        },
+        {
+          "name": "Sin contexto no hay registros",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "QA04-09 emptyTenantToken detalle rechazado",
+      "method": "GET",
+      "endpoint": "/api/v1/cursos/cccccccc-0000-0000-0000-000000000001",
+      "tenant": "00000000-0000-0000-0000-000000000000",
+      "role": "Docente",
+      "expected": 404,
+      "actual": 404,
+      "assertions": [
+        {
+          "name": "HTTP esperado 404",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "QA04-09 emptyTenantToken cohorte rechazada",
+      "method": "GET",
+      "endpoint": "/api/v1/cohortes/44444444-4444-4444-4444-444444444444/validacion",
+      "tenant": "00000000-0000-0000-0000-000000000000",
+      "role": "Docente",
+      "expected": 404,
+      "actual": 404,
+      "assertions": [
+        {
+          "name": "HTTP esperado 404",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "QA04-09 emptyTenantToken matrícula rechazada",
+      "method": "GET",
+      "endpoint": "/api/v1/cohortes/44444444-4444-4444-4444-444444444444/matriculas/bbbbbbbb-0000-0000-0002-000000000001",
+      "tenant": "00000000-0000-0000-0000-000000000000",
+      "role": "Docente",
+      "expected": 404,
+      "actual": 404,
+      "assertions": [
+        {
+          "name": "HTTP esperado 404",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "QA04-09 emptyTenantToken escritura rechazada",
+      "method": "POST",
+      "endpoint": "/api/v1/cursos",
+      "tenant": "00000000-0000-0000-0000-000000000000",
+      "role": "Docente",
+      "expected": 400,
+      "actual": 400,
+      "assertions": [
+        {
+          "name": "HTTP esperado 400",
+          "passed": true
+        },
+        {
+          "name": "Error de dominio ProblemDetails",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "QA04-10 Docente A lee su curso",
+      "method": "GET",
+      "endpoint": "/api/v1/cursos/cccccccc-0000-0000-0000-000000000001",
+      "tenant": "11111111-1111-1111-1111-111111111111",
+      "role": "Docente",
+      "expected": 200,
+      "actual": 200,
+      "assertions": [
+        {
+          "name": "HTTP esperado 200",
+          "passed": true
+        },
+        {
+          "name": "Curso A íntegro",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "QA04-10 Docente A lee su cohorte",
+      "method": "GET",
+      "endpoint": "/api/v1/cursos/cccccccc-0000-0000-0000-000000000001/cohortes",
+      "tenant": "11111111-1111-1111-1111-111111111111",
+      "role": "Docente",
+      "expected": 200,
+      "actual": 200,
+      "assertions": [
+        {
+          "name": "HTTP esperado 200",
+          "passed": true
+        },
+        {
+          "name": "Cohorte propia",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "EXTRA A no elimina curso B",
+      "method": "DELETE",
+      "endpoint": "/api/v1/cursos/cccccccc-0000-0000-0000-000000000002",
+      "tenant": "11111111-1111-1111-1111-111111111111",
+      "role": "Docente",
+      "expected": 404,
+      "actual": 404,
+      "assertions": [
+        {
+          "name": "HTTP esperado 404",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "EXTRA A no elimina cohorte B",
+      "method": "DELETE",
+      "endpoint": "/api/v1/cursos/cccccccc-0000-0000-0000-000000000002/cohortes/44444444-4444-4444-4444-444444444444",
+      "tenant": "11111111-1111-1111-1111-111111111111",
+      "role": "Docente",
+      "expected": 404,
+      "actual": 404,
+      "assertions": [
+        {
+          "name": "HTTP esperado 404",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "EXTRA A no crea cohorte en B",
+      "method": "POST",
+      "endpoint": "/api/v1/cursos/cccccccc-0000-0000-0000-000000000002/cohortes",
+      "tenant": "11111111-1111-1111-1111-111111111111",
+      "role": "Docente",
+      "expected": 404,
+      "actual": 404,
+      "assertions": [
+        {
+          "name": "HTTP esperado 404",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "EXTRA A no valida cohorte B",
+      "method": "GET",
+      "endpoint": "/api/v1/cohortes/44444444-4444-4444-4444-444444444444/validacion",
+      "tenant": "11111111-1111-1111-1111-111111111111",
+      "role": "Docente",
+      "expected": 404,
+      "actual": 404,
+      "assertions": [
+        {
+          "name": "HTTP esperado 404",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "EXTRA A no lee matrícula B",
+      "method": "GET",
+      "endpoint": "/api/v1/cohortes/44444444-4444-4444-4444-444444444444/matriculas/bbbbbbbb-0000-0000-0002-000000000001",
+      "tenant": "11111111-1111-1111-1111-111111111111",
+      "role": "Docente",
+      "expected": 404,
+      "actual": 404,
+      "assertions": [
+        {
+          "name": "HTTP esperado 404",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "EXTRA B no modifica curso A",
+      "method": "PUT",
+      "endpoint": "/api/v1/cursos/cccccccc-0000-0000-0000-000000000001",
+      "tenant": "22222222-2222-2222-2222-222222222222",
+      "role": "Docente",
+      "expected": 404,
+      "actual": 404,
+      "assertions": [
+        {
+          "name": "HTTP esperado 404",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "EXTRA B conserva curso después de ataques",
+      "method": "GET",
+      "endpoint": "/api/v1/cursos/cccccccc-0000-0000-0000-000000000002",
+      "tenant": "22222222-2222-2222-2222-222222222222",
+      "role": "Docente",
+      "expected": 200,
+      "actual": 200,
+      "assertions": [
+        {
+          "name": "HTTP esperado 200",
+          "passed": true
+        },
+        {
+          "name": "Curso B no fue alterado",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "EXTRA B conserva cohorte después de ataques",
+      "method": "GET",
+      "endpoint": "/api/v1/cursos/cccccccc-0000-0000-0000-000000000002/cohortes",
+      "tenant": "22222222-2222-2222-2222-222222222222",
+      "role": "Docente",
+      "expected": 200,
+      "actual": 200,
+      "assertions": [
+        {
+          "name": "HTTP esperado 200",
+          "passed": true
+        },
+        {
+          "name": "Cohorte B no fue alterada",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "EXTRA encabezado B no suplanta JWT A",
+      "method": "GET",
+      "endpoint": "/api/v1/cursos",
+      "tenant": "11111111-1111-1111-1111-111111111111",
+      "role": "Docente",
+      "expected": 200,
+      "actual": 200,
+      "assertions": [
+        {
+          "name": "HTTP esperado 200",
+          "passed": true
+        },
+        {
+          "name": "Header no cambia tenant",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "EXTRA rol Docente validado por Identidad",
+      "method": "GET",
+      "endpoint": "/api/auth/docente",
+      "tenant": "11111111-1111-1111-1111-111111111111",
+      "role": "Docente",
+      "expected": 200,
+      "actual": 200,
+      "assertions": [
+        {
+          "name": "HTTP esperado 200",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "scenario": "EXTRA Docente no tiene acceso Administrador",
+      "method": "GET",
+      "endpoint": "/api/auth/administrador",
+      "tenant": "11111111-1111-1111-1111-111111111111",
+      "role": "Docente",
+      "expected": 403,
+      "actual": 403,
+      "assertions": [
+        {
+          "name": "HTTP esperado 403",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    }
+  ],
+  "regression": [
+    {
+      "project": "services/cursos/tests/PEI.Cursos.UnitTests",
+      "total": 83,
+      "passed": 83,
+      "failed": 0,
+      "skipped": 0,
+      "result": "PASS"
+    },
+    {
+      "project": "services/identidad/tests/PEI.Identidad.UnitTests",
+      "total": 169,
+      "passed": 169,
+      "failed": 0,
+      "skipped": 0,
+      "result": "PASS"
+    },
+    {
+      "project": "services/identidad/tests/PEI.Identidad.IntegrationTests",
+      "total": 65,
+      "passed": 65,
+      "failed": 0,
+      "skipped": 0,
+      "result": "PASS"
+    }
+  ],
+  "collections": [
+    {
+      "file": "identidad.postman_collection.json",
+      "requests": 16,
+      "validation": "JSON parseado y cargado por Postman SDK; estructura básica. Sólo QA04 ejecutada."
+    },
+    {
+      "file": "PEI-Cursos.postman_collection.json",
+      "requests": 12,
+      "validation": "JSON parseado y cargado por Postman SDK; estructura básica. Sólo QA04 ejecutada."
+    },
+    {
+      "file": "PEI-QA04-Aislamiento.postman_collection.json",
+      "requests": 39,
+      "validation": "JSON parseado y cargado por Postman SDK; estructura básica. Sólo QA04 ejecutada."
+    }
+  ],
+  "completed": true,
+  "sourceHashes": {
+    "services/cursos/src/PEI.Cursos.Infrastructure/Persistence/CursosDbContext.cs": "ff6d58938ae034c7dd544d5e6f9df62abf18555a8dc99369b1981ae72381693e",
+    "services/cursos/src/PEI.Cursos.Application/UseCases/Cohortes/Commands/CrearCohorteCommandHandler.cs": "7f8702c38bc24bfae8eb7a6145c1fdaef4ec5797ebee5fe23eeb6f4bc573864b",
+    "services/cursos/tests/PEI.Cursos.UnitTests/Infrastructure/TenantQueryTranslationTests.cs": "7dcf301663b534368c4a092be9d2efa45a29fa4c15bc5a0b3bcc5cf40ac6c6e0",
+    "tests/postman/PEI-QA04-Aislamiento.postman_collection.json": "fd09384f8376b4ddcac10999500a4335da91016b872d2ea3d3fe63fc13cb5147",
+    "tests/tenant-isolation/run.mjs": "c2c54fde890c58c17d1fb77a2c6aa3886820c10738b636e49aa69c47b8cc01c0",
+    "tests/tenant-isolation/package-lock.json": "9b3c3a93c7f53fb08f1b9cc68800c27f0ffab7b4d1add888c8222bfb5cc13d11"
+  },
+  "newman": {
+    "requests": 39,
+    "assertions": 54,
+    "failedAssertions": 0,
+    "failures": 0
+  },
+  "cleanedUp": true
+}
