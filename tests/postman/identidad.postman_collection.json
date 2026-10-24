@@ -735,6 +735,1626 @@
           ]
         }
       ]
+    },
+    {
+      "name": "QA-02 — Casos negativos y permisos de Identidad",
+      "description": "Sólo fixture QA02 en memoria. Sin qa02Fixture y allowMutations las escrituras quedan omitidas. Tokens y contraseñas efímeros provistos por el runner. No ejecutar sobre una base persistente.",
+      "item": [
+        {
+          "name": "QA02-01 — Contraseña incorrecta",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"{{qa02AdminEmail}}\",\"password\":\"{{qa02WrongPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(pm.environment.get('allowMutations')!=='true'){pm.execution.skipRequest();}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401',()=>pm.response.to.have.status(401));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-01b — Cuenta inexistente",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"unknown@test.invalid\",\"password\":\"{{qa02WrongPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(pm.environment.get('allowMutations')!=='true'){pm.execution.skipRequest();}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401',()=>pm.response.to.have.status(401));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-02 — Sin JWT",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/administrador"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401',()=>pm.response.to.have.status(401));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-03 — JWT malformado",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{qa02MalformedToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/administrador"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(!pm.environment.get('qa02MalformedToken')){throw new Error('Falta token sintético del fixture QA02');}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401',()=>pm.response.to.have.status(401));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-04 — JWT expirado",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{qa02ExpiredToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/administrador"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(!pm.environment.get('qa02ExpiredToken')){throw new Error('Falta token sintético del fixture QA02');}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401',()=>pm.response.to.have.status(401));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-05 — Firma incorrecta",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{qa02WrongSignatureToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/administrador"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(!pm.environment.get('qa02WrongSignatureToken')){throw new Error('Falta token sintético del fixture QA02');}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401',()=>pm.response.to.have.status(401));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-06 — Alumno no es Administrador",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{institutionalStudentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/administrador"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(!pm.environment.get('institutionalStudentToken')){throw new Error('Falta token sintético del fixture QA02');}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403',()=>pm.response.to.have.status(403));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-07 — Docente no es Administrador",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{institutionalTeacherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/administrador"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(!pm.environment.get('institutionalTeacherToken')){throw new Error('Falta token sintético del fixture QA02');}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403',()=>pm.response.to.have.status(403));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-08 — Alumno no es Docente",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{institutionalStudentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/docente"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(!pm.environment.get('institutionalStudentToken')){throw new Error('Falta token sintético del fixture QA02');}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403',()=>pm.response.to.have.status(403));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-09 — JWT institucional no es de Plataforma",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{institutionalAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/plataforma/instituciones"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(!pm.environment.get('institutionalAdminToken')){throw new Error('Falta token sintético del fixture QA02');}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401',()=>pm.response.to.have.status(401));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-10 — Login sin campos",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(pm.environment.get('allowMutations')!=='true'){pm.execution.skipRequest();}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('ValidationProblemDetails con errors',()=>{const b=pm.response.json();pm.expect(b.errors).to.be.an('object');pm.expect(Object.keys(b.errors).length).to.be.above(0);});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-11 — Email inválido",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"no-email\",\"password\":\"{{qa02Password}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(pm.environment.get('allowMutations')!=='true'){pm.execution.skipRequest();}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('ValidationProblemDetails con errors',()=>{const b=pm.response.json();pm.expect(b.errors).to.be.an('object');pm.expect(Object.keys(b.errors).length).to.be.above(0);});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-12 — Rol no permitido",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{institutionalAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"qa02-new@test.invalid\",\"password\":\"{{qa02Password}}\",\"nombre\":\"Prueba\",\"apellido\":\"Sintética\",\"rol\":\"Usuario\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(pm.environment.get('allowMutations')!=='true'){pm.execution.skipRequest();}",
+                  "if(!pm.environment.get('institutionalAdminToken')){throw new Error('Falta token sintético del fixture QA02');}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('ValidationProblemDetails con errors',()=>{const b=pm.response.json();pm.expect(b.errors).to.be.an('object');pm.expect(Object.keys(b.errors).length).to.be.above(0);});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-13 — JSON incompleto",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(pm.environment.get('allowMutations')!=='true'){pm.execution.skipRequest();}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('ValidationProblemDetails con errors',()=>{const b=pm.response.json();pm.expect(b.errors).to.be.an('object');pm.expect(Object.keys(b.errors).length).to.be.above(0);});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-14 — Email numérico",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":123,\"password\":\"{{qa02Password}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(pm.environment.get('allowMutations')!=='true'){pm.execution.skipRequest();}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('ValidationProblemDetails con errors',()=>{const b=pm.response.json();pm.expect(b.errors).to.be.an('object');pm.expect(Object.keys(b.errors).length).to.be.above(0);});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-15 — Nombre vacío",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{institutionalAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"qa02-new@test.invalid\",\"password\":\"{{qa02Password}}\",\"nombre\":\"\",\"apellido\":\"Sintética\",\"rol\":\"Alumno\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(pm.environment.get('allowMutations')!=='true'){pm.execution.skipRequest();}",
+                  "if(!pm.environment.get('institutionalAdminToken')){throw new Error('Falta token sintético del fixture QA02');}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('ValidationProblemDetails con errors',()=>{const b=pm.response.json();pm.expect(b.errors).to.be.an('object');pm.expect(Object.keys(b.errors).length).to.be.above(0);});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-16 — Email mayor a150",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{institutionalAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@test.invalid\",\"password\":\"{{qa02Password}}\",\"nombre\":\"Prueba\",\"apellido\":\"Sintética\",\"rol\":\"Alumno\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(pm.environment.get('allowMutations')!=='true'){pm.execution.skipRequest();}",
+                  "if(!pm.environment.get('institutionalAdminToken')){throw new Error('Falta token sintético del fixture QA02');}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('ValidationProblemDetails con errors',()=>{const b=pm.response.json();pm.expect(b.errors).to.be.an('object');pm.expect(Object.keys(b.errors).length).to.be.above(0);});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-17 — Password menor a8",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{institutionalAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"qa02-new@test.invalid\",\"password\":\"{{qa02ShortPassword}}\",\"nombre\":\"Prueba\",\"apellido\":\"Sintética\",\"rol\":\"Alumno\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(pm.environment.get('allowMutations')!=='true'){pm.execution.skipRequest();}",
+                  "if(!pm.environment.get('institutionalAdminToken')){throw new Error('Falta token sintético del fixture QA02');}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('ValidationProblemDetails con errors',()=>{const b=pm.response.json();pm.expect(b.errors).to.be.an('object');pm.expect(Object.keys(b.errors).length).to.be.above(0);});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-18 — Password mayor a72 bytes UTF8",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{institutionalAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"qa02-new@test.invalid\",\"password\":\"{{qa02LongPassword}}\",\"nombre\":\"Prueba\",\"apellido\":\"Sintética\",\"rol\":\"Alumno\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(pm.environment.get('allowMutations')!=='true'){pm.execution.skipRequest();}",
+                  "if(!pm.environment.get('institutionalAdminToken')){throw new Error('Falta token sintético del fixture QA02');}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('ValidationProblemDetails con errors',()=>{const b=pm.response.json();pm.expect(b.errors).to.be.an('object');pm.expect(Object.keys(b.errors).length).to.be.above(0);});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-19 — Nombre mayor a100",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{institutionalAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"qa02-new@test.invalid\",\"password\":\"{{qa02Password}}\",\"nombre\":\"NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN\",\"apellido\":\"Sintética\",\"rol\":\"Alumno\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(pm.environment.get('allowMutations')!=='true'){pm.execution.skipRequest();}",
+                  "if(!pm.environment.get('institutionalAdminToken')){throw new Error('Falta token sintético del fixture QA02');}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('ValidationProblemDetails con errors',()=>{const b=pm.response.json();pm.expect(b.errors).to.be.an('object');pm.expect(Object.keys(b.errors).length).to.be.above(0);});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-20 — Apellido mayor a100",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{institutionalAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"qa02-new@test.invalid\",\"password\":\"{{qa02Password}}\",\"nombre\":\"Prueba\",\"apellido\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\"rol\":\"Alumno\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(pm.environment.get('allowMutations')!=='true'){pm.execution.skipRequest();}",
+                  "if(!pm.environment.get('institutionalAdminToken')){throw new Error('Falta token sintético del fixture QA02');}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('ValidationProblemDetails con errors',()=>{const b=pm.response.json();pm.expect(b.errors).to.be.an('object');pm.expect(Object.keys(b.errors).length).to.be.above(0);});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-21 — Institución enviada por cliente",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{institutionalAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"qa02-new@test.invalid\",\"password\":\"{{qa02Password}}\",\"nombre\":\"Prueba\",\"apellido\":\"Sintética\",\"rol\":\"Alumno\",\"institucionId\":\"11111111-1111-1111-1111-111111111111\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(pm.environment.get('allowMutations')!=='true'){pm.execution.skipRequest();}",
+                  "if(!pm.environment.get('institutionalAdminToken')){throw new Error('Falta token sintético del fixture QA02');}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('ValidationProblemDetails con errors',()=>{const b=pm.response.json();pm.expect(b.errors).to.be.an('object');pm.expect(Object.keys(b.errors).length).to.be.above(0);});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-22 — JSON null",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "null",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(pm.environment.get('allowMutations')!=='true'){pm.execution.skipRequest();}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('ValidationProblemDetails con errors',()=>{const b=pm.response.json();pm.expect(b.errors).to.be.an('object');pm.expect(Object.keys(b.errors).length).to.be.above(0);});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-23 — Registro no asigna Administrador",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{institutionalAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"qa02-new@test.invalid\",\"password\":\"{{qa02Password}}\",\"nombre\":\"Prueba\",\"apellido\":\"Sintética\",\"rol\":\"Administrador\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(pm.environment.get('allowMutations')!=='true'){pm.execution.skipRequest();}",
+                  "if(!pm.environment.get('institutionalAdminToken')){throw new Error('Falta token sintético del fixture QA02');}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('ValidationProblemDetails con errors',()=>{const b=pm.response.json();pm.expect(b.errors).to.be.an('object');pm.expect(Object.keys(b.errors).length).to.be.above(0);});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-24 — Rol distingue mayúsculas",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{institutionalAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"qa02-new@test.invalid\",\"password\":\"{{qa02Password}}\",\"nombre\":\"Prueba\",\"apellido\":\"Sintética\",\"rol\":\"alumno\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(pm.environment.get('allowMutations')!=='true'){pm.execution.skipRequest();}",
+                  "if(!pm.environment.get('institutionalAdminToken')){throw new Error('Falta token sintético del fixture QA02');}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('ValidationProblemDetails con errors',()=>{const b=pm.response.json();pm.expect(b.errors).to.be.an('object');pm.expect(Object.keys(b.errors).length).to.be.above(0);});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-25 — Refresh demasiado largo",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\":\"{{qa02LongRefresh}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(pm.environment.get('allowMutations')!=='true'){pm.execution.skipRequest();}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('ValidationProblemDetails con errors',()=>{const b=pm.response.json();pm.expect(b.errors).to.be.an('object');pm.expect(Object.keys(b.errors).length).to.be.above(0);});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-26 — Logout demasiado largo",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/logout",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\":\"{{qa02LongRefresh}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(pm.environment.get('allowMutations')!=='true'){pm.execution.skipRequest();}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('ValidationProblemDetails con errors',()=>{const b=pm.response.json();pm.expect(b.errors).to.be.an('object');pm.expect(Object.keys(b.errors).length).to.be.above(0);});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-27 — Refresh desconocido",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\":\"{{qa02UnknownRefresh}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(pm.environment.get('allowMutations')!=='true'){pm.execution.skipRequest();}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401',()=>pm.response.to.have.status(401));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-28 — Rol ausente invalida identidad",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{qa02MissingRoleToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/administrador"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(!pm.environment.get('qa02MissingRoleToken')){throw new Error('Falta token sintético del fixture QA02');}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401',()=>pm.response.to.have.status(401));",
+                  "pm.test('Content-Type contractual',()=>pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "pm.test('ProblemDetails coherente',()=>{const b=pm.response.json();pm.expect(b.status).to.eql(pm.response.code);pm.expect(b.title).to.be.a('string').and.not.empty;['type','detail','instance'].forEach(k=>{if(b[k]!=null)pm.expect(b[k]).to.be.a('string');});});",
+                  "pm.test('Sin tokens ni diagnóstico sensible',()=>{const b=pm.response.json();pm.expect(b).not.to.have.property('accessToken');pm.expect(b).not.to.have.property('refreshToken');const text=pm.response.text();pm.expect(text).not.to.match(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|stacktrace|Npgsql|PasswordHash|System\\.[A-Za-z]+Exception/i);['qa02Password','qa02WrongPassword','qa02LongPassword','qa02ShortPassword','qa02AdminEmail'].forEach(k=>{const s=pm.environment.get(k);if(s)pm.expect(text.includes(s),k+' no expuesto').to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-C1 — Control Administrador válido",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{institutionalAdminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/administrador"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(!pm.environment.get('institutionalAdminToken')){throw new Error('Falta token sintético del fixture QA02');}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('Recurso protegido accesible',()=>pm.expect(pm.response.json().mensaje).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-C2 — Control Docente válido",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{institutionalTeacherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/docente"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(!pm.environment.get('institutionalTeacherToken')){throw new Error('Falta token sintético del fixture QA02');}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('Recurso protegido accesible',()=>pm.expect(pm.response.json().mensaje).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-C3 — Control Alumno válido",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{institutionalStudentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/alumno"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(!pm.environment.get('institutionalStudentToken')){throw new Error('Falta token sintético del fixture QA02');}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('Recurso protegido accesible',()=>pm.expect(pm.response.json().mensaje).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA02-C4 — Logout vacío idempotente",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/logout",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.environment.get('qa02Fixture')!=='isolated-memory-v1'){pm.execution.skipRequest();}",
+                  "if(pm.environment.get('allowMutations')!=='true'){pm.execution.skipRequest();}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 204',()=>pm.response.to.have.status(204));",
+                  "pm.test('Sin cuerpo',()=>pm.expect(pm.response.text()).to.eql(''));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }
