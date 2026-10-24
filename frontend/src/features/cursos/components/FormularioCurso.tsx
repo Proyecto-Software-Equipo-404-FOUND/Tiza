@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { BookOpen, Layers, Plus } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { Boton } from '@/shared/components/Boton';
@@ -59,9 +60,11 @@ export function FormularioCurso() {
   const hayConflicto = crear.isError && crear.error instanceof ApiError && crear.error.estado === 409;
 
   return (
-    <form onSubmit={enviar} noValidate className='flex flex-col gap-3'>
+    <form onSubmit={enviar} noValidate className='flex flex-col gap-5'>
       <Campo
         etiqueta='Nombre del curso'
+        placeholder='Ej: Introducción a la Computación'
+        icono={<BookOpen className='h-5 w-5' aria-hidden='true' />}
         value={nombre}
         onChange={(evento) => setNombre(evento.target.value)}
         error={errores.nombre}
@@ -70,6 +73,8 @@ export function FormularioCurso() {
 
       <Campo
         etiqueta='Área'
+        placeholder='Elegí o escribí un área'
+        icono={<Layers className='h-5 w-5' aria-hidden='true' />}
         value={area}
         onChange={(evento) => setArea(evento.target.value)}
         error={errores.area}
@@ -90,6 +95,7 @@ export function FormularioCurso() {
       )}
 
       <Boton type='submit' cargando={crear.isPending} className='self-start'>
+        <Plus className='mr-2 inline h-5 w-5' aria-hidden='true' />
         Crear curso
       </Boton>
     </form>

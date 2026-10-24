@@ -28,8 +28,8 @@ export function AvisosProvider({ children }: { children: ReactNode }) {
           <div
             key={aviso.id}
             role={aviso.tipo === 'error' ? 'alert' : 'status'}
-            className={`rounded-md px-4 py-3 font-bold text-tiza-pizarra shadow-md ${
-              aviso.tipo === 'exito' ? 'bg-tiza-lima' : 'bg-tiza-coral'
+            className={`rounded-xl px-4 py-3 font-bold shadow-tarjeta ${
+              aviso.tipo === 'exito' ? 'bg-tiza-lima text-tiza-bosque' : 'bg-tiza-coral text-white'
             }`}
           >
             {aviso.texto}

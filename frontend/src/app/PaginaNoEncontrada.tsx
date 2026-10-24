@@ -6,7 +6,7 @@ export function PaginaNoEncontrada() {
     <main className='mx-auto max-w-md p-4'>
       <Tarjeta titulo='No encontrada'>
         <p className='mb-4'>No se encontró lo que buscás.</p>
-        <Link to='/' className='font-bold text-tiza-violeta underline'>
+        <Link to='/' className='font-bold text-tiza-pasto underline'>
           Volver al inicio
         </Link>
       </Tarjeta>
