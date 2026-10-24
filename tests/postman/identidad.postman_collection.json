@@ -6,6 +6,148 @@
   },
   "item": [
     {
+      "name": "0. Smoke de autenticación automática (opt-in; crea y revoca sesión)",
+      "description": "Ejecutar esta carpeta completa y en orden. Definir allowAuthentication=true y credenciales de una cuenta Administrador de prueba. Login guarda accessToken y refreshToken; el GET protegido usa accessToken sin copiarlo; logout revoca la sesión. Requiere una API local y una cuenta de pruebas existente. No crea usuarios ni modifica otros datos.",
+      "item": [
+        {
+          "name": "Login y guardar sesión para el smoke test",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "MODIFICA DATOS O SESIONES. Requiere autorización y entorno desechable. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{institutionalEmail}}\",\n  \"password\": \"{{institutionalPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.environment.get(\"allowAuthentication\") !== \"true\") { pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) { const data = pm.response.json(); pm.test(\"Sesión completa\", () => { [\"accessToken\",\"refreshToken\",\"tokenType\",\"accessTokenExpiresAt\",\"refreshTokenExpiresAt\"].forEach(k => pm.expect(data[k]).to.be.a(\"string\")); pm.expect(data.tokenType).to.equal(\"Bearer\"); }); pm.environment.set(\"institutionalToken\", data.accessToken); pm.environment.set(\"refreshToken\", data.refreshToken); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Leer endpoint de Administrador con el token obtenido automáticamente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{institutionalToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/auth/administrador",
+            "description": "Endpoint de solo lectura protegido por la política InstitutionAdmin. Utiliza el accessToken guardado por el request anterior."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.environment.get(\"allowAuthentication\") !== \"true\") { pm.execution.skipRequest(); }",
+                  "if (!pm.environment.get(\"institutionalToken\")) { throw new Error(\"Ejecutar antes el login de esta carpeta y revisar sus credenciales.\"); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) { const data = pm.response.json(); pm.test(\"Respuesta de administrador\", () => pm.expect(data.mensaje).to.be.a(\"string\")); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cerrar la sesión creada por este flujo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/api/auth/logout",
+            "description": "MODIFICA DATOS O SESIONES. Requiere autorización y entorno desechable. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.environment.get(\"allowAuthentication\") !== \"true\") { pm.execution.skipRequest(); }",
+                  "if (!pm.environment.get(\"refreshToken\")) { throw new Error(\"Falta el refreshToken guardado por el login de esta carpeta.\"); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código HTTP 204\", () => pm.response.to.have.status(204));",
+                  "pm.test(\"Sin cuerpo\", () => pm.expect(pm.response.text()).to.equal(\"\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "1. Sesiones institucionales — modifican sesiones",
       "item": [
         {
