@@ -1,6 +1,6 @@
 {
-  "date": "2026-10-24T15:37:26.807Z",
-  "base": "853f3f6c829e20b1a02e217a388344a9ff6359c9",
+  "date": "2026-10-24T15:42:24.105Z",
+  "base": "8a9eed027d59d89b24342afc3020c5d36675c823",
   "fixture": "TestServer+fakes existentes; sin PostgreSQL",
   "cases": [
     {
@@ -998,6 +998,7 @@
     }
   ],
   "completed": true,
+  "collectionBaseline": "853f3f6c829e20b1a02e217a388344a9ff6359c9",
   "previousCollectionPreserved": true,
   "dotnet": {
     "total": 186,

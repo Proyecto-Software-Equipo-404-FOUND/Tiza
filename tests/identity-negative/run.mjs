@@ -24,8 +24,11 @@ async function command(args,label){
 }
 async function run(environment){return await new Promise((resolve,reject)=>newman.run({collection,folder,environment:{values:Object.entries(environment).map(([key,value])=>({key,value,enabled:true}))},reporters:[],timeoutRequest:30000,timeoutScript:10000,timeout:300000},(err,result)=>err?reject(err):resolve(result)));}
 try{
-  const original=JSON.parse(execFileSync('git',['show','853f3f6:tests/postman/identidad.postman_collection.json'],{cwd:root,encoding:'utf8'}));
-  assert.deepEqual({...collection,item:collection.item.filter(x=>x.name!==folder)},original,'Se alteró contenido previo de la colección');
+  const baseline=execFileSync('git',['merge-base','HEAD','origin/main'],{cwd:root,encoding:'utf8'}).trim();
+  const original=JSON.parse(execFileSync('git',['show',`${baseline}:tests/postman/identidad.postman_collection.json`],{cwd:root,encoding:'utf8'}));
+  const withoutQa02=value=>({...value,item:value.item.filter(x=>x.name!==folder)});
+  assert.deepEqual(withoutQa02(collection),withoutQa02(original),'Se alteró contenido previo de la colección');
+  evidence.collectionBaseline=baseline;
   evidence.previousCollectionPreserved=true;
   await new Promise((resolve,reject)=>{const s=createServer();s.on('error',()=>reject(new Error('Puerto18502 ocupado; no se detuvo ningún proceso ajeno.')));s.listen(18502,'127.0.0.1',()=>s.close(resolve));});
   await command(['build','services/identidad/PEI.Identidad.sln','--nologo','-v','quiet','-m:1'],'Compilar Identidad');

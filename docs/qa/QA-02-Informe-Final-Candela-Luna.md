@@ -70,6 +70,6 @@ Los seis criterios iniciales de aceptación se verificaron satisfactoriamente: c
 
 La suite principal requiere checkout completo, .NET 8, Node 20 y puerto local 18502 disponible; no necesita cuentas, PostgreSQL ni Docker. La regresión adicional requiere Docker Linux y puerto 5541 disponible. Ninguna dependencia externa bloquea los criterios de aceptación.
 
-Resultado local: **COMPLETADA**. Publicación y checks remotos: se registrarán en el Pull Request, verificando el último commit antes de entregar. No se realiza merge automático.
+Resultado: **COMPLETADA**. Rama publicada y [PR #108](https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/pull/108) abierto como borrador, sin merge. El commit de implementación `8a9eed0` aprobó los tres checks: [backend y frontend](https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/actions/runs/40108117387) y [QA-02 con Newman](https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/actions/runs/40108117442). El último ajuste compara la colección contra el ancestro común con origin/main en lugar de una revisión fija y volvió a aprobar 186 tests y 33 casos / 141 aserciones localmente. Los checks del último commit se consultan en el PR antes del merge.
 
 Antes del merge, Candela Luna debería revisar las expectativas 401/403 entre esquemas, los límites reales de DTO, la carpeta agregada sin alterar las anteriores, el aislamiento del host de testing, los resultados finales del PR y la coordinación con quienes mantienen #85/#86 y QA-05. Nunca habilitar las variables del fixture sobre una base persistente.
