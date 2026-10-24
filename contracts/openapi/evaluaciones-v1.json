@@ -187,7 +187,7 @@
         "tags": [
           "Evaluaciones"
         ],
-        "summary": "Elimina una evaluación. No lleva cuerpo.",
+        "summary": "Elimina una evaluación en estado Borrador. No lleva cuerpo.",
         "operationId": "EliminarEvaluacion",
         "parameters": [
           {
