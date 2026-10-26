@@ -1,7 +1,27 @@
-import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { Home, GraduationCap } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSesion } from '@/features/auth/SesionContext';
 import { Boton } from '@/shared/components/Boton';
+import { Logo } from '@/shared/components/Logo';
+
+function ItemMenu({ to, end, icono, children }: { to: string; end?: boolean; icono: ReactNode; children: ReactNode }) {
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) =>
+        `flex items-center gap-3 rounded-xl px-4 py-3 font-semibold transition ${
+          isActive ? 'bg-tiza-menta text-tiza-bosque' : 'text-tiza-bosque/80 hover:bg-tiza-menta/60'
+        }`
+      }
+    >
+      {icono}
+      {children}
+    </NavLink>
+  );
+}
 
 export function Layout() {
   const { usuario, salir } = useSesion();
@@ -16,32 +36,40 @@ export function Layout() {
   };
 
   return (
-    <div className='min-h-screen bg-tiza-fondo text-tiza-pizarra'>
-      <header className='border-b border-tiza-pizarra/20 bg-white'>
-        <div className='mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 p-4'>
-          <div className='flex items-center gap-6'>
-            <Link to='/' className='font-heading text-2xl font-black tracking-tight'>
-              t<span className='inline-block -rotate-12 text-tiza-violeta'>ı</span>za
-            </Link>
-            {usuario?.rol !== 'alumno' && (
-              <nav aria-label='Principal'>
-                <Link to='/cursos' className='font-bold text-tiza-violeta underline'>
-                  Cursos
-                </Link>
-              </nav>
-            )}
-          </div>
+    <div className='min-h-screen bg-tiza-fondo text-tiza-bosque'>
+      <header className='border-b border-tiza-borde bg-white'>
+        <div className='flex flex-wrap items-center justify-between gap-3 px-6 py-3'>
+          <Link to='/' aria-label='tiza, ir al inicio'>
+            <Logo />
+          </Link>
           <div className='flex items-center gap-3'>
             <span className='text-sm'>
               {usuario?.nombre} · <span className='capitalize'>{usuario?.rol}</span>
             </span>
-            <Boton variante='secundario' onClick={cerrarSesion}>
+            <Boton variante='secundario' onClick={cerrarSesion} className='!py-2'>
               Salir
             </Boton>
           </div>
         </div>
       </header>
-      <Outlet />
+      <div className='flex flex-col md:flex-row'>
+        <nav
+          aria-label='Principal'
+          className='flex gap-2 border-b border-tiza-borde bg-white/60 p-3 md:min-h-[calc(100vh-4.5rem)] md:w-60 md:shrink-0 md:flex-col md:border-b-0 md:border-r md:p-4'
+        >
+          <ItemMenu to='/' end icono={<Home className='h-5 w-5' aria-hidden='true' />}>
+            Inicio
+          </ItemMenu>
+          {usuario?.rol !== 'alumno' && (
+            <ItemMenu to='/cursos' icono={<GraduationCap className='h-5 w-5' aria-hidden='true' />}>
+              Cursos
+            </ItemMenu>
+          )}
+        </nav>
+        <div className='min-w-0 flex-1'>
+          <Outlet />
+        </div>
+      </div>
     </div>
   );
 }

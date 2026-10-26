@@ -13,7 +13,7 @@ export function PaginaNoAutorizada() {
         </p>
         <Link
           to={usuario ? rutaInicial(usuario.rol) : '/login'}
-          className='font-bold text-tiza-violeta underline'
+          className='font-bold text-tiza-pasto underline'
         >
           {usuario ? 'Volver al inicio' : 'Ir a ingresar'}
         </Link>

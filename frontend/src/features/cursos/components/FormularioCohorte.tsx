@@ -80,7 +80,7 @@ export function FormularioCohorte({ cursoId }: { cursoId: string }) {
       />
 
       <div className='flex flex-col gap-1'>
-        <label htmlFor='docente-cohorte' className='font-bold text-tiza-pizarra'>
+        <label htmlFor='docente-cohorte' className='font-bold text-tiza-bosque'>
           Docente
         </label>
         <select
@@ -88,7 +88,7 @@ export function FormularioCohorte({ cursoId }: { cursoId: string }) {
           value={docenteId}
           onChange={(evento) => setDocenteId(evento.target.value)}
           disabled={crear.isPending}
-          className='rounded-md border border-tiza-pizarra px-3 py-2 text-tiza-pizarra disabled:cursor-not-allowed disabled:opacity-50'
+          className='rounded-xl border border-tiza-borde bg-white px-3 py-3 text-tiza-bosque disabled:cursor-not-allowed disabled:opacity-50'
         >
           {DOCENTES_SEMILLA.map((docente) => (
             <option key={docente.id} value={docente.id}>

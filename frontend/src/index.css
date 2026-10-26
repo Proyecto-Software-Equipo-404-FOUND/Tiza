@@ -3,11 +3,17 @@
 @tailwind utilities;
 
 :root {
-  font-family: Calibri, 'Segoe UI', sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
   color-scheme: light;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: Arial, sans-serif;
-  font-weight: 700;
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+  font-weight: 800;
+}
+
+/* Anillo de foco visible y consistente con la paleta */
+:focus-visible {
+  outline: 2px solid #2F7D5B;
+  outline-offset: 2px;
 }

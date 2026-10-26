@@ -3,6 +3,8 @@ import { Spinner } from '@/shared/components/Spinner';
 import { BannerError } from '@/shared/components/BannerError';
 import { Tabla, type Columna } from '@/shared/components/Tabla';
 import { Tarjeta } from '@/shared/components/Tarjeta';
+import { EnlaceBoton } from '@/shared/components/EnlaceBoton';
+import { GraduationCap } from 'lucide-react';
 import { mensajeDeError } from '@/shared/api/errores';
 import type { Cohorte } from '@/shared/api/tipos';
 import { useCurso } from '../hooks/useCurso';
@@ -15,9 +17,12 @@ const columnas: Columna<Cohorte>[] = [
   {
     titulo: 'Matrícula',
     celda: (cohorte) => (
-      <Link to={`/cohortes/${cohorte.id}/matriculas`} className='text-tiza-violeta underline'>
+      <EnlaceBoton
+        to={`/cohortes/${cohorte.id}/matriculas`}
+        icono={<GraduationCap className='h-4 w-4' aria-hidden='true' />}
+      >
         Ver matrícula
-      </Link>
+      </EnlaceBoton>
     ),
   },
 ];
@@ -29,10 +34,10 @@ export function PaginaCohortes() {
 
   return (
     <main className='mx-auto flex max-w-4xl flex-col gap-4 p-6'>
-      <Link to='/cursos' className='text-sm text-tiza-violeta underline'>
+      <Link to='/cursos' className='text-sm text-tiza-pasto underline'>
         ← Volver a cursos
       </Link>
-      <h1 className='text-2xl font-bold text-tiza-pizarra'>
+      <h1 className='font-heading text-4xl font-extrabold text-tiza-bosque'>
         Cohortes{curso ? ` de ${curso.nombre}` : ''}
       </h1>
 
