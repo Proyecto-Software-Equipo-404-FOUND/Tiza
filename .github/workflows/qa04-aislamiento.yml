@@ -1,0 +1,37 @@
+name: QA-04 - Aislamiento multi-tenant
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tenant-isolation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: tests/tenant-isolation/package-lock.json
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - run: dotnet tool install --global dotnet-ef --version 8.0.30
+      - run: npm ci
+        working-directory: tests/tenant-isolation
+      - name: Verificar colección reproducible
+        run: |
+          node tests/tenant-isolation/generate-collection.mjs
+          git diff --exit-code -- tests/postman/PEI-QA04-Aislamiento.postman_collection.json
+      - name: APIs reales, Newman y regresión xUnit
+        run: node tests/tenant-isolation/run.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qa04-evidencia-sin-secretos
+          path: |
+            tests/tenant-isolation/results/summary.json
+            tests/tenant-isolation/results/requests.md
