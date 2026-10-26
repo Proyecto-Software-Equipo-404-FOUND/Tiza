@@ -1,0 +1,1 @@
+{"name":"tiza-qa02","private":true,"type":"module","scripts":{"test":"node run.mjs","generate":"node generate.mjs"},"devDependencies":{"newman":"6.2.1"}}

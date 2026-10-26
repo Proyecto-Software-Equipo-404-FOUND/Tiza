@@ -1,0 +1,1042 @@
+{
+  "date": "2026-10-24T04:02:29.143Z",
+  "base": "853f3f6c829e20b1a02e217a388344a9ff6359c9",
+  "fixture": "TestServer+fakes existentes; sin PostgreSQL",
+  "cases": [
+    {
+      "id": "QA02-01",
+      "name": "Contraseña incorrecta",
+      "method": "POST",
+      "endpoint": "/api/auth/login",
+      "tokenProfile": "anónimo",
+      "expected": 401,
+      "actual": 401,
+      "contentType": "application/problem+json",
+      "assertions": [
+        {
+          "name": "HTTP 401",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-01b",
+      "name": "Cuenta inexistente",
+      "method": "POST",
+      "endpoint": "/api/auth/login",
+      "tokenProfile": "anónimo",
+      "expected": 401,
+      "actual": 401,
+      "contentType": "application/problem+json",
+      "assertions": [
+        {
+          "name": "HTTP 401",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-02",
+      "name": "Sin JWT",
+      "method": "GET",
+      "endpoint": "/api/auth/administrador",
+      "tokenProfile": "anónimo",
+      "expected": 401,
+      "actual": 401,
+      "contentType": "application/problem+json",
+      "assertions": [
+        {
+          "name": "HTTP 401",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-03",
+      "name": "JWT malformado",
+      "method": "GET",
+      "endpoint": "/api/auth/administrador",
+      "tokenProfile": "qa02MalformedToken",
+      "expected": 401,
+      "actual": 401,
+      "contentType": "application/problem+json",
+      "assertions": [
+        {
+          "name": "HTTP 401",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-04",
+      "name": "JWT expirado",
+      "method": "GET",
+      "endpoint": "/api/auth/administrador",
+      "tokenProfile": "qa02ExpiredToken",
+      "expected": 401,
+      "actual": 401,
+      "contentType": "application/problem+json",
+      "assertions": [
+        {
+          "name": "HTTP 401",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-05",
+      "name": "Firma incorrecta",
+      "method": "GET",
+      "endpoint": "/api/auth/administrador",
+      "tokenProfile": "qa02WrongSignatureToken",
+      "expected": 401,
+      "actual": 401,
+      "contentType": "application/problem+json",
+      "assertions": [
+        {
+          "name": "HTTP 401",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-06",
+      "name": "Alumno no es Administrador",
+      "method": "GET",
+      "endpoint": "/api/auth/administrador",
+      "tokenProfile": "institutionalStudentToken",
+      "expected": 403,
+      "actual": 403,
+      "contentType": "application/problem+json",
+      "assertions": [
+        {
+          "name": "HTTP 403",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-07",
+      "name": "Docente no es Administrador",
+      "method": "GET",
+      "endpoint": "/api/auth/administrador",
+      "tokenProfile": "institutionalTeacherToken",
+      "expected": 403,
+      "actual": null,
+      "contentType": null,
+      "assertions": [
+        {
+          "name": "HTTP 403",
+          "passed": false
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": false
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": false
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": false
+        }
+      ],
+      "result": "FAIL"
+    },
+    {
+      "id": "QA02-08",
+      "name": "Alumno no es Docente",
+      "method": "GET",
+      "endpoint": "/api/auth/docente",
+      "tokenProfile": "institutionalStudentToken",
+      "expected": 403,
+      "actual": 403,
+      "contentType": "application/problem+json",
+      "assertions": [
+        {
+          "name": "HTTP 403",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-09",
+      "name": "JWT institucional no es de Plataforma",
+      "method": "GET",
+      "endpoint": "/api/plataforma/instituciones",
+      "tokenProfile": "institutionalAdminToken",
+      "expected": 401,
+      "actual": 401,
+      "contentType": "application/json; charset=utf-8",
+      "assertions": [
+        {
+          "name": "HTTP 401",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-10",
+      "name": "Login sin campos",
+      "method": "POST",
+      "endpoint": "/api/auth/login",
+      "tokenProfile": "anónimo",
+      "expected": 400,
+      "actual": 400,
+      "contentType": "application/problem+json; charset=utf-8",
+      "assertions": [
+        {
+          "name": "HTTP 400",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "ValidationProblemDetails con errors",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-11",
+      "name": "Email inválido",
+      "method": "POST",
+      "endpoint": "/api/auth/login",
+      "tokenProfile": "anónimo",
+      "expected": 400,
+      "actual": 400,
+      "contentType": "application/problem+json; charset=utf-8",
+      "assertions": [
+        {
+          "name": "HTTP 400",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "ValidationProblemDetails con errors",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-12",
+      "name": "Rol no permitido",
+      "method": "POST",
+      "endpoint": "/api/auth/register",
+      "tokenProfile": "institutionalAdminToken",
+      "expected": 400,
+      "actual": 400,
+      "contentType": "application/problem+json; charset=utf-8",
+      "assertions": [
+        {
+          "name": "HTTP 400",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "ValidationProblemDetails con errors",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-13",
+      "name": "JSON incompleto",
+      "method": "POST",
+      "endpoint": "/api/auth/login",
+      "tokenProfile": "anónimo",
+      "expected": 400,
+      "actual": 400,
+      "contentType": "application/problem+json; charset=utf-8",
+      "assertions": [
+        {
+          "name": "HTTP 400",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "ValidationProblemDetails con errors",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-14",
+      "name": "Email numérico",
+      "method": "POST",
+      "endpoint": "/api/auth/login",
+      "tokenProfile": "anónimo",
+      "expected": 400,
+      "actual": 400,
+      "contentType": "application/problem+json; charset=utf-8",
+      "assertions": [
+        {
+          "name": "HTTP 400",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "ValidationProblemDetails con errors",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-15",
+      "name": "Nombre vacío",
+      "method": "POST",
+      "endpoint": "/api/auth/register",
+      "tokenProfile": "institutionalAdminToken",
+      "expected": 400,
+      "actual": 400,
+      "contentType": "application/problem+json; charset=utf-8",
+      "assertions": [
+        {
+          "name": "HTTP 400",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "ValidationProblemDetails con errors",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-16",
+      "name": "Email mayor a150",
+      "method": "POST",
+      "endpoint": "/api/auth/register",
+      "tokenProfile": "institutionalAdminToken",
+      "expected": 400,
+      "actual": 400,
+      "contentType": "application/problem+json; charset=utf-8",
+      "assertions": [
+        {
+          "name": "HTTP 400",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "ValidationProblemDetails con errors",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-17",
+      "name": "Password menor a8",
+      "method": "POST",
+      "endpoint": "/api/auth/register",
+      "tokenProfile": "institutionalAdminToken",
+      "expected": 400,
+      "actual": 400,
+      "contentType": "application/problem+json; charset=utf-8",
+      "assertions": [
+        {
+          "name": "HTTP 400",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "ValidationProblemDetails con errors",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-18",
+      "name": "Password mayor a72 bytes UTF8",
+      "method": "POST",
+      "endpoint": "/api/auth/register",
+      "tokenProfile": "institutionalAdminToken",
+      "expected": 400,
+      "actual": 400,
+      "contentType": "application/problem+json; charset=utf-8",
+      "assertions": [
+        {
+          "name": "HTTP 400",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "ValidationProblemDetails con errors",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-19",
+      "name": "Nombre mayor a100",
+      "method": "POST",
+      "endpoint": "/api/auth/register",
+      "tokenProfile": "institutionalAdminToken",
+      "expected": 400,
+      "actual": 400,
+      "contentType": "application/problem+json; charset=utf-8",
+      "assertions": [
+        {
+          "name": "HTTP 400",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "ValidationProblemDetails con errors",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-20",
+      "name": "Apellido mayor a100",
+      "method": "POST",
+      "endpoint": "/api/auth/register",
+      "tokenProfile": "institutionalAdminToken",
+      "expected": 400,
+      "actual": 400,
+      "contentType": "application/problem+json; charset=utf-8",
+      "assertions": [
+        {
+          "name": "HTTP 400",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "ValidationProblemDetails con errors",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-21",
+      "name": "Institución enviada por cliente",
+      "method": "POST",
+      "endpoint": "/api/auth/register",
+      "tokenProfile": "institutionalAdminToken",
+      "expected": 400,
+      "actual": 400,
+      "contentType": "application/problem+json; charset=utf-8",
+      "assertions": [
+        {
+          "name": "HTTP 400",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "ValidationProblemDetails con errors",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-22",
+      "name": "JSON null",
+      "method": "POST",
+      "endpoint": "/api/auth/login",
+      "tokenProfile": "anónimo",
+      "expected": 400,
+      "actual": 400,
+      "contentType": "application/problem+json; charset=utf-8",
+      "assertions": [
+        {
+          "name": "HTTP 400",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "ValidationProblemDetails con errors",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-23",
+      "name": "Registro no asigna Administrador",
+      "method": "POST",
+      "endpoint": "/api/auth/register",
+      "tokenProfile": "institutionalAdminToken",
+      "expected": 400,
+      "actual": 400,
+      "contentType": "application/problem+json; charset=utf-8",
+      "assertions": [
+        {
+          "name": "HTTP 400",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "ValidationProblemDetails con errors",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-24",
+      "name": "Rol distingue mayúsculas",
+      "method": "POST",
+      "endpoint": "/api/auth/register",
+      "tokenProfile": "institutionalAdminToken",
+      "expected": 400,
+      "actual": 400,
+      "contentType": "application/problem+json; charset=utf-8",
+      "assertions": [
+        {
+          "name": "HTTP 400",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "ValidationProblemDetails con errors",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-25",
+      "name": "Refresh demasiado largo",
+      "method": "POST",
+      "endpoint": "/api/auth/refresh",
+      "tokenProfile": "anónimo",
+      "expected": 400,
+      "actual": 400,
+      "contentType": "application/problem+json; charset=utf-8",
+      "assertions": [
+        {
+          "name": "HTTP 400",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "ValidationProblemDetails con errors",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-26",
+      "name": "Logout demasiado largo",
+      "method": "POST",
+      "endpoint": "/api/auth/logout",
+      "tokenProfile": "anónimo",
+      "expected": 400,
+      "actual": 400,
+      "contentType": "application/problem+json; charset=utf-8",
+      "assertions": [
+        {
+          "name": "HTTP 400",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "ValidationProblemDetails con errors",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-27",
+      "name": "Refresh desconocido",
+      "method": "POST",
+      "endpoint": "/api/auth/refresh",
+      "tokenProfile": "anónimo",
+      "expected": 401,
+      "actual": 401,
+      "contentType": "application/problem+json",
+      "assertions": [
+        {
+          "name": "HTTP 401",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-28",
+      "name": "Rol ausente invalida identidad",
+      "method": "GET",
+      "endpoint": "/api/auth/administrador",
+      "tokenProfile": "qa02MissingRoleToken",
+      "expected": 401,
+      "actual": 401,
+      "contentType": "application/problem+json",
+      "assertions": [
+        {
+          "name": "HTTP 401",
+          "passed": true
+        },
+        {
+          "name": "Content-Type contractual",
+          "passed": true
+        },
+        {
+          "name": "ProblemDetails coherente",
+          "passed": true
+        },
+        {
+          "name": "Sin tokens ni diagnóstico sensible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-C1",
+      "name": "Control Administrador válido",
+      "method": "GET",
+      "endpoint": "/api/auth/administrador",
+      "tokenProfile": "institutionalAdminToken",
+      "expected": 200,
+      "actual": 200,
+      "contentType": "application/json; charset=utf-8",
+      "assertions": [
+        {
+          "name": "HTTP 200",
+          "passed": true
+        },
+        {
+          "name": "Recurso protegido accesible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-C2",
+      "name": "Control Docente válido",
+      "method": "GET",
+      "endpoint": "/api/auth/docente",
+      "tokenProfile": "institutionalTeacherToken",
+      "expected": 200,
+      "actual": 200,
+      "contentType": "application/json; charset=utf-8",
+      "assertions": [
+        {
+          "name": "HTTP 200",
+          "passed": true
+        },
+        {
+          "name": "Recurso protegido accesible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-C3",
+      "name": "Control Alumno válido",
+      "method": "GET",
+      "endpoint": "/api/auth/alumno",
+      "tokenProfile": "institutionalStudentToken",
+      "expected": 200,
+      "actual": 200,
+      "contentType": "application/json; charset=utf-8",
+      "assertions": [
+        {
+          "name": "HTTP 200",
+          "passed": true
+        },
+        {
+          "name": "Recurso protegido accesible",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "QA02-C4",
+      "name": "Logout vacío idempotente",
+      "method": "POST",
+      "endpoint": "/api/auth/logout",
+      "tokenProfile": "anónimo",
+      "expected": 204,
+      "actual": 204,
+      "contentType": null,
+      "assertions": [
+        {
+          "name": "HTTP 204",
+          "passed": true
+        },
+        {
+          "name": "Sin cuerpo",
+          "passed": true
+        }
+      ],
+      "result": "PASS"
+    }
+  ],
+  "completed": false,
+  "previousCollectionPreserved": true,
+  "dotnet": {
+    "total": 186,
+    "executed": 186,
+    "passed": 186,
+    "failed": 0,
+    "error": 0,
+    "timeout": 0,
+    "aborted": 0,
+    "inconclusive": 0,
+    "passedButRunAborted": 0,
+    "notRunnable": 0,
+    "notExecuted": 0,
+    "disconnected": 0,
+    "warning": 0,
+    "completed": 0,
+    "inProgress": 0,
+    "pending": 0
+  },
+  "disabledGuard": {
+    "requests": 0,
+    "result": "PASS"
+  },
+  "persistence": {
+    "before": {
+      "users": 3,
+      "platformWrites": 0
+    },
+    "after": {
+      "users": 3,
+      "platformWrites": 0
+    },
+    "unchanged": true
+  },
+  "newman": {
+    "requests": 33,
+    "assertions": 141,
+    "failed": 4,
+    "failures": 5
+  },
+  "error": "Fallos Newman; consultar nombres de aserciones sanitizados\n\n5 !== 0\n"
+}
