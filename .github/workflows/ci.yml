@@ -47,3 +47,65 @@ jobs:
             npm ci || npm install
             npm run build --if-present
           fi
+
+  qa07-concurrencia:
+    name: QA-07 PostgreSQL y concurrencia 200/409
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: PostgreSQL exclusivo en Docker
+        shell: bash
+        run: |
+          set -euo pipefail
+          export POSTGRES_PASSWORD="$(openssl rand -hex 24)"
+          echo "::add-mask::$POSTGRES_PASSWORD"
+          docker compose -f infra/docker-compose.yml up -d --wait postgres-evaluaciones
+          docker exec pei-db-evaluaciones createdb -U postgres pei_evaluaciones_qa07
+          actual="$(docker exec pei-db-evaluaciones psql -U postgres -d pei_evaluaciones_qa07 -Atc 'SELECT current_database()')"
+          test "$actual" = pei_evaluaciones_qa07
+          connection="Host=127.0.0.1;Port=5443;Database=pei_evaluaciones_qa07;Username=postgres;Password=$POSTGRES_PASSWORD"
+          echo "::add-mask::$connection"
+          echo "QA07_CONNECTION=$connection" >> "$GITHUB_ENV"
+          echo "ConnectionStrings__Default=$connection" >> "$GITHUB_ENV"
+      - name: Compilar y migrar destino verificado
+        run: |
+          dotnet build services/evaluaciones/PEI.Evaluaciones.sln
+          dotnet tool install --global dotnet-ef --version 8.0.11
+          dotnet ef database update --project services/evaluaciones/src/PEI.Evaluaciones.Infrastructure --startup-project services/evaluaciones/src/PEI.Evaluaciones.Api --no-build
+      - name: xUnit con colision determinista
+        run: dotnet test services/evaluaciones/PEI.Evaluaciones.sln --no-build --logger trx --results-directory TestResults/qa07
+      - name: API local y treinta carreras HTTP
+        shell: bash
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
+          ASPNETCORE_URLS: http://127.0.0.1:5103
+          Logging__LogLevel__Default: Warning
+        run: |
+          set -euo pipefail
+          dotnet run --no-build --no-launch-profile --project services/evaluaciones/src/PEI.Evaluaciones.Api > /tmp/qa07-api.log 2>&1 &
+          api_pid=$!
+          trap 'kill "$api_pid" 2>/dev/null || true' EXIT
+          ready=false
+          for attempt in $(seq 1 60); do
+            kill -0 "$api_pid"
+            if curl --fail --silent http://127.0.0.1:5103/swagger/v1/swagger.json > /dev/null; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" = true
+          bash tests/concurrencia/test-concurrencia.sh --repetitions 30 --output TestResults/qa07/http.json
+      - name: Evidencias QA-07
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa07-evidencias
+          path: TestResults/qa07/
+          if-no-files-found: warn

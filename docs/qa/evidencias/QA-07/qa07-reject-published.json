@@ -1,0 +1,13 @@
+{
+  "utc": "2026-10-24T17:20:02.0270792+00:00",
+  "failures": 1,
+  "runs": [
+    {
+      "iteration": 1,
+      "id": "68a0b718-f9c5-47d6-8ce0-5a15829177fb",
+      "status": "FAIL",
+      "responses": [],
+      "reason": "Estado inicial incorrecto."
+    }
+  ]
+}

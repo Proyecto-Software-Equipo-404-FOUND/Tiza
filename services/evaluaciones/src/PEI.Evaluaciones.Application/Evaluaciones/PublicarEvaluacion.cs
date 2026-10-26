@@ -63,7 +63,14 @@ public class PublicarEvaluacionHandler : IRequestHandler<PublicarEvaluacionComma
         evaluacion.Version++;
         evaluacion.FechaActualizacion = DateTimeOffset.UtcNow;
 
-        await _repositorio.GuardarCambiosAsync(ct);
+        try
+        {
+            await _repositorio.GuardarCambiosAsync(ct);
+        }
+        catch (ConflictoConcurrenciaException)
+        {
+            return ResultadoOperacion<EvaluacionDto>.Conflicto("La evaluacion fue modificada por otra persona. Recargala y reintenta.");
+        }
 
         return ResultadoOperacion<EvaluacionDto>.Ok(EvaluacionDto.Desde(evaluacion));
     }

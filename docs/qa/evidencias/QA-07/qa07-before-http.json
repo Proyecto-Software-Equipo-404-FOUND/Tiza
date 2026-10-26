@@ -1,0 +1,191 @@
+{
+  "utc": "2026-10-24T17:17:46.5757537+00:00",
+  "failures": 9,
+  "runs": [
+    {
+      "iteration": 1,
+      "id": "3843796e-59d3-4efd-8db4-0e9e0aa843a4",
+      "status": "PASS",
+      "responses": [
+        {
+          "request": "A",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u00223843796e-59d3-4efd-8db4-0e9e0aa843a4\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 942694e6-820c-42e8-b84f-c7de66f5d154\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:17:45.513591\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:17:46.0947927\u002B00:00\u0022,\u0022version\u0022:2}"
+        },
+        {
+          "request": "B",
+          "status": 409,
+          "body": "{\u0022title\u0022:\u0022La operacion no se puede realizar en el estado actual.\u0022,\u0022status\u0022:409,\u0022detail\u0022:\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022,\u0022errores\u0022:[\u0022La evaluacion fue modificada por otra persona. Recargala y reintenta.\u0022]}"
+        }
+      ],
+      "initialVersion": 1,
+      "finalVersion": 2,
+      "state": "Publicada",
+      "cohort": "33333333-3333-3333-3333-333333333333",
+      "contentUnchanged": true,
+      "retryStatus": 409
+    },
+    {
+      "iteration": 2,
+      "id": "98f237a8-1bf0-410a-a821-97f170ab5e09",
+      "status": "FAIL",
+      "responses": [
+        {
+          "request": "A",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u002298f237a8-1bf0-410a-a821-97f170ab5e09\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 8d5a02ba-1d6e-43f8-b254-fb07ff90a833\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:17:46.151735\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:17:46.176171\u002B00:00\u0022,\u0022version\u0022:2}"
+        },
+        {
+          "request": "B",
+          "status": 500,
+          "body": "Cuerpo omitido por sanitizacion"
+        }
+      ],
+      "reason": "Se requiere exactamente un HTTP 200 y un HTTP 409."
+    },
+    {
+      "iteration": 3,
+      "id": "53ea037a-808f-4750-aeb7-8bfe918dbc72",
+      "status": "FAIL",
+      "responses": [
+        {
+          "request": "A",
+          "status": 500,
+          "body": "Cuerpo omitido por sanitizacion"
+        },
+        {
+          "request": "B",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u002253ea037a-808f-4750-aeb7-8bfe918dbc72\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 628ee793-f4bf-4ab7-abd8-dff96470c71e\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:17:46.241149\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:17:46.260273\u002B00:00\u0022,\u0022version\u0022:2}"
+        }
+      ],
+      "reason": "Se requiere exactamente un HTTP 200 y un HTTP 409."
+    },
+    {
+      "iteration": 4,
+      "id": "31293172-341f-4ef7-b2f3-f7c207adabf0",
+      "status": "FAIL",
+      "responses": [
+        {
+          "request": "A",
+          "status": 500,
+          "body": "Cuerpo omitido por sanitizacion"
+        },
+        {
+          "request": "B",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u002231293172-341f-4ef7-b2f3-f7c207adabf0\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 d26f1478-1bbd-46cf-b2e6-dda7a821473e\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:17:46.279917\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:17:46.2992625\u002B00:00\u0022,\u0022version\u0022:2}"
+        }
+      ],
+      "reason": "Se requiere exactamente un HTTP 200 y un HTTP 409."
+    },
+    {
+      "iteration": 5,
+      "id": "47522fa3-b5f5-4cc9-8233-6ea78d310c87",
+      "status": "FAIL",
+      "responses": [
+        {
+          "request": "A",
+          "status": 500,
+          "body": "Cuerpo omitido por sanitizacion"
+        },
+        {
+          "request": "B",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u002247522fa3-b5f5-4cc9-8233-6ea78d310c87\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 4ebc6b3a-2071-47ff-9948-f3abb7748f1b\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:17:46.314605\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:17:46.3333875\u002B00:00\u0022,\u0022version\u0022:2}"
+        }
+      ],
+      "reason": "Se requiere exactamente un HTTP 200 y un HTTP 409."
+    },
+    {
+      "iteration": 6,
+      "id": "5ae172f5-fdeb-42a0-a3fc-e0ff3f096be4",
+      "status": "FAIL",
+      "responses": [
+        {
+          "request": "A",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u00225ae172f5-fdeb-42a0-a3fc-e0ff3f096be4\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 9e3655d3-b8b1-40ed-a029-c97d171c455a\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:17:46.348872\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:17:46.3756157\u002B00:00\u0022,\u0022version\u0022:2}"
+        },
+        {
+          "request": "B",
+          "status": 500,
+          "body": "Cuerpo omitido por sanitizacion"
+        }
+      ],
+      "reason": "Se requiere exactamente un HTTP 200 y un HTTP 409."
+    },
+    {
+      "iteration": 7,
+      "id": "1978be99-68eb-4341-b817-c52f45abf1ce",
+      "status": "FAIL",
+      "responses": [
+        {
+          "request": "A",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u00221978be99-68eb-4341-b817-c52f45abf1ce\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 aec263a0-90c7-4be2-9fdd-56a3a0af9b5e\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:17:46.393047\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:17:46.4406633\u002B00:00\u0022,\u0022version\u0022:2}"
+        },
+        {
+          "request": "B",
+          "status": 500,
+          "body": "Cuerpo omitido por sanitizacion"
+        }
+      ],
+      "reason": "Se requiere exactamente un HTTP 200 y un HTTP 409."
+    },
+    {
+      "iteration": 8,
+      "id": "d24fc2d8-16a9-4d78-bba2-f3cb3da35ce3",
+      "status": "FAIL",
+      "responses": [
+        {
+          "request": "A",
+          "status": 500,
+          "body": "Cuerpo omitido por sanitizacion"
+        },
+        {
+          "request": "B",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u0022d24fc2d8-16a9-4d78-bba2-f3cb3da35ce3\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 2204d8b3-1205-4061-beec-f9a8eb56622d\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:17:46.456605\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:17:46.4815018\u002B00:00\u0022,\u0022version\u0022:2}"
+        }
+      ],
+      "reason": "Se requiere exactamente un HTTP 200 y un HTTP 409."
+    },
+    {
+      "iteration": 9,
+      "id": "7f76ecaf-230a-4161-8b9f-9d546b7012b0",
+      "status": "FAIL",
+      "responses": [
+        {
+          "request": "A",
+          "status": 500,
+          "body": "Cuerpo omitido por sanitizacion"
+        },
+        {
+          "request": "B",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u00227f76ecaf-230a-4161-8b9f-9d546b7012b0\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 4105a1bb-89c6-4bb2-ba35-67430971d059\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:17:46.49711\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:17:46.5184005\u002B00:00\u0022,\u0022version\u0022:2}"
+        }
+      ],
+      "reason": "Se requiere exactamente un HTTP 200 y un HTTP 409."
+    },
+    {
+      "iteration": 10,
+      "id": "52d5592b-6d7b-4d1c-b7c9-c80cff053dda",
+      "status": "FAIL",
+      "responses": [
+        {
+          "request": "A",
+          "status": 200,
+          "body": "{\u0022id\u0022:\u002252d5592b-6d7b-4d1c-b7c9-c80cff053dda\u0022,\u0022institucionId\u0022:\u002270707070-7070-4070-8070-707070707070\u0022,\u0022titulo\u0022:\u0022QA-07 6e8916ac-f5b5-45ad-bacf-bb25b695af27\u0022,\u0022tipo\u0022:\u0022Examen\u0022,\u0022estado\u0022:\u0022Publicada\u0022,\u0022cohorteId\u0022:\u002233333333-3333-3333-3333-333333333333\u0022,\u0022preguntasJson\u0022:{\u0022version\u0022:1,\u0022preguntas\u0022:[{\u0022id\u0022:\u002277777777-7777-4777-8777-777777777777\u0022,\u0022tipo\u0022:\u0022Abierta\u0022,\u0022rubrica\u0022:{\u0022criterios\u0022:[{\u0022puntaje\u0022:1,\u0022descripcion\u0022:\u0022Consistencia\u0022}]},\u0022enunciado\u0022:\u0022Explica una transaccion\u0022,\u0022puntajeMaximo\u0022:1}]},\u0022fechaCreacion\u0022:\u00222026-10-24T17:17:46.534522\u002B00:00\u0022,\u0022fechaActualizacion\u0022:\u00222026-10-24T17:17:46.5519977\u002B00:00\u0022,\u0022version\u0022:2}"
+        },
+        {
+          "request": "B",
+          "status": 500,
+          "body": "Cuerpo omitido por sanitizacion"
+        }
+      ],
+      "reason": "Se requiere exactamente un HTTP 200 y un HTTP 409."
+    }
+  ]
+}

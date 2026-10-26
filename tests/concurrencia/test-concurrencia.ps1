@@ -1,44 +1,15 @@
-# ==============================================================================
-# Prueba de Concurrencia Optimista (PowerShell - Windows)
-# ==============================================================================
 param(
-    [string]$Url = "http://localhost:8080",
-    [string]$Id = "00000000-0000-0000-0000-000000000001",
-    [string]$Token = "token-de-prueba"
+    [string]$Url = 'http://127.0.0.1:5103',
+    [string]$Database = 'pei_evaluaciones_qa07',
+    [string]$Institution = '70707070-7070-4070-8070-707070707070',
+    [string]$Cohort = '33333333-3333-3333-3333-333333333333',
+    [int]$Repetitions = 10,
+    [string]$Id,
+    [string]$Output = 'TestResults/qa07-http.json'
 )
-
-Write-Host "Enviando 2 peticiones concurrentes a $Url/api/v1/evaluaciones/$Id..." -ForegroundColor Cyan
-
-$body = @{
-    estado = "Publicada"
-    version = 1
-} | ConvertTo-Json
-
-$headers = @{
-    "Authorization" = "Bearer $Token"
-    "Content-Type"  = "application/json"
-}
-
-$job1 = Start-Job -ScriptBlock {
-    param($u, $h, $b)
-    try {
-        $res = Invoke-WebRequest -Uri "$u" -Method Patch -Headers $h -Body $b -UseBasicParsing
-        return $res.StatusCode
-    } catch {
-        return $_.Exception.Response.StatusCode.value__
-    }
-} -ArgumentList "$Url/api/v1/evaluaciones/$Id", $headers, $body
-
-$job2 = Start-Job -ScriptBlock {
-    param($u, $h, $b)
-    try {
-        $res = Invoke-WebRequest -Uri "$u" -Method Patch -Headers $h -Body $b -UseBasicParsing
-        return $res.StatusCode
-    } catch {
-        return $_.Exception.Response.StatusCode.value__
-    }
-} -ArgumentList "$Url/api/v1/evaluaciones/$Id", $headers, $body
-
-$results = Wait-Job $job1, $job2 | Receive-Job
-Write-Host "Resultados HTTP obtenidos: $($results -join ', ')" -ForegroundColor Yellow
-Write-Host "Resultado esperado: Uno debe ser 200/204 y el otro 409 (Conflict)." -ForegroundColor Green
+$ErrorActionPreference = 'Stop'
+$runnerArgs = @('--url', $Url, '--database', $Database, '--institution', $Institution,
+    '--cohort', $Cohort, '--repetitions', "$Repetitions", '--output', $Output)
+if ($Id) { $runnerArgs += @('--id', $Id) }
+dotnet run --project "$PSScriptRoot/Runner/QA07.Runner.csproj" -- @runnerArgs
+exit $LASTEXITCODE
