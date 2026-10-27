@@ -22,12 +22,14 @@ public sealed class InstitutionalSessionTests
     private static InstitutionalSessionService Service(FakeIdentityStore store, IAuthenticationTokenWriter? writer = null)
     {
         var issuer = new JwtTokenService(Options.Create(Jwt));
-        return new(new LoginHandler(store, new BCryptPasswordHasher(), issuer), store, writer ?? store, new RefreshTokenService(), new RefreshTokenHasher(), issuer);
+        return new(new LoginHandler(store, new BCryptPasswordHasher(), issuer), writer ?? store, new RefreshTokenService(), new RefreshTokenHasher(), issuer);
     }
     private static LoginCommand Login(FakeIdentityStore store) => new() { Email = store.Admin.Email, Password = "Prueba123!" };
 
     private sealed class WriterConFallo(Exception error) : IAuthenticationTokenWriter
     {
+        public Task<T> ConfirmarLoginAsync<T>(PEI.Identidad.Domain.Entities.Usuario autenticado, string hash, DateTime vence, Func<RefreshIdentity, T> emitir, CancellationToken ct = default) => Task.FromException<T>(error);
+        public Task<T> ConfirmarRefreshAsync<T>(string anterior, string nuevo, DateTime vence, Func<RefreshIdentity, T> emitir, CancellationToken ct = default) => Task.FromException<T>(error);
         public Task CrearRefreshTokenAsync(Guid usuarioId, string hash, DateTime vence, CancellationToken ct = default) => Task.FromException(error);
         public Task<bool> RevocarRefreshTokenAsync(string hash, CancellationToken ct = default) => throw new NotSupportedException();
         public Task<bool> RotarRefreshTokenAsync(string anterior, string nuevo, DateTime vence, CancellationToken ct = default) => throw new NotSupportedException();

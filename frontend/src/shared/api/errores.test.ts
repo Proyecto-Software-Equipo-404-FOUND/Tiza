@@ -2,10 +2,22 @@ import { ApiError } from './cliente';
 import { mensajeDeError } from './errores';
 
 describe('mensajeDeError', () => {
-  it('devuelve el texto de conflicto para un 409', () => {
+  it('devuelve el texto de conflicto para un 409 sin detalle', () => {
     const error = new ApiError(409, { title: 'Conflicto', status: 409 });
     expect(mensajeDeError(error)).toBe(
       'Alguien modificó este dato. Recargá la página e intentá de nuevo.',
+    );
+  });
+
+  it('devuelve el detalle del servidor para un 409 con detail', () => {
+    const error = new ApiError(409, {
+      title: 'Conflicto en la operación',
+      status: 409,
+      detail:
+        "Ya existe una comision llamada 'Cohorte Prueba' para el ciclo '2026-2C' en este curso.",
+    });
+    expect(mensajeDeError(error)).toBe(
+      "Ya existe una comision llamada 'Cohorte Prueba' para el ciclo '2026-2C' en este curso.",
     );
   });
 

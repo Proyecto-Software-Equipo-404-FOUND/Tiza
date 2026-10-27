@@ -38,13 +38,14 @@ public sealed class InvitacionesOutbox(PlataformaDbContext db, IEmailSender send
         var entregas = await db.Set<EntregaInvitacion>().FromSqlRaw("""
             SELECT e.* FROM "EntregaInvitacion" e
             WHERE e."Entregada" IS NULL AND e."ContenidoProtegido" <> ''
-              AND e."Creada" + (LEAST(e."Intentos", 60) * interval '1 minute') < clock_timestamp()
-            ORDER BY e."Creada" LIMIT 1 FOR UPDATE OF e SKIP LOCKED
+              AND COALESCE(e."ProximoIntento", e."Creada") <= statement_timestamp()
+            ORDER BY COALESCE(e."ProximoIntento", e."Creada"), e."Creada", e."Id"
+            LIMIT 1 FOR UPDATE OF e SKIP LOCKED
             """).ToListAsync(ct);
         if (entregas.Count == 0) return false;
         var entrega = entregas[0];
         var invitacion = await db.Set<InvitacionAdministrador>().SingleAsync(x => x.Id == entrega.InvitacionId, ct);
-        entrega.Intentos++;
+        entrega.Intentos = (int)Math.Min((long)entrega.Intentos + 1, int.MaxValue);
         if (invitacion.Utilizada.HasValue || invitacion.Vencimiento <= DateTime.UtcNow)
             entrega.ContenidoProtegido = "";
         else
@@ -57,7 +58,15 @@ public sealed class InvitacionesOutbox(PlataformaDbContext db, IEmailSender send
                 entrega.ContenidoProtegido = "";
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
-            catch { /* El envío se reintentará; nunca registrar cuerpo, token o excepción del proveedor. */ }
+            catch
+            {
+                // Capturar la hora despues del fallo; seleccion y programacion usan PostgreSQL.
+                var minutos = Math.Clamp(entrega.Intentos, 1, 60);
+                entrega.ProximoIntento = await db.Database.SqlQuery<DateTime>($"""
+                    SELECT clock_timestamp() + ({minutos} * interval '1 minute') AS "Value"
+                    """).SingleAsync(ct);
+                // Nunca publicar cuerpo, token ni excepcion del proveedor.
+            }
         }
         await db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);

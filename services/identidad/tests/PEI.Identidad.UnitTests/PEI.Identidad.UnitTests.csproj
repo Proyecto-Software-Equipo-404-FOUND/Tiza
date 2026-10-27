@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+    <None Include="..\..\..\..\tests\identity-negative\cases.json" Link="qa02-cases.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

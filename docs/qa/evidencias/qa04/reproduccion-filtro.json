@@ -1,0 +1,60 @@
+[
+  {
+    "tests": [
+      {
+        "outcome": "Failed",
+        "name": "PEI.Cursos.UnitTests.Infrastructure.TenantQueryTranslationTests.ConsultaSinTenantDebeTraducirseSinExcepcion(entidad: \"Cohortes\", sinContexto: False)"
+      },
+      {
+        "outcome": "Failed",
+        "name": "PEI.Cursos.UnitTests.Infrastructure.TenantQueryTranslationTests.ConsultaSinTenantDebeTraducirseSinExcepcion(entidad: \"Cohortes\", sinContexto: True)"
+      },
+      {
+        "outcome": "Failed",
+        "name": "PEI.Cursos.UnitTests.Infrastructure.TenantQueryTranslationTests.ConsultaSinTenantDebeTraducirseSinExcepcion(entidad: \"Cursos\", sinContexto: False)"
+      },
+      {
+        "outcome": "Failed",
+        "name": "PEI.Cursos.UnitTests.Infrastructure.TenantQueryTranslationTests.ConsultaSinTenantDebeTraducirseSinExcepcion(entidad: \"Matriculaciones\", sinContexto: True)"
+      },
+      {
+        "outcome": "Failed",
+        "name": "PEI.Cursos.UnitTests.Infrastructure.TenantQueryTranslationTests.ConsultaSinTenantDebeTraducirseSinExcepcion(entidad: \"Matriculaciones\", sinContexto: False)"
+      },
+      {
+        "outcome": "Failed",
+        "name": "PEI.Cursos.UnitTests.Infrastructure.TenantQueryTranslationTests.ConsultaSinTenantDebeTraducirseSinExcepcion(entidad: \"Cursos\", sinContexto: True)"
+      }
+    ],
+    "run": "qa04-reproduccion"
+  },
+  {
+    "tests": [
+      {
+        "outcome": "Passed",
+        "name": "PEI.Cursos.UnitTests.Infrastructure.TenantQueryTranslationTests.ConsultaSinTenantDebeTraducirseSinExcepcion(entidad: \"Cohortes\", sinContexto: True)"
+      },
+      {
+        "outcome": "Passed",
+        "name": "PEI.Cursos.UnitTests.Infrastructure.TenantQueryTranslationTests.ConsultaSinTenantDebeTraducirseSinExcepcion(entidad: \"Matriculaciones\", sinContexto: True)"
+      },
+      {
+        "outcome": "Passed",
+        "name": "PEI.Cursos.UnitTests.Infrastructure.TenantQueryTranslationTests.ConsultaSinTenantDebeTraducirseSinExcepcion(entidad: \"Cohortes\", sinContexto: False)"
+      },
+      {
+        "outcome": "Passed",
+        "name": "PEI.Cursos.UnitTests.Infrastructure.TenantQueryTranslationTests.ConsultaSinTenantDebeTraducirseSinExcepcion(entidad: \"Cursos\", sinContexto: True)"
+      },
+      {
+        "outcome": "Passed",
+        "name": "PEI.Cursos.UnitTests.Infrastructure.TenantQueryTranslationTests.ConsultaSinTenantDebeTraducirseSinExcepcion(entidad: \"Matriculaciones\", sinContexto: False)"
+      },
+      {
+        "outcome": "Passed",
+        "name": "PEI.Cursos.UnitTests.Infrastructure.TenantQueryTranslationTests.ConsultaSinTenantDebeTraducirseSinExcepcion(entidad: \"Cursos\", sinContexto: False)"
+      }
+    ],
+    "run": "qa04-corregido"
+  }
+]

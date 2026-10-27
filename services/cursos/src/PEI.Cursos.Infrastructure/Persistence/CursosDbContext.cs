@@ -10,6 +10,9 @@ y garantiza el aislamiento multi-tenant aplicando filtros globales de consulta e
 public class CursosDbContext : DbContext
 {
     private readonly ITenantContext? _tenantContext;
+    // EF parametriza miembros del contexto antes de evaluar los && del filtro.
+    // Evitar Nullable.Value y desreferencias de un contexto opcional en la expresión.
+    private Guid? InstitucionActual => _tenantContext?.InstitucionId is Guid id && id != Guid.Empty ? id : null;
 
     public DbSet<Curso> Cursos => Set<Curso>();
     public DbSet<Cohorte> Cohortes => Set<Cohorte>();
@@ -37,12 +40,12 @@ public class CursosDbContext : DbContext
         contexto tenant autenticado con un InstitucionId valido, las consultas devuelven 0 registros
         impidiendo cualquier fuga de informacion inadvertida entre inquilinos. */
         modelBuilder.Entity<Curso>()
-            .HasQueryFilter(c => _tenantContext != null && _tenantContext.InstitucionId.HasValue && c.InstitucionId == _tenantContext.InstitucionId.Value);
+            .HasQueryFilter(c => InstitucionActual.HasValue && c.InstitucionId == InstitucionActual);
 
         modelBuilder.Entity<Cohorte>()
-            .HasQueryFilter(c => _tenantContext != null && _tenantContext.InstitucionId.HasValue && c.InstitucionId == _tenantContext.InstitucionId.Value);
+            .HasQueryFilter(c => InstitucionActual.HasValue && c.InstitucionId == InstitucionActual);
 
         modelBuilder.Entity<Matriculacion>()
-            .HasQueryFilter(m => _tenantContext != null && _tenantContext.InstitucionId.HasValue && m.InstitucionId == _tenantContext.InstitucionId.Value);
+            .HasQueryFilter(m => InstitucionActual.HasValue && m.InstitucionId == InstitucionActual);
     }
 }

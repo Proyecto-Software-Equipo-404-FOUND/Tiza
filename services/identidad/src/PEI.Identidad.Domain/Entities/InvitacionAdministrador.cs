@@ -18,4 +18,5 @@ public sealed class EntregaInvitacion
     public DateTime Creada { get; set; }
     public DateTime? Entregada { get; set; }
     public int Intentos { get; set; }
+    public DateTime? ProximoIntento { get; set; }
 }

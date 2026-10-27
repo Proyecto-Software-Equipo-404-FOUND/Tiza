@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using PEI.BuildingBlocks.MultiTenancy;
@@ -43,7 +44,8 @@ public class CrearCohorteCommandHandler : IRequestHandler<CrearCohorteCommand, C
         var curso = await _cursoRepository.GetByIdAsync(request.CursoId, cancellationToken);
         if (curso is null)
         {
-            throw new DomainException("El curso especificado no existe o no pertenece a la institucion.");
+            // El contrato devuelve el mismo 404 para un curso inexistente o ajeno.
+            throw new KeyNotFoundException("El curso especificado no existe o no pertenece a la institucion.");
         }
 
         if (!curso.Activo)

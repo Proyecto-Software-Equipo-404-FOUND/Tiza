@@ -1,0 +1,632 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "PEI Tiza — Servicio de Evaluaciones",
+    "description": "Creación, edición, publicación y consulta de evaluaciones de cada institución. Una evaluación nace en estado Borrador (se puede editar y borrar) y pasa a Publicada al publicarse con una cohorte asociada. Todos los endpoints exigen el header X-Institucion-Id, que es una solución temporal hasta que Identidad emita el JWT y la institución se lea del token.",
+    "contact": {
+      "name": "Equipo 404 Found",
+      "email": "equipo404found@tiza.pei.edu.ar"
+    },
+    "version": "v1"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Gateway YARP (recomendado para el frontend)"
+    },
+    {
+      "url": "http://localhost:5103",
+      "description": "Servicio directo (desarrollo local)"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Evaluaciones",
+      "description": "CRUD y publicación de evaluaciones."
+    }
+  ],
+  "paths": {
+    "/api/v1/evaluaciones": {
+      "get": {
+        "tags": [
+          "Evaluaciones"
+        ],
+        "summary": "Lista las evaluaciones de la institución.",
+        "operationId": "ListarEvaluaciones",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/InstitucionId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de evaluaciones de la institución (puede estar vacía).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Evaluacion"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/PeticionInvalida"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Evaluaciones"
+        ],
+        "summary": "Crea una evaluación en estado Borrador.",
+        "operationId": "CrearEvaluacion",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/InstitucionId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvaluacionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Evaluación creada. El header Location apunta a GET /api/v1/evaluaciones/{id}.",
+            "headers": {
+              "Location": {
+                "description": "URL de la evaluación creada.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Evaluacion"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/PeticionInvalida"
+          }
+        }
+      }
+    },
+    "/api/v1/evaluaciones/{id}": {
+      "get": {
+        "tags": [
+          "Evaluaciones"
+        ],
+        "summary": "Obtiene una evaluación de la institución.",
+        "operationId": "ObtenerEvaluacion",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/InstitucionId"
+          },
+          {
+            "$ref": "#/components/parameters/EvaluacionId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Evaluación encontrada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Evaluacion"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/PeticionInvalida"
+          },
+          "404": {
+            "$ref": "#/components/responses/NoEncontrada"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Evaluaciones"
+        ],
+        "summary": "Modifica título, tipo y preguntas de una evaluación en Borrador.",
+        "operationId": "ActualizarEvaluacion",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/InstitucionId"
+          },
+          {
+            "$ref": "#/components/parameters/EvaluacionId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvaluacionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Evaluación actualizada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Evaluacion"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/PeticionInvalida"
+          },
+          "404": {
+            "$ref": "#/components/responses/NoEncontrada"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflicto"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Evaluaciones"
+        ],
+        "summary": "Elimina una evaluación en estado Borrador. No lleva cuerpo.",
+        "operationId": "EliminarEvaluacion",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/InstitucionId"
+          },
+          {
+            "$ref": "#/components/parameters/EvaluacionId"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Evaluación eliminada."
+          },
+          "400": {
+            "$ref": "#/components/responses/PeticionInvalida"
+          },
+          "404": {
+            "$ref": "#/components/responses/NoEncontrada"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflicto"
+          }
+        }
+      }
+    },
+    "/api/v1/evaluaciones/{id}/publicar": {
+      "post": {
+        "tags": [
+          "Evaluaciones"
+        ],
+        "summary": "Publica una evaluación en Borrador y le asocia una cohorte.",
+        "description": "Control optimista: el cliente envía la versión que vio. Si no coincide con la versión actual, responde 409. Reglas en orden: cohorte obligatoria (400), evaluación inexistente (404), versión distinta (409), estado distinto de Borrador (409), sin preguntas (400), cohorte inexistente o de otra institución (400). Si todo es válido, la evaluación pasa a Publicada y su versión sube en 1.",
+        "operationId": "PublicarEvaluacion",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/InstitucionId"
+          },
+          {
+            "$ref": "#/components/parameters/EvaluacionId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicarEvaluacionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Evaluación publicada, con la nueva versión.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Evaluacion"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/PeticionInvalida"
+          },
+          "404": {
+            "$ref": "#/components/responses/NoEncontrada"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflicto"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "InstitucionId": {
+        "name": "X-Institucion-Id",
+        "in": "header",
+        "required": true,
+        "description": "Identificador de la institución (tenant). Temporal hasta que la institución se lea del JWT. Si falta o es un UUID vacío, el servicio responde 400.",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "EvaluacionId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "Identificador de la evaluación.",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "responses": {
+      "PeticionInvalida": {
+        "description": "Falta el header de institución o los datos no cumplen las reglas.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          },
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      },
+      "NoEncontrada": {
+        "description": "La evaluación no existe en esa institución.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          },
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      },
+      "Conflicto": {
+        "description": "La operación no se puede realizar en el estado o la versión actual.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          },
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "EvaluacionRequest": {
+        "type": "object",
+        "required": [
+          "titulo",
+          "tipo",
+          "preguntasJson"
+        ],
+        "properties": {
+          "titulo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Título de la evaluación."
+          },
+          "tipo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "description": "Tipo de evaluación (por ejemplo Examen o Cuestionario). Más adelante se restringe a Examen, Cuestionario o Quiz."
+          },
+          "preguntasJson": {
+            "$ref": "#/components/schemas/PreguntasJson"
+          }
+        },
+        "example": {
+          "titulo": "Examen parcial de Programación I",
+          "tipo": "Examen",
+          "preguntasJson": {
+            "version": 1,
+            "preguntas": [
+              {
+                "id": "5f1c1d9e-0a3b-4c11-9a52-1b2c3d4e5f60",
+                "enunciado": "¿Qué imprime Console.WriteLine(2 + 3)?",
+                "tipo": "OpcionMultiple",
+                "puntajeMaximo": 2,
+                "opciones": [
+                  {
+                    "id": "7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+                    "texto": "5",
+                    "esCorrecta": true
+                  },
+                  {
+                    "id": "8b2c3d4e-5f60-4b7c-9d8e-0f1a2b3c4d5e",
+                    "texto": "23",
+                    "esCorrecta": false
+                  }
+                ]
+              },
+              {
+                "id": "9c3d4e5f-6071-4c8d-8e9f-1a2b3c4d5e6f",
+                "enunciado": "Explicá qué es una variable.",
+                "tipo": "Abierta",
+                "puntajeMaximo": 4,
+                "rubrica": {
+                  "criterios": [
+                    {
+                      "descripcion": "Define el concepto correctamente",
+                      "puntaje": 2
+                    },
+                    {
+                      "descripcion": "Da un ejemplo",
+                      "puntaje": 2
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      },
+      "PreguntasJson": {
+        "type": "object",
+        "description": "Estructura de preguntas y rúbricas. Se valida contra el esquema oficial contracts/schemas/preguntas-v1.schema.json; este componente lo refleja para generar clientes tipados.",
+        "required": [
+          "version",
+          "preguntas"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "default": 1,
+            "description": "Versión del esquema de preguntas."
+          },
+          "preguntas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Pregunta"
+            }
+          }
+        }
+      },
+      "Pregunta": {
+        "type": "object",
+        "required": [
+          "id",
+          "enunciado",
+          "tipo",
+          "puntajeMaximo"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "enunciado": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "OpcionMultiple",
+              "Abierta"
+            ]
+          },
+          "puntajeMaximo": {
+            "type": "number",
+            "minimum": 0
+          },
+          "opciones": {
+            "type": "array",
+            "description": "Opciones de respuesta (preguntas OpcionMultiple).",
+            "items": {
+              "$ref": "#/components/schemas/Opcion"
+            }
+          },
+          "rubrica": {
+            "$ref": "#/components/schemas/Rubrica"
+          }
+        }
+      },
+      "Opcion": {
+        "type": "object",
+        "required": [
+          "id",
+          "texto",
+          "esCorrecta"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "texto": {
+            "type": "string"
+          },
+          "esCorrecta": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Rubrica": {
+        "type": "object",
+        "description": "Rúbrica de corrección (preguntas Abierta).",
+        "properties": {
+          "criterios": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Criterio"
+            }
+          }
+        }
+      },
+      "Criterio": {
+        "type": "object",
+        "required": [
+          "descripcion",
+          "puntaje"
+        ],
+        "properties": {
+          "descripcion": {
+            "type": "string"
+          },
+          "puntaje": {
+            "type": "number"
+          }
+        }
+      },
+      "PublicarEvaluacionRequest": {
+        "type": "object",
+        "required": [
+          "versionEsperada",
+          "cohorteId"
+        ],
+        "properties": {
+          "versionEsperada": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "description": "Versión de la evaluación que el cliente vio por última vez."
+          },
+          "cohorteId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Cohorte a la que se publica la evaluación."
+          }
+        }
+      },
+      "Evaluacion": {
+        "type": "object",
+        "required": [
+          "id",
+          "institucionId",
+          "titulo",
+          "tipo",
+          "estado",
+          "preguntasJson",
+          "fechaCreacion",
+          "fechaActualizacion",
+          "version"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "institucionId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Institución a la que pertenece la evaluación."
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "Borrador",
+              "Publicada"
+            ],
+            "description": "Estado de la evaluación."
+          },
+          "cohorteId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Cohorte asociada. Vacía mientras está en Borrador."
+          },
+          "preguntasJson": {
+            "$ref": "#/components/schemas/PreguntasJson"
+          },
+          "fechaCreacion": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fechaActualizacion": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Número de versión; empieza en 1 y sube al publicar."
+          }
+        }
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "instance": {
+            "type": "string",
+            "nullable": true
+          },
+          "errores": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Lista de mensajes de error de negocio."
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  }
+}
