@@ -1,0 +1,218 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tiza.pei.edu.ar/contracts/schemas/resultado-envio-respuesta-sala-v1.schema.json",
+  "title": "ResultadoEnvioRespuesta",
+  "description": "Resultado del método SignalR EnviarRespuesta del hub /hubs/sala (contrato sala-hub-v1). Aceptada y Duplicada son éxito; Rechazada incluye un ErrorHub y no persiste ni consume secuencia.",
+  "type": "object",
+  "required": [
+    "estado",
+    "preguntaId",
+    "idempotencyKey",
+    "secuencia",
+    "recibidaUtc",
+    "error"
+  ],
+  "properties": {
+    "estado": {
+      "type": "string",
+      "enum": [
+        "Aceptada",
+        "Duplicada",
+        "Rechazada"
+      ],
+      "description": "Aceptada: fila nueva persistida. Duplicada: ya existía la misma clave y payload; no se escribe ni se emite evento. Rechazada: no se persiste ni se consume secuencia."
+    },
+    "preguntaId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid",
+      "description": "Eco del payload. Puede ser null solo si el payload no se pudo interpretar."
+    },
+    "idempotencyKey": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid",
+      "description": "Eco del payload. Puede ser null solo si el payload no se pudo interpretar."
+    },
+    "secuencia": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1,
+      "description": "Eco del payload. Puede ser null solo si el payload no se pudo interpretar."
+    },
+    "recibidaUtc": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Hora del servidor en que se procesó la invocación. En Duplicada es la hora original de la respuesta persistida."
+    },
+    "error": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/error"
+        }
+      ],
+      "description": "Presente solo cuando estado es Rechazada."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "estado": {
+            "const": "Rechazada"
+          }
+        },
+        "required": [
+          "estado"
+        ]
+      },
+      "then": {
+        "properties": {
+          "error": {
+            "$ref": "#/$defs/error"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "error": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "estado": {
+            "enum": [
+              "Aceptada",
+              "Duplicada"
+            ]
+          }
+        },
+        "required": [
+          "estado"
+        ]
+      },
+      "then": {
+        "properties": {
+          "preguntaId": {
+            "type": "string"
+          },
+          "idempotencyKey": {
+            "type": "string"
+          },
+          "secuencia": {
+            "type": "integer"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "error": {
+      "type": "object",
+      "required": [
+        "codigo",
+        "mensaje",
+        "reintentable",
+        "correlationId"
+      ],
+      "properties": {
+        "codigo": {
+          "type": "string",
+          "enum": [
+            "NO_AUTENTICADO",
+            "NO_AUTORIZADO",
+            "SALA_NO_ENCONTRADA",
+            "SALA_OTRA_INSTITUCION",
+            "SALA_LLENA",
+            "ALUMNO_YA_EN_SALA",
+            "SALA_FINALIZADA",
+            "SALA_NO_INICIADA",
+            "SALA_YA_INICIADA",
+            "ALUMNO_NO_EN_SALA",
+            "PREGUNTA_INEXISTENTE",
+            "PREGUNTA_NO_VIGENTE",
+            "RESPUESTA_INVALIDA",
+            "RESPUESTA_YA_REGISTRADA",
+            "IDEMPOTENCY_KEY_REUTILIZADA",
+            "SECUENCIA_FUERA_DE_ORDEN",
+            "TIEMPO_AGOTADO",
+            "PAYLOAD_INVALIDO",
+            "LIMITE_ENVIOS",
+            "SIN_PREGUNTAS",
+            "ERROR_INTERNO"
+          ],
+          "description": "Código estable del catálogo de errores."
+        },
+        "mensaje": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Texto legible en español para el usuario."
+        },
+        "reintentable": {
+          "type": "boolean",
+          "description": "true si el mismo envío puede reintentarse con la misma clave y secuencia."
+        },
+        "correlationId": {
+          "type": "string",
+          "minLength": 8,
+          "description": "Identificador de correlación para logs y soporte."
+        },
+        "detalles": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": true,
+          "description": "Datos adicionales no sensibles (por ejemplo, secuenciaEsperada)."
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "estado": "Aceptada",
+      "preguntaId": "5f1c1d9e-0a3b-4c11-9a52-1b2c3d4e5f60",
+      "idempotencyKey": "b3f1c2d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+      "secuencia": 1,
+      "recibidaUtc": "2026-10-26T14:03:11.482Z",
+      "error": null
+    },
+    {
+      "estado": "Duplicada",
+      "preguntaId": "5f1c1d9e-0a3b-4c11-9a52-1b2c3d4e5f60",
+      "idempotencyKey": "b3f1c2d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+      "secuencia": 1,
+      "recibidaUtc": "2026-10-26T14:03:11.482Z",
+      "error": null
+    },
+    {
+      "estado": "Rechazada",
+      "preguntaId": "5f1c1d9e-0a3b-4c11-9a52-1b2c3d4e5f60",
+      "idempotencyKey": "b3f1c2d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+      "secuencia": 1,
+      "recibidaUtc": "2026-10-26T14:03:12.010Z",
+      "error": {
+        "codigo": "PREGUNTA_NO_VIGENTE",
+        "mensaje": "La pregunta ya no está vigente.",
+        "reintentable": false,
+        "correlationId": "0f7c2f0e-9a1b-4c2d-8e3f-4a5b6c7d8e9f",
+        "detalles": {
+          "preguntaActualId": "9c3d4e5f-6071-4c8d-8e9f-1a2b3c4d5e6f"
+        }
+      }
+    }
+  ]
+}
