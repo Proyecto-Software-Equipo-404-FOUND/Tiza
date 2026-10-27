@@ -221,25 +221,25 @@ public class AuthHandlerTests
         }
 
         public Task<bool> PuedeRegistrarAsync(
-            Guid institucionId)
+            Guid institucionId, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(
                 institucionId == _institucionId &&
                 _institucionActiva);
         }
 
-        public Task<bool> ExisteEmailAsync(string email) => Task.FromResult(_usuarios.Any(u => string.Equals(u.Email.Trim(), email.Trim(), StringComparison.OrdinalIgnoreCase)));
+        public Task<bool> ExisteEmailAsync(string email, CancellationToken cancellationToken = default) => Task.FromResult(_usuarios.Any(u => string.Equals(u.Email.Trim(), email.Trim(), StringComparison.OrdinalIgnoreCase)));
         public Task<Usuario?> BuscarUsuarioParaLoginAsync(string email, CancellationToken cancellationToken = default) =>
             Task.FromResult(_usuarios.FirstOrDefault(u => u.Activo && u.Institucion.Activo && string.Equals(u.Email.Trim(), email.Trim(), StringComparison.OrdinalIgnoreCase)));
         public Task<RefreshIdentity?> BuscarIdentidadParaRenovacionAsync(string hash, CancellationToken cancellationToken = default) => Task.FromResult<RefreshIdentity?>(null);
 
-        public Task AddAsync(Usuario usuario)
+        public Task AddAsync(Usuario usuario, CancellationToken cancellationToken = default)
         {
             _usuarios.Add(usuario);
             return Task.CompletedTask;
         }
 
-        public Task SaveChangesAsync()
+        public Task SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             Guardado = true;
             return Task.CompletedTask;

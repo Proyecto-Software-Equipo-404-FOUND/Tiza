@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { z } from 'zod';
 import { ApiError, guardarTokenRenovacion } from '@/shared/api/cliente';
 import { mensajeDeError } from '@/shared/api/errores';
 import { BannerError } from '@/shared/components/BannerError';
 import { Boton } from '@/shared/components/Boton';
 import { Campo } from '@/shared/components/Campo';
+import { IconoLapiz, Logo } from '@/shared/components/Logo';
 import { Tarjeta } from '@/shared/components/Tarjeta';
 import { iniciarSesion } from '../api/auth';
 import { rutaInicial } from '../rutaInicial';
@@ -26,6 +28,7 @@ export function PaginaLogin() {
   const [errores, setErrores] = useState<Errores>({});
   const [errorGeneral, setErrorGeneral] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
+  const [verContrasena, setVerContrasena] = useState(false);
 
   const enviar = async (evento: FormEvent) => {
     evento.preventDefault();
@@ -64,39 +67,74 @@ export function PaginaLogin() {
   };
 
   return (
-    <div className='mx-auto flex min-h-screen max-w-md flex-col justify-center gap-4 p-4'>
-      <Tarjeta titulo='Ingresar a Tiza'>
-        <form onSubmit={enviar} noValidate className='flex flex-col gap-4'>
-          <Campo
-            etiqueta='Correo'
-            type='email'
-            autoComplete='email'
-            value={correo}
-            onChange={(e) => {
-              setCorreo(e.target.value);
-              setErrorGeneral(null);
-            }}
-            error={errores.correo}
-            disabled={cargando}
+    <div className='min-h-screen bg-tiza-fondo'>
+      <div className='mx-auto flex min-h-screen max-w-6xl flex-col gap-8 px-6 py-8'>
+        <Logo tamano='grande' />
+        <div className='grid flex-1 items-center gap-10 pb-8 lg:grid-cols-2'>
+          <img
+            src='/ilustracion-login.png'
+            alt=''
+            aria-hidden='true'
+            className='hidden w-full max-w-xl justify-self-center lg:block'
           />
-          <Campo
-            etiqueta='Contraseña'
-            type='password'
-            autoComplete='current-password'
-            value={contrasena}
-            onChange={(e) => {
-              setContrasena(e.target.value);
-              setErrorGeneral(null);
-            }}
-            error={errores.contrasena}
-            disabled={cargando}
-          />
-          {errorGeneral && <BannerError mensaje={errorGeneral} />}
-          <Boton type='submit' cargando={cargando}>
-            Ingresar
-          </Boton>
-        </form>
-      </Tarjeta>
+          <div className='mx-auto w-full max-w-lg'>
+            <Tarjeta
+              titulo='Ingresar a Tiza'
+              subtitulo='Tu espacio para aprender y evaluar'
+              icono={<IconoLapiz className='h-9 w-9' />}
+            >
+              <form onSubmit={enviar} noValidate className='flex flex-col gap-5'>
+                <Campo
+                  etiqueta='Correo'
+                  type='email'
+                  autoComplete='email'
+                  placeholder='nombre@ejemplo.com'
+                  icono={<Mail className='h-5 w-5' aria-hidden='true' />}
+                  value={correo}
+                  onChange={(e) => {
+                    setCorreo(e.target.value);
+                    setErrorGeneral(null);
+                  }}
+                  error={errores.correo}
+                  disabled={cargando}
+                />
+                <Campo
+                  etiqueta='Contraseña'
+                  type={verContrasena ? 'text' : 'password'}
+                  autoComplete='current-password'
+                  placeholder='Ingresá tu contraseña'
+                  icono={<Lock className='h-5 w-5' aria-hidden='true' />}
+                  accion={
+                    <button
+                      type='button'
+                      onClick={() => setVerContrasena((v) => !v)}
+                      aria-label={verContrasena ? 'Ocultar la contraseña' : 'Mostrar la contraseña'}
+                      className='rounded-md p-1 text-tiza-bosque/70 hover:text-tiza-bosque'
+                    >
+                      {verContrasena ? (
+                        <EyeOff className='h-5 w-5' aria-hidden='true' />
+                      ) : (
+                        <Eye className='h-5 w-5' aria-hidden='true' />
+                      )}
+                    </button>
+                  }
+                  value={contrasena}
+                  onChange={(e) => {
+                    setContrasena(e.target.value);
+                    setErrorGeneral(null);
+                  }}
+                  error={errores.contrasena}
+                  disabled={cargando}
+                />
+                {errorGeneral && <BannerError mensaje={errorGeneral} />}
+                <Boton type='submit' cargando={cargando}>
+                  Ingresar
+                </Boton>
+              </form>
+            </Tarjeta>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

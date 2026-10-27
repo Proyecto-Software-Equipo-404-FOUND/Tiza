@@ -47,7 +47,10 @@ describe('PaginaMatriculas', () => {
     mostrarPagina();
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Matrícula' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: '← Volver a cursos' })).toHaveAttribute('href', '/cursos');
+    expect(screen.getByRole('link', { name: '← Volver a cursos' })).toHaveAttribute(
+      'href',
+      '/cursos',
+    );
   });
 
   it('no envía dos veces mientras hay un envío en curso', async () => {
@@ -122,5 +125,33 @@ describe('PaginaMatriculas', () => {
       await screen.findByText('Alguien modificó este dato. Recargá la página e intentá de nuevo.'),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
+  });
+
+  it('muestra el mensaje de permiso ante un 403', async () => {
+    vi.mocked(api.listarMatriculas).mockResolvedValue([]);
+    vi.mocked(api.matricularAlumno).mockRejectedValue(
+      new ApiError(403, { status: 403, title: 'Prohibido' }),
+    );
+    mostrarPagina();
+
+    await userEvent.selectOptions(await screen.findByLabelText('Alumno'), 'a1');
+    await userEvent.click(screen.getByRole('button', { name: 'Matricular' }));
+
+    const mensajes = await screen.findAllByText('No tenés permiso para hacer esto.');
+    expect(mensajes.length).toBeGreaterThan(0);
+  });
+
+  it('muestra el mensaje de no encontrado ante un 404', async () => {
+    vi.mocked(api.listarMatriculas).mockResolvedValue([]);
+    vi.mocked(api.matricularAlumno).mockRejectedValue(
+      new ApiError(404, { status: 404, title: 'No encontrado' }),
+    );
+    mostrarPagina();
+
+    await userEvent.selectOptions(await screen.findByLabelText('Alumno'), 'a1');
+    await userEvent.click(screen.getByRole('button', { name: 'Matricular' }));
+
+    const mensajes = await screen.findAllByText('No se encontró lo que buscás.');
+    expect(mensajes.length).toBeGreaterThan(0);
   });
 });

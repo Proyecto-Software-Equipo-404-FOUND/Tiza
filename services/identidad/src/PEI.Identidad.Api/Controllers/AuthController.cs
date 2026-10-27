@@ -18,7 +18,7 @@ public sealed class AuthController(InstitutionalSessionService sessions, Registe
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Login(LoginCommand command, CancellationToken ct) => TokenResponse(await sessions.LoginAsync(command, ct));
     [Authorize(Policy = "InstitutionAdmin"), HttpPost("register")]
-    public async Task<IActionResult> Register(RegisterCommand command) => StatusCode(StatusCodes.Status201Created, new { id = await register.HandleAsync(command), message = "Usuario registrado correctamente." });
+    public async Task<IActionResult> Register(RegisterCommand command, CancellationToken ct) => StatusCode(StatusCodes.Status201Created, new { id = await register.HandleAsync(command, ct), message = "Usuario registrado correctamente." });
 
     [AllowAnonymous, HttpPost("refresh"), EnableRateLimiting("login")]
     [ProducesResponseType(typeof(SessionResponse), StatusCodes.Status200OK)]

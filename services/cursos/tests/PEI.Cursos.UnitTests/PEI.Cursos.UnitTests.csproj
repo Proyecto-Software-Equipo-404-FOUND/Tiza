@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\PEI.Cursos.Infrastructure\PEI.Cursos.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\PEI.Cursos.Application\PEI.Cursos.Application.csproj" />
     <ProjectReference Include="..\..\src\PEI.Cursos.Domain\PEI.Cursos.Domain.csproj" />
   </ItemGroup>

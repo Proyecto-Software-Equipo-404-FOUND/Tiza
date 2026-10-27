@@ -12,7 +12,7 @@ export function IndicadorConexion({ estado, onReintentar }: Props) {
 
   if (estado === 'conectado') {
     return (
-      <p role='status' className='text-sm text-tiza-pizarra'>
+      <p role='status' className='text-sm text-tiza-bosque'>
         {/* Verde a propósito: la guía (sección 10.4) pide un detalle discreto en verde para «Conectado» */}
         <span aria-hidden='true' className='mr-2 inline-block h-2 w-2 rounded-full bg-green-600' />
         Conectado
@@ -22,7 +22,7 @@ export function IndicadorConexion({ estado, onReintentar }: Props) {
 
   if (estado === 'reconectando') {
     return (
-      <p role='alert' className='rounded-md bg-tiza-coral px-3 py-2 font-bold text-tiza-pizarra'>
+      <p role='alert' className='rounded-xl bg-tiza-coral px-3 py-2 font-bold text-white'>
         Se cortó la conexión. Reconectando…
       </p>
     );

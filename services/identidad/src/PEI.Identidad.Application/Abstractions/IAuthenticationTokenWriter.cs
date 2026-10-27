@@ -1,7 +1,16 @@
+using PEI.Identidad.Domain.Entities;
+
 namespace PEI.Identidad.Application.Abstractions;
 
 public interface IAuthenticationTokenWriter
 {
+    // El callback solo emite el resultado desde la identidad bloqueada. No hace I/O.
+    // El resultado se devuelve unicamente despues del commit; cualquier fallo revierte la sesion.
+    Task<T> ConfirmarLoginAsync<T>(Usuario autenticado, string tokenHash, DateTime vencimiento,
+        Func<RefreshIdentity, T> emitir, CancellationToken cancellationToken = default);
+    Task<T> ConfirmarRefreshAsync<T>(string anteriorHash, string nuevoHash, DateTime vencimiento,
+        Func<RefreshIdentity, T> emitir, CancellationToken cancellationToken = default);
+
     Task<bool> RotarRefreshTokenAsync(string tokenAnteriorHash, string tokenNuevoHash,
         DateTime fechaExpiracion, CancellationToken cancellationToken = default);
 

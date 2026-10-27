@@ -1,0 +1,36 @@
+name: QA-02 - Casos negativos de Identidad
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  identity-negative:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: tests/identity-negative/package-lock.json
+      - run: npm ci
+        working-directory: tests/identity-negative
+      - name: Comprobar casos y colección reproducibles
+        run: |
+          node tests/identity-negative/generate.mjs
+          git diff --exit-code -- tests/identity-negative/cases.json tests/postman/identidad.postman_collection.json
+      - name: xUnit y Newman sin base persistente
+        run: node tests/identity-negative/run.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qa02-evidencia-sanitizada
+          path: tests/identity-negative/results/summary.json
