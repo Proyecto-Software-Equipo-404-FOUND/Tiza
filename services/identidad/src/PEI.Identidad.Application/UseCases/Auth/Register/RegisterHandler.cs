@@ -7,13 +7,15 @@ using PEI.Identidad.Domain.Security;
 namespace PEI.Identidad.Application.UseCases.Auth.Register;
 public sealed class RegisterHandler(IRegistrationDataAccess data, IPasswordHasher hasher, ITenantContext tenant)
 {
-    public async Task<Guid> HandleAsync(RegisterCommand command)
+    public async Task<Guid> HandleAsync(RegisterCommand command, CancellationToken cancellationToken = default)
     {
-        if (tenant.InstitucionId is not Guid institucion || institucion == Guid.Empty || !await data.PuedeRegistrarAsync(institucion))
+        cancellationToken.ThrowIfCancellationRequested();
+        if (tenant.InstitucionId is not Guid institucion || institucion == Guid.Empty || !await data.PuedeRegistrarAsync(institucion, cancellationToken))
             throw new TenantAccessDeniedException();
         Validator.ValidateObject(command, new ValidationContext(command), true);
         if (!IdentityRoles.IsAssignable(command.Rol)) throw new ValidationException("Rol no permitido.");
-        if (await data.ExisteEmailAsync(command.Email)) throw new RegistrationConflictException();
+        if (await data.ExisteEmailAsync(command.Email, cancellationToken)) throw new RegistrationConflictException();
+        cancellationToken.ThrowIfCancellationRequested();
         var usuario = new Usuario
         {
             InstitucionId = institucion,
@@ -23,8 +25,10 @@ public sealed class RegisterHandler(IRegistrationDataAccess data, IPasswordHashe
             Apellido = command.Apellido.Trim(),
             Rol = command.Rol
         };
-        await data.AddAsync(usuario);
-        await data.SaveChangesAsync();
+        // BCrypt es sincronico: observar cancelacion antes de llegar a persistencia.
+        cancellationToken.ThrowIfCancellationRequested();
+        await data.AddAsync(usuario, cancellationToken);
+        await data.SaveChangesAsync(cancellationToken);
         return usuario.Id;
     }
 }

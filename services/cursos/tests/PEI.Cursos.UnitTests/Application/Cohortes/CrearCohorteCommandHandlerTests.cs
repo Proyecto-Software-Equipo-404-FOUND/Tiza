@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using PEI.Cursos.Application.UseCases.Cohortes.Commands;
 using PEI.Cursos.Domain.Entities;
@@ -45,7 +46,7 @@ public class CrearCohorteCommandHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_ConCursoInexistente_DebeLanzarDomainException()
+    public async Task HandleAsync_ConCursoInexistente_DebeLanzarKeyNotFoundException()
     {
         // Arrange
         _tenant.InstitucionId = Guid.NewGuid();
@@ -53,7 +54,7 @@ public class CrearCohorteCommandHandlerTests
         var command = new CrearCohorteCommand(Guid.NewGuid(), "Comision 1", "2026-1C", Guid.NewGuid());
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<DomainException>(() => handler.HandleAsync(command));
+        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() => handler.HandleAsync(command));
         Assert.Contains("El curso especificado no existe", ex.Message);
         Assert.Empty(_cohorteRepo.Items);
         Assert.Equal(0, _uow.CommitsRealizados);

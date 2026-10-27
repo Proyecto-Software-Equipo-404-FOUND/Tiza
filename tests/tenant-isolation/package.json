@@ -1,0 +1,7 @@
+{
+  "name": "tiza-qa04-tenant-isolation",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node run.mjs", "collection": "node generate-collection.mjs" },
+  "devDependencies": { "newman": "6.2.1", "postman-collection": "4.4.0" }
+}

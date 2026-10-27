@@ -8,9 +8,9 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const estilos: Record<Variante, string> = {
-  principal: 'bg-tiza-lima text-tiza-pizarra',
-  secundario: 'border border-tiza-pizarra bg-transparent text-tiza-pizarra',
-  peligro: 'bg-tiza-coral text-tiza-pizarra',
+  principal: 'bg-tiza-lima text-tiza-bosque hover:brightness-95',
+  secundario: 'border border-tiza-borde bg-white text-tiza-bosque hover:bg-tiza-menta',
+  peligro: 'bg-tiza-coral text-white hover:brightness-95',
 };
 
 export function Boton({
@@ -26,7 +26,7 @@ export function Boton({
       {...resto}
       disabled={disabled || cargando}
       aria-busy={cargando}
-      className={`rounded-md px-4 py-2 font-bold disabled:cursor-not-allowed disabled:opacity-50 ${estilos[variante]} ${className}`}
+      className={`rounded-xl px-5 py-3 font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${estilos[variante]} ${className}`}
     >
       {cargando ? 'Cargando…' : children}
     </button>

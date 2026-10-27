@@ -19,10 +19,10 @@ const columnas: Columna<Matricula>[] = [
 function Marco({ children }: { children: ReactNode }) {
   return (
     <main className='mx-auto flex max-w-3xl flex-col gap-4 p-4'>
-      <Link to='/cursos' className='text-sm text-tiza-violeta underline'>
+      <Link to='/cursos' className='text-sm text-tiza-pasto underline'>
         ← Volver a cursos
       </Link>
-      <h1 className='text-2xl font-bold text-tiza-pizarra'>Matrícula</h1>
+      <h1 className='font-heading text-4xl font-extrabold text-tiza-bosque'>Matrícula</h1>
       {children}
     </main>
   );
@@ -100,7 +100,7 @@ export function PaginaMatriculas() {
       <Tarjeta titulo='Matricular un alumno'>
         <form onSubmit={enviar} className='flex flex-col gap-3 sm:flex-row sm:items-end'>
           <div className='flex flex-1 flex-col gap-1'>
-            <label htmlFor='alumno' className='font-bold text-tiza-pizarra'>
+            <label htmlFor='alumno' className='font-bold text-tiza-bosque'>
               Alumno
             </label>
             <select
@@ -108,7 +108,7 @@ export function PaginaMatriculas() {
               value={alumnoId}
               onChange={(e) => setAlumnoId(e.target.value)}
               disabled={matricular.isPending}
-              className='rounded-md border border-tiza-pizarra px-3 py-2 text-tiza-pizarra disabled:opacity-50'
+              className='rounded-xl border border-tiza-borde bg-white px-3 py-3 text-tiza-bosque disabled:opacity-50'
             >
               <option value=''>Elegí un alumno</option>
               {disponibles.map((a) => (
@@ -123,7 +123,7 @@ export function PaginaMatriculas() {
           </Boton>
         </form>
         {disponibles.length === 0 && (
-          <p className='mt-2 text-sm text-tiza-pizarra/70'>No quedan alumnos para matricular.</p>
+          <p className='mt-2 text-sm text-tiza-bosque/70'>No quedan alumnos para matricular.</p>
         )}
       </Tarjeta>
 

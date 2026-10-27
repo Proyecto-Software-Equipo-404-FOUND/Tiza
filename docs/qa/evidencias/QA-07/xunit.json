@@ -1,0 +1,62 @@
+[
+  {
+    "phase": "Antes del arreglo",
+    "started": "2026-10-24T14:17:10.7488432-03:00",
+    "finished": "2026-10-24T14:17:19.8906579-03:00",
+    "total": 1,
+    "passed": 0,
+    "failed": 1,
+    "tests": [
+      {
+        "name": "PEI.Evaluaciones.IntegrationTests.PublicacionConcurrenteTests.DosLecturasDeVersionUno_SoloUnaPublicacionConfirmada",
+        "error": "Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException : The database operation was expected to affect 1 row(s), but actually affected 0 row(s); data may have been modified or deleted since entities were loaded. See https://go.microsoft.com/fwlink/?LinkId=527962 for information on understanding and handling optimistic concurrency exceptions.",
+        "outcome": "Failed",
+        "duration": "00:00:05.6009455"
+      }
+    ]
+  },
+  {
+    "phase": "Despues del arreglo",
+    "started": "2026-10-24T14:19:49.0038296-03:00",
+    "finished": "2026-10-24T14:19:51.0889164-03:00",
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "tests": [
+      {
+        "name": "PEI.Evaluaciones.UnitTests.UnitTest1.Test1",
+        "error": null,
+        "outcome": "Passed",
+        "duration": "00:00:00.0020263"
+      },
+      {
+        "name": "PEI.Evaluaciones.UnitTests.PublicarConcurrenciaTests.ErrorDistintoDeConcurrencia_NoSeDisfrazaDeConflicto",
+        "error": null,
+        "outcome": "Passed",
+        "duration": "00:00:00.0021405"
+      },
+      {
+        "name": "PEI.Evaluaciones.UnitTests.PublicarConcurrenciaTests.ConflictoDePersistencia_SeDevuelveComoConflictoSinReintentar",
+        "error": null,
+        "outcome": "Passed",
+        "duration": "00:00:00.0611802"
+      }
+    ]
+  },
+  {
+    "phase": "Despues del arreglo",
+    "started": "2026-10-24T14:19:51.4871086-03:00",
+    "finished": "2026-10-24T14:19:54.5272167-03:00",
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "tests": [
+      {
+        "name": "PEI.Evaluaciones.IntegrationTests.PublicacionConcurrenteTests.DosLecturasDeVersionUno_SoloUnaPublicacionConfirmada",
+        "error": null,
+        "outcome": "Passed",
+        "duration": "00:00:02.1355648"
+      }
+    ]
+  }
+]

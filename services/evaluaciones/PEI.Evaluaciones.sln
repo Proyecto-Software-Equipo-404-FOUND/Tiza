@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PEI.Evaluaciones.UnitTests"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PEI.BuildingBlocks", "..\..\building-blocks\PEI.BuildingBlocks\PEI.BuildingBlocks.csproj", "{1CB73171-3213-47EF-9AA6-C3F677C97B53}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PEI.Evaluaciones.IntegrationTests", "tests\PEI.Evaluaciones.IntegrationTests\PEI.Evaluaciones.IntegrationTests.csproj", "{C47A9B8D-A4FD-42D2-8A1E-E04D690C7C99}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -52,6 +54,10 @@ Global
 		{1CB73171-3213-47EF-9AA6-C3F677C97B53}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1CB73171-3213-47EF-9AA6-C3F677C97B53}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1CB73171-3213-47EF-9AA6-C3F677C97B53}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C47A9B8D-A4FD-42D2-8A1E-E04D690C7C99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C47A9B8D-A4FD-42D2-8A1E-E04D690C7C99}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C47A9B8D-A4FD-42D2-8A1E-E04D690C7C99}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C47A9B8D-A4FD-42D2-8A1E-E04D690C7C99}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{1B41621B-7D6D-4313-AFE0-0043C9CD3553} = {C3593DEF-9CE6-4005-8535-2A733735F69F}
@@ -59,5 +65,6 @@ Global
 		{6CA9C000-174A-4DD0-8E50-304A0F91523A} = {C3593DEF-9CE6-4005-8535-2A733735F69F}
 		{7B3466EB-9CB9-46D1-BAF5-C4F7F1E09CE9} = {C3593DEF-9CE6-4005-8535-2A733735F69F}
 		{CE2F6BDB-42ED-41E0-8815-FAAEAE26734D} = {6AE232F2-A293-4919-9DB2-B574EA84320C}
+		{C47A9B8D-A4FD-42D2-8A1E-E04D690C7C99} = {6AE232F2-A293-4919-9DB2-B574EA84320C}
 	EndGlobalSection
 EndGlobal
