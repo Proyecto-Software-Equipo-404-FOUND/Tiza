@@ -1,0 +1,39 @@
+name: QA-05 - Smoke de Identidad con Newman
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qa05-newman:
+    name: QA-05 Newman y smoke QA-01
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: tests/identity-negative/package-lock.json
+      - name: Instalar Newman bloqueado por lockfile
+        run: npm ci
+        working-directory: tests/identity-negative
+      - name: Ejecutar xUnit y carpeta smoke QA-01 con Newman
+        run: node tests/identity-negative/run-qa05.mjs
+      - name: Publicar evidencia sanitizada
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa05-newman-evidencia
+          path: tests/qa05/results/summary.json
+          if-no-files-found: warn
