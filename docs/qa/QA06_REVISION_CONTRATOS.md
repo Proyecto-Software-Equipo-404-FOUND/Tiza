@@ -98,3 +98,17 @@ El [PR107](https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/pull/107) 
 La matriz anterior documenta la base853f3f6. Los casos marcados “previsto/pendiente en QA-04” ahora tienen evidencia PASS en ese PR; no se atribuye el comportamiento corregido al main original. Ninguno de estos dos arreglos está incluido en QA-06. Ambos PR permanecen sin merge.
 
 [Informe consolidado de Candela Luna](https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/blob/feature/QA-04-tests-aislamiento/docs/qa/INFORME_QA04_QA06_Candela_Luna.md). La recuperación web alternativa de los enlaces externos tampoco pudo acceder a su contenido. La validación del PO continúa pendiente.
+
+## Actualización y Validación Técnica Local — 27/10/2026
+
+* **Relevo de validación:** Ante la no disponibilidad temporal del Product Owner (Nicolás Monasterio) para el cierre de esta ventana, la validación y gestión del PR #106 son asumidas por Ariel C. (`@aacarriego`).
+* **Sincronización:** Se integraron los últimos cambios de `main` (merge de PRs #117, #116 y #115), resolviendo el hallazgo QA06-H01 en Evaluaciones al incorporar los ejemplos y esquemas de `ProblemDetails` para respuestas 400 y 409.
+* **Resultados de ejecución y tests locales (.NET 8):**
+  * `dotnet build PEI.sln`: Compilación exitosa de 30 proyectos con 0 errores y 0 advertencias.
+  * `PEI.Evaluaciones.UnitTests`: 15/15 superados (100% PASS, incluye `ContratoPreguntasTests.cs`).
+  * `PEI.Identidad.UnitTests`: 197/197 superados (100% PASS).
+  * `PEI.IA.UnitTests`: 21/21 superados (100% PASS).
+  * `PEI.Cursos.UnitTests`: 83/83 superados (100% PASS).
+  * `PEI.SalaEnVivo.UnitTests`: 1/1 superado (100% PASS).
+  * **Total acumulado en suites unitarias:** 317 casos ejecutados, 317 superados, 0 fallidos, 0 omitidos.
+* **Cierre técnico:** Se valida la entrega como auditoría documental, matriz de endpoints y conjunto de pruebas contractuales del Sprint 1. Los hallazgos funcionales abiertos (H02 a H08) quedan registrados como deuda técnica/historias a priorizar para los siguientes sprints.
