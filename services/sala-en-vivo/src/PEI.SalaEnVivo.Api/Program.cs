@@ -18,6 +18,7 @@ builder.Services.AddDbContext<pei_sala_db>(options =>
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<ISalaRepository, SalaRepository>();
 builder.Services.AddScoped<IParticipanteSalaRepository, ParticipanteSalaRepository>();
+builder.Services.AddScoped<IRespuestaSalaRepository, RespuestaSalaRepository>();
 
 builder.Services.AddScoped<CrearSalaCommandHandler>();
 
