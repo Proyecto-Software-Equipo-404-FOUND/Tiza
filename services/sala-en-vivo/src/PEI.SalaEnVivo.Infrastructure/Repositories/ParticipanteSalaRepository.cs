@@ -26,5 +26,14 @@ namespace PEI.SalaEnVivo.Infrastructure.Repositories
                 p => p.SalaId == salaId && p.AlumnoId == alumnoId,
                 cancellationToken);
         }
+
+        public async Task<Guid?> ObtenerUltimaSalaIdDeAlumnoAsync(Guid alumnoId, CancellationToken cancellationToken = default)
+        {
+            return await _context.ParticipanteSala
+                .Where(p => p.AlumnoId == alumnoId)
+                .OrderByDescending(p => p.Id)
+                .Select(p => (Guid?)p.SalaId)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
     }
 }
