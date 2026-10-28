@@ -3,12 +3,14 @@ using PEI.SalaEnVivo.Application.Interfaces.Repositories;
 using PEI.SalaEnVivo.Application.UseCases.Salas.Handlers;
 using PEI.SalaEnVivo.Infrastructure.Persistence;
 using PEI.SalaEnVivo.Infrastructure.Repositories;
+using PEI.SalaEnVivo.Infrastructure.Services;
 using PEI.SalaEnVivo.Api.Hubs;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using MediatR;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +21,29 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<ISalaRepository, SalaRepository>();
 builder.Services.AddScoped<IParticipanteSalaRepository, ParticipanteSalaRepository>();
 builder.Services.AddScoped<IRespuestaSalaRepository, RespuestaSalaRepository>();
+
+var redisConn = builder.Configuration.GetConnectionString("Redis")
+                ?? builder.Configuration["Redis:ConnectionString"];
+if (!string.IsNullOrWhiteSpace(redisConn))
+{
+    builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+    {
+        try
+        {
+            var config = ConfigurationOptions.Parse(redisConn);
+            config.AbortOnConnectFail = false;
+            return ConnectionMultiplexer.Connect(config);
+        }
+        catch (Exception ex)
+        {
+            var logger = sp.GetRequiredService<ILogger<Program>>();
+            logger.LogWarning(ex, "No se pudo conectar a Redis al inicio ({RedisConn}). Se continuará con fallback a base de datos.", redisConn);
+            return null!;
+        }
+    });
+}
+
+builder.Services.AddScoped<ISalaCronometroService, SalaCronometroService>();
 
 builder.Services.AddScoped<CrearSalaCommandHandler>();
 
