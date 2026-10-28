@@ -1,5 +1,4 @@
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using PEI.SalaEnVivo.Application.DTOs.Respuestas;
 using PEI.SalaEnVivo.Application.Interfaces;
@@ -190,7 +189,7 @@ namespace PEI.SalaEnVivo.Application.UseCases.Salas.Handlers
                     command.Secuencia,
                     ahoraUtc);
             }
-            catch (DbUpdateException ex)
+            catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Colisión concurrente al guardar respuesta para alumno {AlumnoId}, sala {SalaId}.", command.AlumnoId, command.SalaId);
 
