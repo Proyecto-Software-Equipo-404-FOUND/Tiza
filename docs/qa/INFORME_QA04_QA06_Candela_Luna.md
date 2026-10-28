@@ -166,3 +166,38 @@ La simulación `git merge-tree --write-tree feature/QA-04-tests-aislamiento feat
 |QA-04|`C:/Users/cande/OneDrive/Desktop/Facu/proyecto software/Tiza/tests/tenant-isolation/package-lock.json`|Fija árbol de dependencias npm e integridades para npm ci.|
 |QA-04|`C:/Users/cande/OneDrive/Desktop/Facu/proyecto software/Tiza/tests/tenant-isolation/package.json`|Define dependencias y comandos de la suite.|
 |QA-04|`C:/Users/cande/OneDrive/Desktop/Facu/proyecto software/Tiza/tests/tenant-isolation/run.mjs`|Orquesta Docker descartable, migraciones/semillas existentes, APIs, Newman, regresión, evidencia y limpieza.|
+
+## Estado final y trazabilidad de QA-04
+
+Verificación del 27/10/2026 contra `origin/main` (`575cf1c33e327ffbc125195aef908a97917097de`): la implementación QA-04 del PR #107 está integrada en `main` desde el 26/10/2026 (merge commit `f0784172b2797a5f00109d8b651dc81b72c046b3`). Esta sección actualiza la trazabilidad sin alterar los resultados de pruebas ya archivados.
+
+### Alcance técnico y resultados verificados
+
+El objetivo fue impedir que docentes de una institución consulten o modifiquen cursos, cohortes y matrículas de otra institución. La colección cubre acceso propio autorizado; lectura y escritura cruzada A/B; JWT ausente y firma inválida; tenant ausente, vacío o inválido; conservación de los recursos atacados y controles de rol contra Identidad. Las aserciones comprueban códigos, identificadores/contenido esperado y lecturas posteriores a ataques; los intentos de escritura cruzada deben ser rechazados y los recursos de B conservar sus valores.
+
+El registro histórico sanitizado `docs/qa/evidencias/qa04/resultado-final.json` reporta 39 solicitudes aprobadas, 54 aserciones aprobadas y cero fallos Newman. Registra además Cursos UnitTests 83/83, Identidad UnitTests 169/169 e Identidad IntegrationTests con PostgreSQL 65/65, sin fallos ni omisiones. Comparé los seis hashes de código/colección/lockfile incluidos en la evidencia con los archivos de `main`: todos coinciden. La evidencia legible está en `docs/qa/evidencias/qa04/resultado-final.md`.
+
+El workflow `QA-04 - Aislamiento multi-tenant` del HEAD original `619e3bdace379831b188701abcab4a396aab73c6` terminó en SUCCESS: [run de aislamiento](https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/actions/runs/40059790520). También terminaron en SUCCESS los checks de [backend](https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/actions/runs/40059790552/job/120770600079) y [frontend](https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/actions/runs/40059790552/job/120770600097). No repetí el runner local: Docker Desktop, .NET 8 y los puertos requeridos estaban disponibles, pero `npm ci` no terminó en este entorno y no llegó a iniciarse la suite. No cuento esa repetición como PASS; los resultados reportados arriba pertenecen a la evidencia histórica y a los checks reales de GitHub.
+
+Los defectos ya corregidos en el PR fueron el filtro EF que evaluaba `Nullable.Value` con tenant ausente y el status de creación de cohorte cuando el curso padre no era visible. La evidencia antes de corregirlos se conserva en `antes-correccion.*` y `reproduccion-filtro.json`; no se cambiaron para esta regularización el código productivo, las pruebas ni sus resultados.
+
+### Estado de la issue #47 y excepciones
+
+PR integrado: [#107 — QA-04: aislamiento HTTP multi-tenant y corrección de rechazos](https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/pull/107). GitHub muestra tres commits originales: `a0828276 test(qa04): verificar aislamiento real y corregir rechazos sin tenant`, `3a9d7cc6 docs(qa): enlazar entregas y commits de QA04 y QA06` y `619e3bda docs(qa): precisar trazabilidad y condiciones de integración`. Sus prefijos no son `QA-04:`. No se reescriben ni se afirma que un commit documental nuevo los cambie retroactivamente.
+
+Estado verificable de los seis criterios de terminado:
+
+| Criterio | Estado al 27/10/2026 | Evidencia / límite |
+|---|---|---|
+| Rama QA-04 creada | Cumplido | El PR conserva la rama fuente `feature/QA-04-tests-aislamiento`. |
+| Commits empiezan con `QA-04:` | Pendiente / excepción por aceptar | Los tres commits integrados tienen prefijos históricos `test(qa04):` y `docs(qa):`. |
+| PR contiene `Closes #47` | Cumplido como referencia añadida después del merge | Se agregó a la descripción del PR #107 ya fusionado; esto no garantiza el cierre automático retroactivo. La issue se mantiene abierta. |
+| Checklist de plantilla del PR completo | Pendiente | La descripción original no contiene un checklist de plantilla completo; no se infiere cumplimiento. |
+| CI en verde | Cumplido | Workflow QA-04, backend y frontend exitosos en los HEAD indicados arriba. |
+| Aprobación del par revisor | Pendiente | La API de GitHub no devuelve revisiones formales en el PR #107. No se atribuye aprobación a nadie. |
+
+Para regularizar la referencia, la descripción del PR #107 incluye ahora `Closes #47` y explica que se añadió después del merge. La issue #47 sigue abierta. Se solicita al Scrum Master confirmar la aceptación de las pruebas y evidencias, decidir si acepta la excepción de nomenclatura histórica y confirmar si QA-04 puede cerrarse. No se ejecutó el cierre de la issue.
+
+### Recomendación de cierre
+
+QA-04 está técnicamente verificada en el alcance descrito y el código ya está integrado en `main`. La issue no está lista para cierre administrativo hasta que el Scrum Master valide la evidencia, acepte o rechace explícitamente la excepción de nombres históricos y confirme el cierre. Si exige cumplimiento literal del prefijo, el historial original no puede cambiarse sin reescribir commits ya fusionados; esa diferencia debe quedar aceptada como excepción o resolverse por el proceso del equipo, no simulando nuevos mensajes históricos.
