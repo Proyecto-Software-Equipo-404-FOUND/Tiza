@@ -8,6 +8,7 @@ namespace PEI.SalaEnVivo.Application.Interfaces.Repositories
         Task AddAsync(Sala sala, CancellationToken cancellationToken);
         Task<bool> ExisteActivaPorPINAsync(int pin, CancellationToken cancellationToken);
         Task<Sala?> ObtenerActivaPorPINAsync(int pin, CancellationToken cancellationToken);
+        Task<Sala?> ObtenerPorIdAsync(Guid id, CancellationToken cancellationToken = default);
 
         Task<ITransaccion> IniciarTransaccionAsync(CancellationToken cancellationToken = default);
     }

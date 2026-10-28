@@ -34,6 +34,11 @@ namespace PEI.SalaEnVivo.Infrastructure.Repositories
                          && s.FechaVencimiento > DateTime.UtcNow, cancellationToken);
         }
 
+        public async Task<Sala?> ObtenerPorIdAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            return await _context.Sala.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+        }
+
         public async Task<ITransaccion> IniciarTransaccionAsync(CancellationToken cancellationToken = default)
         {
             var efTransaccion = await _context.Database.BeginTransactionAsync(cancellationToken);
