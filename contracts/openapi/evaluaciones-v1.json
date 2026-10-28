@@ -293,11 +293,31 @@
           "application/problem+json": {
             "schema": {
               "$ref": "#/components/schemas/ProblemDetails"
+            },
+            "examples": {
+              "faltaInstitucion": {
+                "summary": "Falta el header X-Institucion-Id",
+                "value": {
+                  "title": "Falta el encabezado X-Institucion-Id con un identificador valido.",
+                  "status": 400,
+                  "errores": []
+                }
+              }
             }
           },
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/ProblemDetails"
+            },
+            "examples": {
+              "faltaInstitucion": {
+                "summary": "Falta el header X-Institucion-Id",
+                "value": {
+                  "title": "Falta el encabezado X-Institucion-Id con un identificador valido.",
+                  "status": 400,
+                  "errores": []
+                }
+              }
             }
           }
         }
@@ -323,11 +343,37 @@
           "application/problem+json": {
             "schema": {
               "$ref": "#/components/schemas/ProblemDetails"
+            },
+            "examples": {
+              "eliminarPublicada": {
+                "summary": "DELETE sobre una evaluación que no está en Borrador",
+                "value": {
+                  "title": "La operacion no se puede realizar en el estado actual.",
+                  "status": 409,
+                  "detail": "Solo se pueden borrar evaluaciones en estado Borrador.",
+                  "errores": [
+                    "Solo se pueden borrar evaluaciones en estado Borrador."
+                  ]
+                }
+              }
             }
           },
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/ProblemDetails"
+            },
+            "examples": {
+              "eliminarPublicada": {
+                "summary": "DELETE sobre una evaluación que no está en Borrador",
+                "value": {
+                  "title": "La operacion no se puede realizar en el estado actual.",
+                  "status": 409,
+                  "detail": "Solo se pueden borrar evaluaciones en estado Borrador.",
+                  "errores": [
+                    "Solo se pueden borrar evaluaciones en estado Borrador."
+                  ]
+                }
+              }
             }
           }
         }
