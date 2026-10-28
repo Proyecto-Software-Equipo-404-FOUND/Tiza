@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { ChevronRight, GraduationCap, Sparkles, Users } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
+import { ChevronRight, GraduationCap, Pencil, Sparkles, Users } from 'lucide-react';
 import { useCursos } from '../hooks/useCursos';
 import { Spinner } from '@/shared/components/Spinner';
 import { BannerError } from '@/shared/components/BannerError';
@@ -9,9 +9,14 @@ import type { Curso } from '@/shared/api/tipos';
 import { Tarjeta } from '@/shared/components/Tarjeta';
 import { EnlaceBoton } from '@/shared/components/EnlaceBoton';
 import { FormularioCurso } from '../components/FormularioCurso';
+import { AccionesCurso } from '../components/AccionesCurso';
+import { FormularioEditarCurso } from '../components/FormularioEditarCurso';
 import { IconoArea } from '../components/IconoArea';
 
-const columnas: Columna<Curso>[] = [
+const crearColumnas = (
+  onEditar: (curso: Curso) => void,
+  onEliminado: (id: string) => void,
+): Columna<Curso>[] => [
   {
     titulo: 'Nombre',
     celda: (curso) => (
@@ -28,12 +33,16 @@ const columnas: Columna<Curso>[] = [
       <EnlaceBoton
         to={`/cursos/${curso.id}/cohortes`}
         icono={<Users className='h-4 w-4' aria-hidden='true' />}
-        className='bg-tiza-menta/60'
+        className='whitespace-nowrap bg-tiza-menta/60'
       >
         Ver cohortes
         <ChevronRight className='h-4 w-4' aria-hidden='true' />
       </EnlaceBoton>
     ),
+  },
+  {
+    titulo: 'Acciones',
+    celda: (curso) => <AccionesCurso curso={curso} onEditar={onEditar} onEliminado={onEliminado} />,
   },
 ];
 
@@ -45,6 +54,11 @@ const circulo = (icono: ReactNode) => (
 
 export function PaginaCursos() {
   const { data: resultado, isPending, isError, error, refetch } = useCursos();
+  const [enEdicion, setEnEdicion] = useState<Curso | null>(null);
+
+  // Si se elimina el curso que se está editando, se sale de la edición
+  const alEliminar = (id: string) => setEnEdicion((actual) => (actual?.id === id ? null : actual));
+  const columnas = crearColumnas(setEnEdicion, alEliminar);
 
   return (
     <main className='mx-auto flex max-w-6xl flex-col gap-6 p-6'>
@@ -56,13 +70,27 @@ export function PaginaCursos() {
       </header>
 
       <div className='grid items-start gap-6 lg:grid-cols-[2fr_3fr]'>
-        <Tarjeta
-          titulo='Crear nuevo curso'
-          subtitulo='Completá la información para crear un nuevo curso.'
-          icono={circulo(<GraduationCap className='h-6 w-6' aria-hidden='true' />)}
-        >
-          <FormularioCurso />
-        </Tarjeta>
+        {enEdicion ? (
+          <Tarjeta
+            titulo='Editar curso'
+            subtitulo={`Estás editando «${enEdicion.nombre}».`}
+            icono={circulo(<Pencil className='h-6 w-6' aria-hidden='true' />)}
+          >
+            <FormularioEditarCurso
+              key={enEdicion.id}
+              curso={enEdicion}
+              onTerminar={() => setEnEdicion(null)}
+            />
+          </Tarjeta>
+        ) : (
+          <Tarjeta
+            titulo='Crear nuevo curso'
+            subtitulo='Completá la información para crear un nuevo curso.'
+            icono={circulo(<GraduationCap className='h-6 w-6' aria-hidden='true' />)}
+          >
+            <FormularioCurso />
+          </Tarjeta>
+        )}
 
         <Tarjeta
           titulo='Tus cursos activos'
