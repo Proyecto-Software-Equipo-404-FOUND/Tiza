@@ -3,6 +3,7 @@ import { usuarios, cursos } from './datos';
 import { crearTokenFalso } from './token';
 import { handlersMatriculas } from './matriculas';
 import { handlersCohortes } from './cohortes';
+import { handlersEvaluaciones } from './evaluaciones';
 
 export const handlers = [
   // Ruta real por el gateway: el transform la entrega a Identidad como /api/auth/login
@@ -87,4 +88,5 @@ export const handlers = [
   }),
   ...handlersMatriculas,
   ...handlersCohortes,
+  ...handlersEvaluaciones,
 ];
