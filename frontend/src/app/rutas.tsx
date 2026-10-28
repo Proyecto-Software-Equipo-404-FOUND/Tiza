@@ -2,6 +2,8 @@ import { createBrowserRouter, type RouteObject } from 'react-router-dom';
 import { PaginaLogin } from '@/features/auth/pages/PaginaLogin';
 import { PaginaCohortes } from '@/features/cursos/pages/PaginaCohortes';
 import { PaginaCursos } from '@/features/cursos/pages/PaginaCursos';
+import { PaginaEvaluacion } from '@/features/evaluaciones/pages/PaginaEvaluacion';
+import { PaginaEvaluaciones } from '@/features/evaluaciones/pages/PaginaEvaluaciones';
 import { PaginaMatriculas } from '@/features/matriculas/PaginaMatriculas';
 import { Layout } from './Layout';
 import { PaginaErrorRuta } from './PaginaErrorRuta';
@@ -40,6 +42,8 @@ export const rutas: RouteObject[] = [
                   { path: '/cursos', element: <PaginaCursos /> },
                   { path: '/cursos/:cursoId/cohortes', element: <PaginaCohortes /> },
                   { path: '/cohortes/:cohorteId/matriculas', element: <PaginaMatriculas /> },
+                  { path: '/evaluaciones', element: <PaginaEvaluaciones /> },
+                  { path: '/evaluaciones/:evaluacionId', element: <PaginaEvaluacion /> },
                 ],
               },
             ],
