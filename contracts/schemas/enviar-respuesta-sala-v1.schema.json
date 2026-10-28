@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tiza.pei.edu.ar/contracts/schemas/enviar-respuesta-sala-v1.schema.json",
+  "title": "EnviarRespuestaRequest",
+  "description": "Payload del método SignalR EnviarRespuesta del hub /hubs/sala (contrato sala-hub-v1). El servidor deriva salaId, alumnoId e institucionId de la conexión autenticada; no deben enviarse en el payload. Campos desconocidos se ignoran para permitir evolución aditiva.",
+  "type": "object",
+  "required": [
+    "preguntaId",
+    "respuesta",
+    "idempotencyKey",
+    "secuencia"
+  ],
+  "properties": {
+    "preguntaId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID de la pregunta vigente de la evaluación publicada de la sala."
+    },
+    "respuesta": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 10000,
+      "description": "Si la pregunta es OpcionMultiple, UUID de la opción elegida. Si es Abierta, texto de la respuesta. Se recorta antes de validar; no puede quedar vacío."
+    },
+    "idempotencyKey": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID v4 generado una vez por respuesta lógica. Se reutiliza solo en reintentos de esa misma respuesta. Ámbito: (salaId, alumnoId)."
+    },
+    "secuencia": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647,
+      "description": "Contador por (salaId, alumnoId). El siguiente valor esperado es ultimaSecuencia + 1. Se reutiliza en reintentos y no se consume en rechazos."
+    }
+  },
+  "examples": [
+    {
+      "preguntaId": "5f1c1d9e-0a3b-4c11-9a52-1b2c3d4e5f60",
+      "respuesta": "7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+      "idempotencyKey": "b3f1c2d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+      "secuencia": 1
+    },
+    {
+      "preguntaId": "9c3d4e5f-6071-4c8d-8e9f-1a2b3c4d5e6f",
+      "respuesta": "Una variable es un espacio en memoria con un nombre y un tipo asociado.",
+      "idempotencyKey": "c4e2d3f5-6a7b-4c8d-9e0f-1a2b3c4d5e6f",
+      "secuencia": 2
+    }
+  ]
+}
