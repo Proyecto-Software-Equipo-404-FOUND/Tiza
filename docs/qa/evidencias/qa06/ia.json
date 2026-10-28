@@ -1,0 +1,230 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "PEI Tiza — Servicio de Inteligencia Artificial",
+    "description": "Endpoints internos de corrección automatizada de respuestas abiertas usando IA.",
+    "contact": {
+      "name": "Equipo 404 Found"
+    },
+    "version": "v1"
+  },
+  "paths": {
+    "/api/v1/Correcciones": {
+      "post": {
+        "tags": [
+          "Correcciones"
+        ],
+        "summary": "Solicita la corrección automatizada de una respuesta abierta basada en la rúbrica del docente.",
+        "requestBody": {
+          "description": "Datos de la respuesta a corregir con rúbrica y puntaje máximo.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorregirRespuestaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorregirRespuestaRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorregirRespuestaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Corrección completada exitosamente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorregirRespuestaResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos de entrada inválidos (ProblemDetails RFC 9457).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servicio de IA.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/Correcciones/health": {
+      "get": {
+        "tags": [
+          "Correcciones"
+        ],
+        "summary": "Health check del servicio de IA.",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CorregirRespuestaRequest": {
+        "required": [
+          "preguntaEnunciado",
+          "respuestaTexto",
+          "rubricaJson"
+        ],
+        "type": "object",
+        "properties": {
+          "respuestaTexto": {
+            "maxLength": 10000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "preguntaEnunciado": {
+            "maxLength": 2000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "rubricaJson": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "puntajeMaximo": {
+            "maximum": 100,
+            "minimum": 0.1,
+            "type": "number",
+            "format": "double"
+          },
+          "institucionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "evaluacionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "preguntaId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CorregirRespuestaResponse": {
+        "type": "object",
+        "properties": {
+          "solicitudId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "notaSugerida": {
+            "type": "number",
+            "format": "double"
+          },
+          "justificacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "desglosePorCriterio": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DesgloseCriterio"
+            },
+            "nullable": true
+          },
+          "proveedor": {
+            "type": "string",
+            "nullable": true
+          },
+          "modelo": {
+            "type": "string",
+            "nullable": true
+          },
+          "tokensEntrada": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tokensSalida": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "latenciaMs": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DesgloseCriterio": {
+        "type": "object",
+        "properties": {
+          "criterio": {
+            "type": "string",
+            "nullable": true
+          },
+          "puntajeMaximo": {
+            "type": "number",
+            "format": "double"
+          },
+          "puntajeOtorgado": {
+            "type": "number",
+            "format": "double"
+          },
+          "comentario": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "instance": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": {}
+      }
+    }
+  }
+}
