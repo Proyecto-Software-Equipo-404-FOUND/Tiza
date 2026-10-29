@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { CalendarDays, UserRound, Users } from 'lucide-react';
 import { z } from 'zod';
 import { Boton } from '@/shared/components/Boton';
 import { Campo } from '@/shared/components/Campo';
+import { CampoSelect } from '@/shared/components/CampoSelect';
 import { BannerError } from '@/shared/components/BannerError';
 import { useAviso } from '@/shared/components/Aviso';
 import { ApiError } from '@/shared/api/cliente';
@@ -58,9 +60,11 @@ export function FormularioEditarCohorte({ cursoId, cohorte, onTerminar }: Props)
     });
   };
 
+  // Ante un 409 los datos que se ven están desactualizados: se vuelven a pedir y se sale de la edición
   const recargar = () => {
     actualizar.reset();
     cliente.invalidateQueries({ queryKey: ['cohortes', cursoId] });
+    onTerminar();
   };
 
   const hayConflicto =
@@ -70,6 +74,7 @@ export function FormularioEditarCohorte({ cursoId, cohorte, onTerminar }: Props)
     <form onSubmit={enviar} noValidate className='flex flex-col gap-5'>
       <Campo
         etiqueta='Nombre de la cohorte'
+        icono={<Users className='h-5 w-5' aria-hidden='true' />}
         value={nombre}
         onChange={(evento) => setNombre(evento.target.value)}
         error={errores.nombre}
@@ -78,6 +83,7 @@ export function FormularioEditarCohorte({ cursoId, cohorte, onTerminar }: Props)
 
       <Campo
         etiqueta='Período'
+        icono={<CalendarDays className='h-5 w-5' aria-hidden='true' />}
         placeholder='2026-1C'
         value={periodo}
         onChange={(evento) => setPeriodo(evento.target.value)}
@@ -85,34 +91,27 @@ export function FormularioEditarCohorte({ cursoId, cohorte, onTerminar }: Props)
         disabled={actualizar.isPending}
       />
 
-      <div className='flex flex-col gap-1.5'>
-        <label htmlFor='docente-cohorte-edicion' className='text-sm font-semibold text-tiza-bosque'>
-          Docente
-        </label>
-        <select
-          id='docente-cohorte-edicion'
-          value={docenteId}
-          onChange={(evento) => setDocenteId(evento.target.value)}
-          disabled={actualizar.isPending}
-          className='rounded-xl border border-tiza-borde bg-white px-3 py-3 text-tiza-bosque disabled:cursor-not-allowed disabled:opacity-50'
-        >
-          {docentes.map((docente) => (
-            <option key={docente.id} value={docente.id}>
-              {docente.nombre}
-            </option>
-          ))}
-        </select>
-        {errores.docenteId && (
-          <p role='alert' className='text-sm text-tiza-coral'>
-            {errores.docenteId}
-          </p>
-        )}
-      </div>
+      <CampoSelect
+        etiqueta='Docente'
+        id='docente-cohorte-edicion'
+        icono={<UserRound className='h-5 w-5' aria-hidden='true' />}
+        value={docenteId}
+        onChange={(evento) => setDocenteId(evento.target.value)}
+        error={errores.docenteId}
+        disabled={actualizar.isPending}
+      >
+        {docentes.map((docente) => (
+          <option key={docente.id} value={docente.id}>
+            {docente.nombre}
+          </option>
+        ))}
+      </CampoSelect>
 
       {actualizar.isError && (
         <BannerError
           mensaje={mensajeDeError(actualizar.error)}
           onReintentar={hayConflicto ? recargar : undefined}
+          textoBoton='Recargar'
         />
       )}
 

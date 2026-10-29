@@ -69,7 +69,7 @@ export function PaginaCursos() {
         </p>
       </header>
 
-      <div className='grid items-start gap-6 lg:grid-cols-[2fr_3fr]'>
+      <div className='grid grid-cols-1 items-start gap-6 lg:grid-cols-[2fr_3fr]'>
         {enEdicion ? (
           <Tarjeta
             titulo='Editar curso'
