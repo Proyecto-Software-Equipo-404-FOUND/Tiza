@@ -1,17 +1,21 @@
+using System.Collections.Concurrent;
+using System.Security.Claims;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using MediatR;
-using System.Security.Claims;
 using Microsoft.Extensions.DependencyInjection;
 using PEI.SalaEnVivo.Application.DTOs.Respuestas;
+using PEI.SalaEnVivo.Application.DTOs.Salas;
 using PEI.SalaEnVivo.Application.Interfaces.Repositories;
 using PEI.SalaEnVivo.Application.UseCases.Salas.Commands;
+using PEI.SalaEnVivo.Application.UseCases.Salas.Queries;
 
 namespace PEI.SalaEnVivo.Api.Hubs
 {
     [Authorize]
     public sealed class SalaHub : Hub
     {
+        private static readonly ConcurrentDictionary<(Guid SalaId, Guid AlumnoId), string> _conexionesActivasPorAlumno = new();
         private readonly ISender _sender;
 
         public SalaHub(ISender sender)
@@ -49,15 +53,104 @@ namespace PEI.SalaEnVivo.Api.Hubs
 
                 Context.Items["SalaId"] = salaId;
 
-                await Groups.AddToGroupAsync(
-                    Context.ConnectionId,
-                    salaId.ToString(),
+                await VincularSesionUnicaAlumnoAsync(salaId, alumnoId);
+
+                var estado = await _sender.Send(
+                    new ObtenerEstadoSalaQuery(
+                        alumnoId,
+                        institucionId,
+                        "Alumno",
+                        salaId),
+                    Context.ConnectionAborted);
+
+                await Clients.Caller.SendAsync(
+                    "estadoSala",
+                    estado,
                     Context.ConnectionAborted);
             }
             catch (UnauthorizedAccessException)
             {
                 throw new HubException(
                     "No tienes permiso para ingresar a esta sala.");
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new HubException(ex.Message);
+            }
+        }
+
+        public async Task<EstadoSalaDto> ObtenerEstadoSala()
+        {
+            var user = Context.User;
+
+            if (!Guid.TryParse(
+                user?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user?.FindFirst("sub")?.Value,
+                out var usuarioId))
+            {
+                throw new HubException("NO_AUTORIZADO: Usuario no identificado.");
+            }
+
+            var institucionClaim = user?.FindFirst("institucion_id")?.Value
+                                   ?? user?.FindFirst("InstitucionId")?.Value;
+
+            if (!Guid.TryParse(institucionClaim, out var institucionId))
+            {
+                throw new HubException("NO_AUTORIZADO: Institución no válida.");
+            }
+
+            var rol = user?.FindFirst(ClaimTypes.Role)?.Value
+                      ?? user?.FindFirst("role")?.Value
+                      ?? "Alumno";
+
+            Guid? salaIdContexto = null;
+            if (Context.Items.TryGetValue("SalaId", out var salaIdObj) && salaIdObj is Guid id && id != Guid.Empty)
+            {
+                salaIdContexto = id;
+            }
+
+            try
+            {
+                var estado = await _sender.Send(
+                    new ObtenerEstadoSalaQuery(
+                        usuarioId,
+                        institucionId,
+                        rol,
+                        salaIdContexto),
+                    Context.ConnectionAborted);
+
+                Context.Items["SalaId"] = estado.SalaId;
+
+                var esDocente = string.Equals(rol, "Docente", StringComparison.OrdinalIgnoreCase);
+                if (esDocente)
+                {
+                    await Groups.AddToGroupAsync(
+                        Context.ConnectionId,
+                        estado.SalaId.ToString(),
+                        Context.ConnectionAborted);
+                    await Groups.AddToGroupAsync(
+                        Context.ConnectionId,
+                        $"{estado.SalaId}:docentes",
+                        Context.ConnectionAborted);
+                }
+                else
+                {
+                    await VincularSesionUnicaAlumnoAsync(estado.SalaId, usuarioId);
+                }
+
+                await Clients.Caller.SendAsync(
+                    "estadoSala",
+                    estado,
+                    Context.ConnectionAborted);
+
+                return estado;
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                throw new HubException(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                throw new HubException(ex.Message);
             }
             catch (InvalidOperationException ex)
             {
@@ -101,6 +194,16 @@ namespace PEI.SalaEnVivo.Api.Hubs
                 Context.Items["SalaId"] = salaId;
             }
 
+            // Verificar que esta sesión no haya sido desplazada por una reconexión en otro dispositivo/pestaña
+            if (_conexionesActivasPorAlumno.TryGetValue((salaId, alumnoId), out var conexionActiva)
+                && !string.Equals(conexionActiva, Context.ConnectionId, StringComparison.Ordinal))
+            {
+                return ResultadoEnvioRespuestaDto.Rechazada(
+                    request.PreguntaId, request.IdempotencyKey, request.Secuencia,
+                    "SESION_REEMPLAZADA", "Tu sesión fue reemplazada por una conexión más reciente en la sala.",
+                    reintentable: false, correlationId: Context.ConnectionId);
+            }
+
             var command = new EnviarRespuestaCommand(
                 salaId,
                 alumnoId,
@@ -129,6 +232,28 @@ namespace PEI.SalaEnVivo.Api.Hubs
             }
 
             return resultado;
+        }
+
+        private async Task VincularSesionUnicaAlumnoAsync(Guid salaId, Guid alumnoId)
+        {
+            var clave = (salaId, alumnoId);
+            var nuevaConexionId = Context.ConnectionId;
+
+            if (_conexionesActivasPorAlumno.TryGetValue(clave, out var conexionPrevia)
+                && !string.Equals(conexionPrevia, nuevaConexionId, StringComparison.Ordinal))
+            {
+                await Groups.RemoveFromGroupAsync(
+                    conexionPrevia,
+                    salaId.ToString(),
+                    Context.ConnectionAborted);
+            }
+
+            _conexionesActivasPorAlumno[clave] = nuevaConexionId;
+
+            await Groups.AddToGroupAsync(
+                nuevaConexionId,
+                salaId.ToString(),
+                Context.ConnectionAborted);
         }
     }
 }
