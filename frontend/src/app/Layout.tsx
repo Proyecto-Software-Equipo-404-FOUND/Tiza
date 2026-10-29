@@ -1,4 +1,4 @@
-import { Home, GraduationCap } from 'lucide-react';
+import { ClipboardList, GraduationCap, Home } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -12,7 +12,7 @@ function ItemMenu({ to, end, icono, children }: { to: string; end?: boolean; ico
       to={to}
       end={end}
       className={({ isActive }) =>
-        `flex items-center gap-3 rounded-xl px-4 py-3 font-semibold transition ${
+        `flex shrink-0 items-center gap-3 whitespace-nowrap rounded-xl px-3 py-2 font-semibold transition md:px-4 md:py-3 ${
           isActive ? 'bg-tiza-menta text-tiza-bosque' : 'text-tiza-bosque/80 hover:bg-tiza-menta/60'
         }`
       }
@@ -55,15 +55,20 @@ export function Layout() {
       <div className='flex flex-col md:flex-row'>
         <nav
           aria-label='Principal'
-          className='flex gap-2 border-b border-tiza-borde bg-white/60 p-3 md:min-h-[calc(100vh-4.5rem)] md:w-60 md:shrink-0 md:flex-col md:border-b-0 md:border-r md:p-4'
+          className='flex gap-2 overflow-x-auto border-b border-tiza-borde bg-white/60 p-3 md:min-h-[calc(100vh-4.5rem)] md:w-60 md:shrink-0 md:flex-col md:border-b-0 md:border-r md:p-4'
         >
           <ItemMenu to='/' end icono={<Home className='h-5 w-5' aria-hidden='true' />}>
             Inicio
           </ItemMenu>
           {usuario?.rol !== 'alumno' && (
-            <ItemMenu to='/cursos' icono={<GraduationCap className='h-5 w-5' aria-hidden='true' />}>
-              Cursos
-            </ItemMenu>
+            <>
+              <ItemMenu to='/cursos' icono={<GraduationCap className='h-5 w-5' aria-hidden='true' />}>
+                Cursos
+              </ItemMenu>
+              <ItemMenu to='/evaluaciones' icono={<ClipboardList className='h-5 w-5' aria-hidden='true' />}>
+                Evaluaciones
+              </ItemMenu>
+            </>
           )}
         </nav>
         <div className='min-w-0 flex-1'>
