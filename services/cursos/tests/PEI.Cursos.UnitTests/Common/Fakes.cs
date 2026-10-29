@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using PEI.BuildingBlocks.MultiTenancy;
 using PEI.Cursos.Application.Interfaces;
 using PEI.Cursos.Domain.Entities;
+using PEI.Cursos.Domain.Enums;
 
 namespace PEI.Cursos.UnitTests.Common;
 
@@ -156,5 +157,18 @@ public class FakeMatriculacionRepository : IMatriculacionRepository
     {
         Items.Add(matriculacion);
         return Task.CompletedTask;
+    }
+
+    public Task<IReadOnlyList<Matriculacion>> GetByCohorteIdAsync(
+        Guid cohorteId,
+        bool soloActivas = true,
+        CancellationToken cancellationToken = default)
+    {
+        var query = Items.Where(m => m.CohorteId == cohorteId);
+        if (soloActivas)
+        {
+            query = query.Where(m => m.Estado == EstadoMatriculacion.Activa);
+        }
+        return Task.FromResult((IReadOnlyList<Matriculacion>)query.ToList());
     }
 }
