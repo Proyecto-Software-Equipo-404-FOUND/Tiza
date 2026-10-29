@@ -51,4 +51,28 @@ export const handlersCohortes = [
       headers: { Location: `/api/v1/cursos/${cursoId}/cohortes/${nueva.id}` },
     });
   }),
+
+  http.put('*/api/v1/cursos/:cursoId/cohortes/:id', async ({ params, request }) => {
+    const cohorte = cohortes.find((c) => c.id === params.id && c.cursoId === params.cursoId);
+    if (!cohorte) return HttpResponse.json({ title: 'No encontrada', status: 404 }, { status: 404 });
+    const { nombre, periodo, docenteId } = (await request.json()) as {
+      nombre: string;
+      periodo: string;
+      docenteId: string;
+    };
+    // Mismo truco: un nombre 'conflicto' simula el 409
+    if (nombre.toLowerCase() === 'conflicto') {
+      return HttpResponse.json({ title: 'Conflicto', status: 409 }, { status: 409 });
+    }
+    Object.assign(cohorte, { nombre, periodo, docenteId });
+    return HttpResponse.json(cohorte);
+  }),
+
+  // Baja lógica en el backend; el mock la quita de la lista
+  http.delete('*/api/v1/cursos/:cursoId/cohortes/:id', ({ params }) => {
+    const indice = cohortes.findIndex((c) => c.id === params.id && c.cursoId === params.cursoId);
+    if (indice === -1) return HttpResponse.json({ title: 'No encontrada', status: 404 }, { status: 404 });
+    cohortes.splice(indice, 1);
+    return new HttpResponse(null, { status: 204 });
+  }),
 ];
