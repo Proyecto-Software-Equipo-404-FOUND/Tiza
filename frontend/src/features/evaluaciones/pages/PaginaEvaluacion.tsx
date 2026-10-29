@@ -88,7 +88,8 @@ export function PaginaEvaluacion() {
 
           <Tarjeta titulo='Resumen'>
             <p>
-              {evaluacion.preguntasJson.preguntas.length} preguntas ·{' '}
+              {evaluacion.preguntasJson.preguntas.length}{' '}
+              {evaluacion.preguntasJson.preguntas.length === 1 ? 'pregunta' : 'preguntas'} ·{' '}
               {puntajeTotal(evaluacion.preguntasJson.preguntas)} puntos en total
             </p>
           </Tarjeta>
