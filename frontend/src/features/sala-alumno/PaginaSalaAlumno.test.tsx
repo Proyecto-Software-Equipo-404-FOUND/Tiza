@@ -6,7 +6,7 @@ import { PaginaSalaAlumno } from './PaginaSalaAlumno';
 
 const SALA = '11111111-1111-4111-8111-111111111111';
 
-function preparar(invocar: (metodo: string, ...args: unknown[]) => Promise<void> = async () => {}) {
+function preparar(invocar: (metodo: string, ...args: unknown[]) => Promise<unknown> = async () => {}) {
   const { conexion, simular } = crearConexionFalsa();
   conexion.invocar = vi.fn(invocar);
   render(<PaginaSalaAlumno conexion={conexion} />);
