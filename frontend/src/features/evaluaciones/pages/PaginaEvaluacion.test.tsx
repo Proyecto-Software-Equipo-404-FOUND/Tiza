@@ -7,6 +7,8 @@ import { ApiError } from '@/shared/api/cliente';
 import type { Evaluacion } from '../tipos';
 
 vi.mock('../hooks/useEvaluacion', () => ({ useEvaluacion: vi.fn() }));
+vi.mock('../components/PublicarEvaluacion', () => ({ PublicarEvaluacion: () => <p>PUBLICAR</p> }));
+vi.mock('../components/EliminarEvaluacion', () => ({ EliminarEvaluacion: () => <p>ELIMINAR</p> }));
 
 type Estado = ReturnType<typeof useEvaluacion>;
 
@@ -133,5 +135,18 @@ describe('PaginaEvaluacion', () => {
     simular({ data: { ...evaluacion, estado: 'Publicada' } });
     renderizar();
     expect(screen.queryByRole('link', { name: 'Editar borrador' })).not.toBeInTheDocument();
+  });
+
+  it('un borrador muestra las acciones de publicar y eliminar; uno publicado no', () => {
+    simular({ data: { ...evaluacion, estado: 'Borrador' } });
+    const { unmount } = renderizar();
+    expect(screen.getByText('PUBLICAR')).toBeInTheDocument();
+    expect(screen.getByText('ELIMINAR')).toBeInTheDocument();
+    unmount();
+
+    simular({ data: { ...evaluacion, estado: 'Publicada' } });
+    renderizar();
+    expect(screen.queryByText('PUBLICAR')).not.toBeInTheDocument();
+    expect(screen.queryByText('ELIMINAR')).not.toBeInTheDocument();
   });
 });
