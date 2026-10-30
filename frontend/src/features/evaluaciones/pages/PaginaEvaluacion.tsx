@@ -6,7 +6,9 @@ import { EnlaceBoton } from '@/shared/components/EnlaceBoton';
 import { Spinner } from '@/shared/components/Spinner';
 import { Tabla, type Columna } from '@/shared/components/Tabla';
 import { Tarjeta } from '@/shared/components/Tarjeta';
+import { EliminarEvaluacion } from '../components/EliminarEvaluacion';
 import { InsigniaEstado } from '../components/InsigniaEstado';
+import { PublicarEvaluacion } from '../components/PublicarEvaluacion';
 import { etiquetaTipoPregunta, formatearFecha, puntajeTotal } from '../formato';
 import { useEvaluacion } from '../hooks/useEvaluacion';
 import type { Criterio, Pregunta } from '../tipos';
@@ -105,6 +107,13 @@ export function PaginaEvaluacion() {
               {puntajeTotal(evaluacion.preguntasJson.preguntas)} puntos en total
             </p>
           </Tarjeta>
+
+          {evaluacion.estado === 'Borrador' && (
+            <>
+              <PublicarEvaluacion evaluacion={evaluacion} />
+              <EliminarEvaluacion evaluacionId={evaluacion.id} />
+            </>
+          )}
 
           <section aria-labelledby='titulo-preguntas' className='flex flex-col gap-3'>
             <h2 id='titulo-preguntas' className='font-heading text-2xl font-extrabold text-tiza-bosque'>
