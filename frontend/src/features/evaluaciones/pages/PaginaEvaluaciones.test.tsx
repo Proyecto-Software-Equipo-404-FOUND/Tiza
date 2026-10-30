@@ -25,7 +25,7 @@ const evaluacion = (datos: Partial<Evaluacion>): Evaluacion => ({
   id: 'e1',
   institucionId: 'i1',
   titulo: 'Parcial 1',
-  tipo: 'Parcial',
+  tipo: 'Examen',
   estado: 'Publicada',
   cohorteId: 'c1',
   preguntasJson: {
@@ -101,5 +101,11 @@ describe('PaginaEvaluaciones', () => {
     const filas = screen.getAllByRole('row');
     expect(filas[1]).toHaveTextContent('Nueva');
     expect(filas[2]).toHaveTextContent('Vieja');
+  });
+
+  it('tiene un enlace para crear una evaluación nueva', () => {
+    simular({ data: [] });
+    renderizar();
+    expect(screen.getByRole('link', { name: 'Nueva evaluación' })).toHaveAttribute('href', '/evaluaciones/nueva');
   });
 });

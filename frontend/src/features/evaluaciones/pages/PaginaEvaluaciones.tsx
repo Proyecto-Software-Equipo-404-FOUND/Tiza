@@ -1,4 +1,4 @@
-import { ChevronRight, ClipboardList, FileText } from 'lucide-react';
+import { ChevronRight, ClipboardList, FileText, Plus } from 'lucide-react';
 import { mensajeDeError } from '@/shared/api/errores';
 import { BannerError } from '@/shared/components/BannerError';
 import { EnlaceBoton } from '@/shared/components/EnlaceBoton';
@@ -29,7 +29,7 @@ const columnas: Columna<Evaluacion>[] = [
   {
     titulo: 'Detalle',
     celda: (evaluacion) => (
-      <EnlaceBoton to={`/evaluaciones/${evaluacion.id}`} className='bg-tiza-menta/60'>
+      <EnlaceBoton to={`/evaluaciones/${evaluacion.id}`} className='whitespace-nowrap bg-tiza-menta/60'>
         Ver detalle
         <ChevronRight className='h-4 w-4' aria-hidden='true' />
       </EnlaceBoton>
@@ -42,11 +42,20 @@ export function PaginaEvaluaciones() {
 
   return (
     <main className='mx-auto flex max-w-6xl flex-col gap-6 p-6'>
-      <header>
-        <h1 className='font-heading text-4xl font-extrabold text-tiza-bosque'>Evaluaciones</h1>
-        <p className='mt-1 text-tiza-bosque/70'>
-          Las evaluaciones de tu institución, en borrador o ya publicadas.
-        </p>
+      <header className='flex flex-wrap items-start justify-between gap-4'>
+        <div>
+          <h1 className='font-heading text-4xl font-extrabold text-tiza-bosque'>Evaluaciones</h1>
+          <p className='mt-1 text-tiza-bosque/70'>
+            Las evaluaciones de tu institución, en borrador o ya publicadas.
+          </p>
+        </div>
+        <EnlaceBoton
+          to='/evaluaciones/nueva'
+          icono={<Plus className='h-5 w-5' aria-hidden='true' />}
+          className='whitespace-nowrap !px-5 !py-3 !text-base border-transparent bg-tiza-lima hover:brightness-95'
+        >
+          Nueva evaluación
+        </EnlaceBoton>
       </header>
 
       <Tarjeta

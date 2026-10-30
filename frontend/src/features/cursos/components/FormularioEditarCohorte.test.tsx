@@ -101,6 +101,14 @@ describe('FormularioEditarCohorte', () => {
     simular({ isError: true, error: new ApiError(409, { status: 409, title: 'Conflicto' }) });
     mostrarFormulario();
     expect(screen.getByRole('alert')).toHaveTextContent('Alguien modificó este dato');
-    expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Recargar' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Reintentar' })).not.toBeInTheDocument();
+  });
+
+  it('«Recargar» sale de la edición para ver los datos actualizados', async () => {
+    simular({ isError: true, error: new ApiError(409, { status: 409, title: 'Conflicto' }) });
+    const onTerminar = mostrarFormulario();
+    await userEvent.click(screen.getByRole('button', { name: 'Recargar' }));
+    expect(onTerminar).toHaveBeenCalledTimes(1);
   });
 });

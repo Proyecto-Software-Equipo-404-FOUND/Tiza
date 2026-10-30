@@ -8,7 +8,7 @@ const evaluaciones: Evaluacion[] = [
     id: 'e0000000-0000-4000-8000-000000000001',
     institucionId: INSTITUCION_A,
     titulo: 'Parcial 1: Variables y estructuras de control',
-    tipo: 'Parcial',
+    tipo: 'Examen',
     estado: 'Publicada',
     cohorteId: COHORTE_1_ID,
     preguntasJson: {
@@ -48,7 +48,7 @@ const evaluaciones: Evaluacion[] = [
     id: 'e0000000-0000-4000-8000-000000000002',
     institucionId: INSTITUCION_A,
     titulo: 'Trabajo práctico: Funciones',
-    tipo: 'Trabajo práctico',
+    tipo: 'Cuestionario',
     estado: 'Borrador',
     cohorteId: null,
     preguntasJson: {
@@ -79,6 +79,57 @@ const sinInstitucion = () =>
   HttpResponse.json({ title: 'Petición inválida', status: 400, detail: 'Falta la institución.' }, { status: 400 });
 
 export const handlersEvaluaciones = [
+  // Crea en estado Borrador y responde 201 con Location, como el servicio real
+  http.post('*/api/v1/evaluaciones', async ({ request }) => {
+    const institucionId = institucionDe(request);
+    if (!institucionId) return sinInstitucion();
+    const { titulo, tipo, preguntasJson } = (await request.json()) as Pick<Evaluacion, 'titulo' | 'tipo' | 'preguntasJson'>;
+    if (!titulo?.trim() || !tipo?.trim() || !preguntasJson) {
+      return HttpResponse.json(
+        { title: 'Petición inválida', status: 400, detail: 'Faltan datos de la evaluación.' },
+        { status: 400 },
+      );
+    }
+    const ahora = new Date().toISOString();
+    const nueva: Evaluacion = {
+      id: crypto.randomUUID(),
+      institucionId,
+      titulo,
+      tipo,
+      estado: 'Borrador',
+      cohorteId: null,
+      preguntasJson,
+      fechaCreacion: ahora,
+      fechaActualizacion: ahora,
+      version: 1,
+    };
+    evaluaciones.push(nueva);
+    return HttpResponse.json(nueva, { status: 201, headers: { Location: `/api/v1/evaluaciones/${nueva.id}` } });
+  }),
+
+  // Solo se modifica un Borrador. Truco para probar el 409 en pantalla: ponerle de título «conflicto».
+  // El contrato no dice si el PUT sube la versión: acá se deja igual.
+  http.put('*/api/v1/evaluaciones/:id', async ({ params, request }) => {
+    const institucionId = institucionDe(request);
+    if (!institucionId) return sinInstitucion();
+    const evaluacion = evaluaciones.find((e) => e.id === params.id && e.institucionId === institucionId);
+    if (!evaluacion) return HttpResponse.json({ title: 'No encontrada', status: 404 }, { status: 404 });
+
+    const { titulo, tipo, preguntasJson } = (await request.json()) as Pick<Evaluacion, 'titulo' | 'tipo' | 'preguntasJson'>;
+    if (evaluacion.estado !== 'Borrador' || titulo?.trim().toLowerCase() === 'conflicto') {
+      return HttpResponse.json(
+        {
+          title: 'La operación no se puede realizar en el estado actual.',
+          status: 409,
+          detail: 'Solo se pueden modificar evaluaciones en estado Borrador.',
+        },
+        { status: 409 },
+      );
+    }
+    Object.assign(evaluacion, { titulo, tipo, preguntasJson, fechaActualizacion: new Date().toISOString() });
+    return HttpResponse.json(evaluacion);
+  }),
+
   http.get('*/api/v1/evaluaciones', ({ request }) => {
     const institucionId = institucionDe(request);
     if (!institucionId) return sinInstitucion();
