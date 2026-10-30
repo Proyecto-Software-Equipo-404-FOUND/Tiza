@@ -86,6 +86,25 @@ export const handlers = [
       headers: { Location: `/api/v1/cursos/${nuevo.id}` },
     });
   }),
+
+  http.put('*/api/v1/cursos/:id', async ({ params, request }) => {
+    const curso = cursos.find((c) => c.id === params.id);
+    if (!curso) return HttpResponse.json({ title: 'No encontrado', status: 404 }, { status: 404 });
+    const { nombre, area } = (await request.json()) as { nombre: string; area: string };
+    if (nombre.toLowerCase() === 'conflicto') {
+      return HttpResponse.json({ title: 'Conflicto', status: 409 }, { status: 409 });
+    }
+    Object.assign(curso, { nombre, area });
+    return HttpResponse.json(curso);
+  }),
+
+  // Baja lógica en el backend; el mock la quita de la lista
+  http.delete('*/api/v1/cursos/:id', ({ params }) => {
+    const indice = cursos.findIndex((c) => c.id === params.id);
+    if (indice === -1) return HttpResponse.json({ title: 'No encontrado', status: 404 }, { status: 404 });
+    cursos.splice(indice, 1);
+    return new HttpResponse(null, { status: 204 });
+  }),
   ...handlersMatriculas,
   ...handlersCohortes,
   ...handlersEvaluaciones,

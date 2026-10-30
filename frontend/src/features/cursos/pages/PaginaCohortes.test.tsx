@@ -1,16 +1,32 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
 import { PaginaCohortes } from './PaginaCohortes';
 import { useCurso } from '../hooks/useCurso';
 import { useCohortes } from '../hooks/useCohortes';
 import { ApiError } from '@/shared/api/cliente';
+import type { Cohorte } from '@/shared/api/tipos';
 import { CURSO_1_ID, COHORTE_1_ID, DOCENTE_A_ID, INSTITUCION_A } from '@/mocks/datos';
 
 vi.mock('../hooks/useCurso', () => ({ useCurso: vi.fn() }));
 vi.mock('../hooks/useCohortes', () => ({ useCohortes: vi.fn() }));
 vi.mock('../components/FormularioCohorte', () => ({
   FormularioCohorte: () => <div>formulario</div>,
+}));
+
+vi.mock('../components/AccionesCohorte', () => ({
+  AccionesCohorte: ({ cohorte, onEditar }: { cohorte: Cohorte; onEditar: (c: Cohorte) => void }) => (
+    <button onClick={() => onEditar(cohorte)}>acciones de {cohorte.nombre}</button>
+  ),
+}));
+vi.mock('../components/FormularioEditarCohorte', () => ({
+  FormularioEditarCohorte: ({ cohorte, onTerminar }: { cohorte: Cohorte; onTerminar: () => void }) => (
+    <div>
+      formulario de edición de {cohorte.nombre}
+      <button onClick={onTerminar}>cancelar edición</button>
+    </div>
+  ),
 }));
 
 type EstadoCohortes = ReturnType<typeof useCohortes>;
@@ -89,5 +105,29 @@ describe('PaginaCohortes', () => {
       'href',
       `/cohortes/${COHORTE_1_ID}/matriculas`,
     );
+  });
+  it('al elegir editar muestra el formulario de edición y al cancelar vuelve al de crear', async () => {
+    simular({
+      data: [
+        {
+          id: COHORTE_1_ID,
+          cursoId: CURSO_1_ID,
+          docenteId: DOCENTE_A_ID,
+          nombre: 'Cohorte 2026 - Mañana',
+          periodo: '2026-1C',
+          activo: true,
+          fechaCreacionUtc: '2026-10-09T12:00:00Z',
+        },
+      ],
+    });
+    renderizar();
+    expect(screen.getByRole('heading', { name: 'Nueva cohorte' })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'acciones de Cohorte 2026 - Mañana' }));
+    expect(screen.getByRole('heading', { name: 'Editar cohorte' })).toBeInTheDocument();
+    expect(screen.getByText(/formulario de edición de Cohorte 2026 - Mañana/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'cancelar edición' }));
+    expect(screen.getByRole('heading', { name: 'Nueva cohorte' })).toBeInTheDocument();
   });
 });

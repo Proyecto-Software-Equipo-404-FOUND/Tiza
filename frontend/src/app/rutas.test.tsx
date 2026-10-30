@@ -26,11 +26,15 @@ vi.mock('@/features/cursos/api/cursos', () => ({
     fechaCreacionUtc: '2026-10-09T12:00:00Z',
   }),
   crearCurso: vi.fn(),
+  actualizarCurso: vi.fn(),
+  eliminarCurso: vi.fn(),
 }));
 
 vi.mock('@/features/cursos/api/cohortes', () => ({
   listarCohortes: vi.fn().mockResolvedValue([]),
   crearCohorte: vi.fn(),
+  actualizarCohorte: vi.fn(),
+  eliminarCohorte: vi.fn(),
 }));
 
 vi.mock('@/features/matriculas/api/matriculas', () => ({
