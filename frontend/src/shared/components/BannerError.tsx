@@ -12,7 +12,7 @@ export function BannerError({ mensaje = 'Algo salió mal. Probá de nuevo.', onR
     <div role='alert' className='flex flex-wrap items-center justify-between gap-3 rounded-xl border border-tiza-coral bg-tiza-coral/10 p-4 text-tiza-bosque'>
       <p>{mensaje}</p>
       {onReintentar && (
-        <Boton variante='secundario' onClick={onReintentar}>
+        <Boton type='button' variante='secundario' onClick={onReintentar}>
           {textoBoton}
         </Boton>
       )}
