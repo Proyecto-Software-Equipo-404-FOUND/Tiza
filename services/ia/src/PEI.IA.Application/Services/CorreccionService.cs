@@ -14,6 +14,7 @@ public class CorreccionService : ICorreccionService
     private readonly ILlmClient _llmClient;
     private readonly IPromptBuilder _promptBuilder;
     private readonly IToolExecutor _toolExecutor;
+    private readonly IEvaluacionesClient? _evaluacionesClient;
     private readonly ILogger<CorreccionService> _logger;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -25,12 +26,23 @@ public class CorreccionService : ICorreccionService
         ILlmClient llmClient,
         IPromptBuilder promptBuilder,
         IToolExecutor toolExecutor,
+        IEvaluacionesClient? evaluacionesClient,
         ILogger<CorreccionService> logger)
     {
         _llmClient = llmClient;
         _promptBuilder = promptBuilder;
         _toolExecutor = toolExecutor;
+        _evaluacionesClient = evaluacionesClient;
         _logger = logger;
+    }
+
+    public CorreccionService(
+        ILlmClient llmClient,
+        IPromptBuilder promptBuilder,
+        IToolExecutor toolExecutor,
+        ILogger<CorreccionService> logger)
+        : this(llmClient, promptBuilder, toolExecutor, null, logger)
+    {
     }
 
     public async Task<CorregirRespuestaResponse> CorregirAsync(
@@ -75,6 +87,8 @@ public class CorreccionService : ICorreccionService
             return GenerarFallback(request, "El proveedor LLM no estuvo disponible o no devolvió respuesta.");
         }
 
+        CorregirRespuestaResponse respuesta;
+
         // ── Caso 1: El LLM invocó una tool (Tool Calling de MCP) ──
         if (llmResult.ToolCalls is { Count: > 0 })
         {
@@ -96,17 +110,48 @@ public class CorreccionService : ICorreccionService
             // Parsear nota y justificación de los argumentos de la tool
             var datos = ParsearResultadoDeJson(targetTool.ArgumentosJson, request.PuntajeMaximo);
 
-            return ConstruirRespuesta(datos, llmResult);
+            respuesta = ConstruirRespuesta(datos, llmResult);
         }
-
         // ── Caso 2: El LLM respondió con texto / JSON directo ──
-        if (!string.IsNullOrWhiteSpace(llmResult.Contenido))
+        else if (!string.IsNullOrWhiteSpace(llmResult.Contenido))
         {
             var datos = ParsearResultadoDeJson(llmResult.Contenido, request.PuntajeMaximo);
-            return ConstruirRespuesta(datos, llmResult);
+            respuesta = ConstruirRespuesta(datos, llmResult);
+        }
+        else
+        {
+            return GenerarFallback(request, "El LLM no invocó ninguna tool ni retornó contenido válido.");
         }
 
-        return GenerarFallback(request, "El LLM no invocó ninguna tool ni retornó contenido válido.");
+        // ── Integración S2-IA-01 / EV-06: Persistir calificación sugerida en Evaluaciones ──
+        if (request.EntregaId.HasValue && _evaluacionesClient != null)
+        {
+            try
+            {
+                var desgloseJson = JsonSerializer.Serialize(respuesta.DesglosePorCriterio, JsonOptions);
+                var registrado = await _evaluacionesClient.RegistrarSugerenciaAsync(
+                    entregaId: request.EntregaId.Value,
+                    notaSugerida: respuesta.NotaSugerida,
+                    justificacion: respuesta.Justificacion,
+                    desgloseJson: desgloseJson,
+                    ct: cancellationToken);
+
+                if (!registrado)
+                {
+                    _logger.LogWarning(
+                        "No se pudo persistir la sugerencia en Evaluaciones para EntregaId={EntregaId}. La respuesta al llamador es igualmente válida.",
+                        request.EntregaId.Value);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "Excepción al registrar sugerencia en Evaluaciones para EntregaId={EntregaId}.",
+                    request.EntregaId.Value);
+            }
+        }
+
+        return respuesta;
     }
 
     private static DatosEvaluacion ParsearResultadoDeJson(string json, decimal puntajeMaximo)
