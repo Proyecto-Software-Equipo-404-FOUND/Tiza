@@ -4,6 +4,7 @@ using PEI.BuildingBlocks.Logging;
 using PEI.IA.Application.Interfaces;
 using PEI.IA.Application.Prompts;
 using PEI.IA.Application.Services;
+using PEI.IA.Infrastructure.Evaluaciones;
 using PEI.IA.Infrastructure.LlmClients;
 using PEI.IA.Infrastructure.Mcp;
 
@@ -32,6 +33,17 @@ builder.Services.AddTransient<IToolExecutor>(sp =>
     return settings.UsarPlanB
         ? sp.GetRequiredService<LocalToolExecutor>()
         : sp.GetRequiredService<McpToolExecutor>();
+});
+
+// ── Cliente HTTP → Microservicio de Evaluaciones (EV-06) ──
+var evaluacionesSettings = builder.Configuration
+    .GetSection("EvaluacionesSettings")
+    .Get<EvaluacionesSettings>() ?? new EvaluacionesSettings();
+builder.Services.AddSingleton(evaluacionesSettings);
+builder.Services.AddHttpClient<IEvaluacionesClient, EvaluacionesHttpClient>(client =>
+{
+    client.BaseAddress = new Uri(evaluacionesSettings.BaseUrl.TrimEnd('/') + "/");
+    client.Timeout     = TimeSpan.FromMilliseconds(evaluacionesSettings.TimeoutMs);
 });
 
 // ── Controllers + JSON ──
