@@ -38,9 +38,10 @@ public static class DependencyInjection
         services.AddScoped<IRequestHandler<GetCohortesByCursoQuery, IReadOnlyList<CohorteDto>?>, GetCohortesByCursoQueryHandler>();
         services.AddScoped<IRequestHandler<ValidarCohorteQuery, CohorteValidacionDto?>, ValidarCohorteQueryHandler>();
 
-        // Registrar Handlers de Matriculaciones (Caso de Uso CU-04)
+        // Registrar Handlers de Matriculaciones (Casos de Uso CU-04 y S2-CU-01)
         services.AddScoped<IRequestHandler<MatricularAlumnoCommand, MatriculacionDto>, MatricularAlumnoCommandHandler>();
         services.AddScoped<IRequestHandler<GetMatriculacionByIdQuery, MatriculacionDto?>, GetMatriculacionByIdQueryHandler>();
+        services.AddScoped<IRequestHandler<GetMatriculacionesByCohorteQuery, IReadOnlyList<MatriculacionDto>?>, GetMatriculacionesByCohorteQueryHandler>();
 
         return services;
     }
