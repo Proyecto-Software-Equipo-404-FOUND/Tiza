@@ -7,6 +7,7 @@ using PEI.IA.Application.Services;
 using PEI.IA.Infrastructure.Evaluaciones;
 using PEI.IA.Infrastructure.LlmClients;
 using PEI.IA.Infrastructure.Mcp;
+using PEI.IA.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,8 +18,15 @@ builder.Services.AddSingleton(mcpSettings);
 var llmSettings = builder.Configuration.GetSection("LlmSettings").Get<LlmSettings>() ?? new LlmSettings();
 builder.Services.AddSingleton(llmSettings);
 
-// ── Cliente LLM (OpenAI compatible: Groq, OpenRouter, Local) ──
-builder.Services.AddHttpClient<ILlmClient, OpenAiCompatibleClient>();
+var resilienceOptions = builder.Configuration.GetSection("LlmResilienceOptions").Get<LlmResilienceOptions>() ?? new LlmResilienceOptions();
+builder.Services.AddSingleton(resilienceOptions);
+
+// ── Repositorio de Auditoría de Solicitudes IA (SolicitudCorreccion) ──
+builder.Services.AddSingleton<ISolicitudCorreccionRepository, InMemorySolicitudCorreccionRepository>();
+
+// ── Cliente LLM Resiliente con Polly (Conmutación automática + Circuit Breaker) ──
+builder.Services.AddHttpClient();
+builder.Services.AddSingleton<ILlmClient, PollyResilientLlmClient>();
 
 // ── Servicios de aplicación ──
 builder.Services.AddSingleton<IPromptBuilder, PromptBuilder>();
