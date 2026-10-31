@@ -35,5 +35,10 @@ namespace PEI.SalaEnVivo.Infrastructure.Repositories
                 .Select(p => (Guid?)p.SalaId)
                 .FirstOrDefaultAsync(cancellationToken);
         }
+
+        public Task<int> ContarAlumnosAsync(Guid salaId, CancellationToken cancellationToken = default)
+        {
+            return _context.ParticipanteSala.CountAsync(p => p.SalaId == salaId, cancellationToken);
+        }
     }
 }

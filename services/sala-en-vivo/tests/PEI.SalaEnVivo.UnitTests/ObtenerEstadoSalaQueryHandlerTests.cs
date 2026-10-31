@@ -1,3 +1,4 @@
+using PEI.SalaEnVivo.Application.DTOs.Evaluaciones;
 using PEI.SalaEnVivo.Application.Interfaces;
 using PEI.SalaEnVivo.Application.Interfaces.Repositories;
 using PEI.SalaEnVivo.Application.UseCases.Salas.Handlers;
@@ -13,6 +14,7 @@ namespace PEI.SalaEnVivo.UnitTests
         private readonly FakeParticipanteSalaRepository _participanteRepository = new();
         private readonly FakeRespuestaSalaRepository _respuestaRepository = new();
         private readonly FakeSalaCronometroService _cronometroService = new();
+        private readonly FakeEvaluacionesClient _evaluacionesClient = new();
 
         private ObtenerEstadoSalaQueryHandler CrearHandler()
         {
@@ -20,7 +22,8 @@ namespace PEI.SalaEnVivo.UnitTests
                 _salaRepository,
                 _participanteRepository,
                 _respuestaRepository,
-                _cronometroService);
+                _cronometroService,
+                _evaluacionesClient);
         }
 
         private Sala CrearSala(Guid salaId, Guid institucionId, string estado = "EnCurso")
@@ -203,6 +206,48 @@ namespace PEI.SalaEnVivo.UnitTests
 
             Assert.Contains("SALA_NO_ENCONTRADA", ex.Message);
         }
+
+        [Fact]
+        public async Task Handle_SalaEnCursoConPreguntaVigente_RetornaPreguntaActual()
+        {
+            var salaId = Guid.NewGuid();
+            var alumnoId = Guid.NewGuid();
+            var institucionId = Guid.NewGuid();
+            var evaluacionId = Guid.NewGuid();
+            var pregunta1Id = Guid.NewGuid();
+            var pregunta2Id = Guid.NewGuid();
+
+            var sala = CrearSala(salaId, institucionId, "EnCurso");
+            sala.EvaluacionId = evaluacionId;
+            sala.EstablecerPreguntaActual(pregunta2Id, 2);
+
+            _participanteRepository.Participantes.Add(new ParticipanteSala
+            {
+                Id = Guid.NewGuid(),
+                SalaId = salaId,
+                AlumnoId = alumnoId
+            });
+
+            _evaluacionesClient.Evaluaciones[evaluacionId] = new EvaluacionPreguntasDto(
+                evaluacionId,
+                "Publicada",
+                new[]
+                {
+                    new PreguntaEvaluacionDto(pregunta1Id, "Pregunta 1", "Abierta", 5m, null),
+                    new PreguntaEvaluacionDto(pregunta2Id, "Pregunta 2", "Abierta", 5m, null)
+                });
+
+            var handler = CrearHandler();
+            var query = new ObtenerEstadoSalaQuery(alumnoId, institucionId, "Alumno", salaId);
+
+            var estado = await handler.Handle(query, CancellationToken.None);
+
+            Assert.NotNull(estado.PreguntaActual);
+            Assert.Equal(pregunta2Id, estado.PreguntaActual!.PreguntaId);
+            Assert.Equal(2, estado.PreguntaActual.Indice);
+            Assert.Equal(2, estado.PreguntaActual.TotalPreguntas);
+            Assert.Equal("Pregunta 2", estado.PreguntaActual.Enunciado);
+        }
     }
 
     internal class FakeParticipanteSalaRepository : IParticipanteSalaRepository
@@ -225,5 +270,8 @@ namespace PEI.SalaEnVivo.UnitTests
 
             return Task.FromResult(ultima?.SalaId);
         }
+
+        public Task<int> ContarAlumnosAsync(Guid salaId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(Participantes.Count(p => p.SalaId == salaId));
     }
 }

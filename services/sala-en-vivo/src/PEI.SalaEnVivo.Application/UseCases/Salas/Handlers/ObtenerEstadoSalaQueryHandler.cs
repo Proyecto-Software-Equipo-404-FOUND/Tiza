@@ -1,4 +1,6 @@
+using System.Text.Json;
 using MediatR;
+using PEI.SalaEnVivo.Application.DTOs.Evaluaciones;
 using PEI.SalaEnVivo.Application.DTOs.Salas;
 using PEI.SalaEnVivo.Application.Interfaces;
 using PEI.SalaEnVivo.Application.Interfaces.Repositories;
@@ -12,17 +14,20 @@ namespace PEI.SalaEnVivo.Application.UseCases.Salas.Handlers
         private readonly IParticipanteSalaRepository _participanteRepository;
         private readonly IRespuestaSalaRepository _respuestaRepository;
         private readonly ISalaCronometroService _cronometroService;
+        private readonly IEvaluacionesClient? _evaluacionesClient;
 
         public ObtenerEstadoSalaQueryHandler(
             ISalaRepository salaRepository,
             IParticipanteSalaRepository participanteRepository,
             IRespuestaSalaRepository respuestaRepository,
-            ISalaCronometroService cronometroService)
+            ISalaCronometroService cronometroService,
+            IEvaluacionesClient? evaluacionesClient = null)
         {
             _salaRepository = salaRepository;
             _participanteRepository = participanteRepository;
             _respuestaRepository = respuestaRepository;
             _cronometroService = cronometroService;
+            _evaluacionesClient = evaluacionesClient;
         }
 
         public async Task<EstadoSalaDto> Handle(
@@ -104,14 +109,89 @@ namespace PEI.SalaEnVivo.Application.UseCases.Salas.Handlers
             DateTime? fechaLimiteUtc = vencimientoCronometro
                 ?? (sala.FechaVencimiento != default ? DateTime.SpecifyKind(sala.FechaVencimiento, DateTimeKind.Utc) : null);
 
+            PreguntaActualDto? preguntaActual = null;
+            if (_evaluacionesClient != null &&
+                string.Equals(sala.Estado, "EnCurso", StringComparison.OrdinalIgnoreCase))
+            {
+                var evaluacion = await ObtenerEvaluacionAsync(sala.EvaluacionId, sala.InstitucionId, cancellationToken);
+                if (evaluacion != null && evaluacion.Preguntas.Count > 0)
+                {
+                    var indice = ObtenerIndiceVigente(sala.PreguntaActualId, sala.IndicePreguntaActual, evaluacion.Preguntas);
+                    preguntaActual = PreguntaActualMapper.Crear(
+                        sala.Id,
+                        evaluacion.Preguntas,
+                        indice,
+                        fechaLimiteUtc ?? sala.FechaVencimiento);
+                }
+            }
+
             return new EstadoSalaDto(
                 SalaId: sala.Id,
                 Estado: sala.Estado,
-                PreguntaActual: null,
+                PreguntaActual: preguntaActual,
                 UltimaSecuencia: ultimaSecuencia,
                 PreguntasRespondidas: preguntasRespondidas,
                 ServidorUtc: DateTime.UtcNow,
                 FechaLimiteUtc: fechaLimiteUtc);
+        }
+
+        private async Task<EvaluacionPreguntasDto?> ObtenerEvaluacionAsync(
+            Guid evaluacionId,
+            Guid institucionId,
+            CancellationToken cancellationToken)
+        {
+            if (_evaluacionesClient == null || evaluacionId == Guid.Empty)
+            {
+                return null;
+            }
+
+            try
+            {
+                var evaluacion = await _evaluacionesClient.ObtenerPreguntasAsync(
+                    evaluacionId,
+                    institucionId,
+                    cancellationToken);
+
+                if (evaluacion == null ||
+                    !string.Equals(evaluacion.Estado, "Publicada", StringComparison.OrdinalIgnoreCase))
+                {
+                    return null;
+                }
+
+                return evaluacion;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex) when (ex is HttpRequestException or JsonException or TaskCanceledException)
+            {
+                return null;
+            }
+        }
+
+        private static int ObtenerIndiceVigente(
+            Guid? preguntaActualId,
+            int indiceActual,
+            IReadOnlyList<PreguntaEvaluacionDto> preguntas)
+        {
+            if (preguntaActualId.HasValue)
+            {
+                for (var i = 0; i < preguntas.Count; i++)
+                {
+                    if (preguntas[i].Id == preguntaActualId.Value)
+                    {
+                        return i + 1;
+                    }
+                }
+            }
+
+            if (indiceActual >= 1 && indiceActual <= preguntas.Count)
+            {
+                return indiceActual;
+            }
+
+            return 1;
         }
     }
 }
