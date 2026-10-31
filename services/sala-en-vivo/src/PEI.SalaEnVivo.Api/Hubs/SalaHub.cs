@@ -4,6 +4,7 @@ using MediatR;
 using System.Security.Claims;
 using Microsoft.Extensions.DependencyInjection;
 using PEI.SalaEnVivo.Application.DTOs.Respuestas;
+using PEI.SalaEnVivo.Application.DTOs.Salas;
 using PEI.SalaEnVivo.Application.Interfaces.Repositories;
 using PEI.SalaEnVivo.Application.UseCases.Salas.Commands;
 
@@ -12,6 +13,8 @@ namespace PEI.SalaEnVivo.Api.Hubs
     [Authorize]
     public sealed class SalaHub : Hub
     {
+        private const string RolDocente = "Docente";
+
         private readonly ISender _sender;
 
         public SalaHub(ISender sender)
@@ -53,6 +56,8 @@ namespace PEI.SalaEnVivo.Api.Hubs
                     Context.ConnectionId,
                     salaId.ToString(),
                     Context.ConnectionAborted);
+
+                await NotificarIngresoAlumnoAsync(salaId, alumnoId);
             }
             catch (UnauthorizedAccessException)
             {
@@ -63,6 +68,93 @@ namespace PEI.SalaEnVivo.Api.Hubs
             {
                 throw new HubException(ex.Message);
             }
+        }
+
+        public async Task UnirseASalaDocente(Guid salaId)
+        {
+            if (!EsDocente())
+            {
+                throw new HubException(
+                    "NO_AUTORIZADO: Solo un docente puede unirse como docente.");
+            }
+
+            var institucionId = ObtenerInstitucionId();
+
+            var resultado = await _sender.Send(
+                new UnirseASalaDocenteCommand(salaId, institucionId),
+                Context.ConnectionAborted);
+
+            if (!resultado.Exito)
+            {
+                throw new HubException($"{resultado.Codigo}: {resultado.Mensaje}");
+            }
+
+            var salaIdValidada = resultado.Valor;
+
+            Context.Items["SalaId"] = salaIdValidada;
+            Context.Items["Rol"] = RolDocente;
+
+            await Groups.AddToGroupAsync(
+                Context.ConnectionId,
+                salaIdValidada.ToString(),
+                Context.ConnectionAborted);
+
+            await Groups.AddToGroupAsync(
+                Context.ConnectionId,
+                $"{salaIdValidada}:docentes",
+                Context.ConnectionAborted);
+        }
+
+        public async Task IniciarSala()
+        {
+            var (salaId, institucionId) = ObtenerContextoDocente();
+
+            var resultado = await _sender.Send(
+                new IniciarSalaCommand(salaId, institucionId),
+                Context.ConnectionAborted);
+
+            if (!resultado.Exito || resultado.Valor == null)
+            {
+                throw new HubException($"{resultado.Codigo}: {resultado.Mensaje}");
+            }
+
+            var valor = resultado.Valor;
+            var grupoSala = valor.SalaIniciada.SalaId.ToString();
+
+            await Clients.Group(grupoSala).SendAsync(
+                "salaIniciada",
+                new
+                {
+                    salaId = valor.SalaIniciada.SalaId,
+                    iniciadaUtc = valor.SalaIniciada.IniciadaUtc,
+                    totalPreguntas = valor.SalaIniciada.TotalPreguntas,
+                    fechaLimiteUtc = valor.SalaIniciada.FechaLimiteUtc
+                },
+                Context.ConnectionAborted);
+
+            await Clients.Group(grupoSala).SendAsync(
+                "preguntaActual",
+                MapearPreguntaActual(valor.PreguntaActual),
+                Context.ConnectionAborted);
+        }
+
+        public async Task AvanzarPregunta(Guid? preguntaId = null)
+        {
+            var (salaId, institucionId) = ObtenerContextoDocente();
+
+            var resultado = await _sender.Send(
+                new AvanzarPreguntaCommand(salaId, institucionId, preguntaId),
+                Context.ConnectionAborted);
+
+            if (!resultado.Exito || resultado.Valor == null)
+            {
+                throw new HubException($"{resultado.Codigo}: {resultado.Mensaje}");
+            }
+
+            await Clients.Group(resultado.Valor.SalaId.ToString()).SendAsync(
+                "preguntaActual",
+                MapearPreguntaActual(resultado.Valor),
+                Context.ConnectionAborted);
         }
 
         public async Task<ResultadoEnvioRespuestaDto> EnviarRespuesta(EnviarRespuestaRequest request)
@@ -129,6 +221,95 @@ namespace PEI.SalaEnVivo.Api.Hubs
             }
 
             return resultado;
+        }
+
+        private async Task NotificarIngresoAlumnoAsync(Guid salaId, Guid alumnoId)
+        {
+            var participanteRepo = Context.GetHttpContext()?
+                .RequestServices.GetService<IParticipanteSalaRepository>();
+
+            var totalConectados = participanteRepo != null
+                ? await participanteRepo.ContarAlumnosAsync(salaId, Context.ConnectionAborted)
+                : 0;
+
+            if (totalConectados < 1)
+            {
+                totalConectados = 1;
+            }
+
+            await Clients.Group($"{salaId}:docentes").SendAsync(
+                "alumnoIngreso",
+                new
+                {
+                    salaId,
+                    alumnoId,
+                    alias = $"Alumno {totalConectados}",
+                    totalConectados,
+                    ingresoUtc = DateTime.UtcNow
+                },
+                Context.ConnectionAborted);
+        }
+
+        private (Guid SalaId, Guid InstitucionId) ObtenerContextoDocente()
+        {
+            if (!EsDocente())
+            {
+                throw new HubException(
+                    "NO_AUTORIZADO: Solo un docente puede realizar esta acción.");
+            }
+
+            var institucionId = ObtenerInstitucionId();
+
+            if (!Context.Items.TryGetValue("SalaId", out var salaIdObj) ||
+                salaIdObj is not Guid salaId)
+            {
+                throw new HubException(
+                    "NO_AUTORIZADO: El docente no está unido a una sala.");
+            }
+
+            return (salaId, institucionId);
+        }
+
+        private Guid ObtenerInstitucionId()
+        {
+            var user = Context.User;
+            var institucionClaim = user?.FindFirst("institucion_id")?.Value
+                                   ?? user?.FindFirst("InstitucionId")?.Value;
+
+            if (!Guid.TryParse(institucionClaim, out var institucionId))
+            {
+                throw new HubException("NO_AUTORIZADO: Institución no válida.");
+            }
+
+            return institucionId;
+        }
+
+        private bool EsDocente()
+        {
+            var user = Context.User;
+
+            return user?.IsInRole(RolDocente) == true
+                   || user?.FindFirst("role")?.Value == RolDocente
+                   || user?.FindFirst(ClaimTypes.Role)?.Value == RolDocente;
+        }
+
+        private static object MapearPreguntaActual(PreguntaActualDto pregunta)
+        {
+            return new
+            {
+                salaId = pregunta.SalaId,
+                preguntaId = pregunta.PreguntaId,
+                indice = pregunta.Indice,
+                totalPreguntas = pregunta.TotalPreguntas,
+                tipo = pregunta.Tipo,
+                enunciado = pregunta.Enunciado,
+                opciones = pregunta.Opciones?
+                    .Select(o => new { id = o.Id, texto = o.Texto })
+                    .ToArray(),
+                puntajeMaximo = pregunta.PuntajeMaximo,
+                fechaInicioUtc = pregunta.FechaInicioUtc,
+                fechaLimiteUtc = pregunta.FechaLimiteUtc
+            };
         }
     }
 }
