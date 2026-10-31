@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
 import { PaginaCursos } from './PaginaCursos';
@@ -10,6 +11,20 @@ import { CURSO_1_ID, INSTITUCION_A } from '@/mocks/datos';
 vi.mock('../hooks/useCursos', () => ({ useCursos: vi.fn() }));
 vi.mock('../components/FormularioCurso', () => ({
   FormularioCurso: () => <div>formulario</div>,
+}));
+
+vi.mock('../components/AccionesCurso', () => ({
+  AccionesCurso: ({ curso, onEditar }: { curso: Curso; onEditar: (c: Curso) => void }) => (
+    <button onClick={() => onEditar(curso)}>acciones de {curso.nombre}</button>
+  ),
+}));
+vi.mock('../components/FormularioEditarCurso', () => ({
+  FormularioEditarCurso: ({ curso, onTerminar }: { curso: Curso; onTerminar: () => void }) => (
+    <div>
+      formulario de edición de {curso.nombre}
+      <button onClick={onTerminar}>cancelar edición</button>
+    </div>
+  ),
 }));
 
 type Estado = ReturnType<typeof useCursos>;
@@ -78,5 +93,29 @@ describe('PaginaCursos', () => {
       'href',
       `/cursos/${CURSO_1_ID}/cohortes`,
     );
+  });
+  it('al elegir editar muestra el formulario de edición y al cancelar vuelve al de crear', async () => {
+    simular({
+      data: paginado([
+        {
+          id: CURSO_1_ID,
+          institucionId: INSTITUCION_A,
+          nombre: 'Programación I',
+          area: 'Sistemas',
+          activo: true,
+          fechaCreacionUtc: '2026-10-09T12:00:00Z',
+        },
+      ]),
+    });
+    renderizar();
+    expect(screen.getByRole('heading', { name: 'Crear nuevo curso' })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'acciones de Programación I' }));
+    expect(screen.getByRole('heading', { name: 'Editar curso' })).toBeInTheDocument();
+    expect(screen.getByText(/formulario de edición de Programación I/)).toBeInTheDocument();
+    expect(screen.queryByText('formulario')).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'cancelar edición' }));
+    expect(screen.getByRole('heading', { name: 'Crear nuevo curso' })).toBeInTheDocument();
   });
 });

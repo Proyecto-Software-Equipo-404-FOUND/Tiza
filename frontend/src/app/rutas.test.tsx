@@ -26,17 +26,26 @@ vi.mock('@/features/cursos/api/cursos', () => ({
     fechaCreacionUtc: '2026-10-09T12:00:00Z',
   }),
   crearCurso: vi.fn(),
+  actualizarCurso: vi.fn(),
+  eliminarCurso: vi.fn(),
 }));
 
 vi.mock('@/features/cursos/api/cohortes', () => ({
   listarCohortes: vi.fn().mockResolvedValue([]),
   crearCohorte: vi.fn(),
+  actualizarCohorte: vi.fn(),
+  eliminarCohorte: vi.fn(),
 }));
 
 vi.mock('@/features/matriculas/api/matriculas', () => ({
   listarAlumnos: vi.fn().mockResolvedValue([]),
   listarMatriculas: vi.fn().mockResolvedValue([]),
   matricularAlumno: vi.fn(),
+}));
+
+vi.mock('@/features/evaluaciones/api/evaluaciones', () => ({
+  listarEvaluaciones: vi.fn().mockResolvedValue([]),
+  obtenerEvaluacion: vi.fn(),
 }));
 
 const iniciarComo = (rol: Rol) =>
@@ -104,6 +113,20 @@ describe('rutas de la aplicación', () => {
     iniciarComo('administrador');
     mostrar('/cohortes/c1/matriculas');
     expect(await screen.findByRole('heading', { level: 1, name: 'Matrícula' })).toBeInTheDocument();
+  });
+
+  it('un docente entra a la lista de evaluaciones y ve el enlace en el menú', async () => {
+    iniciarComo('docente');
+    mostrar('/evaluaciones');
+    expect(await screen.findByRole('heading', { level: 1, name: 'Evaluaciones' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Evaluaciones' })).toBeInTheDocument();
+  });
+
+  it('un alumno no entra a las evaluaciones', () => {
+    iniciarComo('alumno');
+    mostrar('/evaluaciones');
+    expect(screen.getByText('No tenés permiso para ver esta página.')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Evaluaciones' })).not.toBeInTheDocument();
   });
 
   it('el alumno no ve el enlace a Cursos', () => {
