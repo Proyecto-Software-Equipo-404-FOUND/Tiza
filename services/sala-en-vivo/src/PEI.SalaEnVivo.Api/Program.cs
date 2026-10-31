@@ -22,6 +22,7 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<ISalaRepository, SalaRepository>();
 builder.Services.AddScoped<IParticipanteSalaRepository, ParticipanteSalaRepository>();
 builder.Services.AddScoped<IRespuestaSalaRepository, RespuestaSalaRepository>();
+builder.Services.AddScoped<IAuditoriaFocoRepository, AuditoriaFocoRepository>();
 
 var redisConn = builder.Configuration.GetConnectionString("Redis")
                 ?? builder.Configuration["Redis:ConnectionString"];

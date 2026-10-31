@@ -4,6 +4,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
+using PEI.SalaEnVivo.Application.DTOs.Foco;
 using PEI.SalaEnVivo.Application.DTOs.Respuestas;
 using PEI.SalaEnVivo.Application.DTOs.Salas;
 using PEI.SalaEnVivo.Application.Interfaces.Repositories;
@@ -322,6 +323,78 @@ namespace PEI.SalaEnVivo.Api.Hubs
             }
 
             return resultado;
+        }
+
+        public async Task<EventoFocoRegistradoDto> RegistrarEventoFoco(RegistrarEventoFocoRequest request)
+        {
+            var user = Context.User;
+
+            if (!Guid.TryParse(
+                user?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user?.FindFirst("sub")?.Value,
+                out var alumnoId))
+            {
+                throw new HubException("NO_AUTORIZADO: Alumno no identificado.");
+            }
+
+            var institucionId = ObtenerInstitucionId();
+
+            if (!Context.Items.TryGetValue("SalaId", out var salaIdObj) || salaIdObj is not Guid salaId || salaId == Guid.Empty)
+            {
+                var participanteRepo = Context.GetHttpContext()?.RequestServices.GetService<IParticipanteSalaRepository>();
+                var salaIdRecuperada = participanteRepo != null
+                    ? await participanteRepo.ObtenerUltimaSalaIdDeAlumnoAsync(alumnoId, Context.ConnectionAborted)
+                    : null;
+
+                if (!salaIdRecuperada.HasValue || salaIdRecuperada.Value == Guid.Empty)
+                {
+                    throw new HubException("ALUMNO_NO_EN_SALA: El alumno no se encuentra unido a ninguna sala activa.");
+                }
+
+                salaId = salaIdRecuperada.Value;
+                Context.Items["SalaId"] = salaId;
+            }
+
+            try
+            {
+                var evento = await _sender.Send(
+                    new RegistrarEventoFocoCommand(
+                        salaId,
+                        alumnoId,
+                        institucionId,
+                        request.DuracionMs,
+                        request.TipoEvento,
+                        request.PreguntaId),
+                    Context.ConnectionAborted);
+
+                await Clients.Group($"{salaId}:docentes").SendAsync(
+                    "alertaFoco",
+                    new
+                    {
+                        id = evento.Id,
+                        salaId = evento.SalaId,
+                        alumnoId = evento.AlumnoId,
+                        preguntaId = evento.PreguntaId,
+                        tipoEvento = evento.TipoEvento,
+                        duracionMs = evento.DuracionMs,
+                        severidad = evento.Severidad,
+                        registradoUtc = evento.RegistradoUtc
+                    },
+                    Context.ConnectionAborted);
+
+                return evento;
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                throw new HubException(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                throw new HubException(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new HubException(ex.Message);
+            }
         }
 
         private async Task VincularSesionUnicaAlumnoAsync(Guid salaId, Guid alumnoId)
