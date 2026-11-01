@@ -52,10 +52,11 @@ export function FormularioEditarCurso({ curso, onTerminar }: Props) {
     });
   };
 
-  // Ante un 409 la lista puede estar desactualizada: se ofrece recargarla
+  // Ante un 409 los datos que se ven están desactualizados: se vuelven a pedir y se sale de la edición
   const recargar = () => {
     actualizar.reset();
     cliente.invalidateQueries({ queryKey: ['cursos'] });
+    onTerminar();
   };
 
   const hayConflicto =
@@ -91,6 +92,7 @@ export function FormularioEditarCurso({ curso, onTerminar }: Props) {
         <BannerError
           mensaje={mensajeDeError(actualizar.error)}
           onReintentar={hayConflicto ? recargar : undefined}
+          textoBoton='Recargar'
         />
       )}
 

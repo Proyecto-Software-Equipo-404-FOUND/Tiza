@@ -29,7 +29,7 @@ const columnas: Columna<Evaluacion>[] = [
   {
     titulo: 'Detalle',
     celda: (evaluacion) => (
-      <EnlaceBoton to={`/evaluaciones/${evaluacion.id}`} className='bg-tiza-menta/60'>
+      <EnlaceBoton to={`/evaluaciones/${evaluacion.id}`} className='whitespace-nowrap bg-tiza-menta/60'>
         Ver detalle
         <ChevronRight className='h-4 w-4' aria-hidden='true' />
       </EnlaceBoton>

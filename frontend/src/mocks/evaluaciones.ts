@@ -8,7 +8,7 @@ const evaluaciones: Evaluacion[] = [
     id: 'e0000000-0000-4000-8000-000000000001',
     institucionId: INSTITUCION_A,
     titulo: 'Parcial 1: Variables y estructuras de control',
-    tipo: 'Parcial',
+    tipo: 'Examen',
     estado: 'Publicada',
     cohorteId: COHORTE_1_ID,
     preguntasJson: {
@@ -48,7 +48,7 @@ const evaluaciones: Evaluacion[] = [
     id: 'e0000000-0000-4000-8000-000000000002',
     institucionId: INSTITUCION_A,
     titulo: 'Trabajo práctico: Funciones',
-    tipo: 'Trabajo práctico',
+    tipo: 'Cuestionario',
     estado: 'Borrador',
     cohorteId: null,
     preguntasJson: {

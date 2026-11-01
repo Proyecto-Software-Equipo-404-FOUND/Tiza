@@ -25,7 +25,7 @@ const evaluacion = (datos: Partial<Evaluacion>): Evaluacion => ({
   id: 'e1',
   institucionId: 'i1',
   titulo: 'Parcial 1',
-  tipo: 'Parcial',
+  tipo: 'Examen',
   estado: 'Publicada',
   cohorteId: 'c1',
   preguntasJson: {
