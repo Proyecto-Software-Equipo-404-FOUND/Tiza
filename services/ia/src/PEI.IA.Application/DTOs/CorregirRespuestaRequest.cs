@@ -35,4 +35,7 @@ public class CorregirRespuestaRequest
 
     /// <summary>Identificador opcional de la pregunta dentro de la evaluación.</summary>
     public Guid? PreguntaId { get; set; }
+
+    /// <summary>Identificador de la entrega en Evaluaciones (para registrar la sugerencia vía S2-EV-02 / EV-06).</summary>
+    public Guid? EntregaId { get; set; }
 }

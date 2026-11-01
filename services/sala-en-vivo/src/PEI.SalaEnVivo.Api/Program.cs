@@ -4,6 +4,7 @@ using PEI.SalaEnVivo.Application.UseCases.Salas.Handlers;
 using PEI.SalaEnVivo.Infrastructure.Persistence;
 using PEI.SalaEnVivo.Infrastructure.Repositories;
 using PEI.SalaEnVivo.Infrastructure.Services;
+using PEI.SalaEnVivo.Infrastructure.Clientes;
 using PEI.SalaEnVivo.Api.Hubs;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
@@ -21,6 +22,7 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<ISalaRepository, SalaRepository>();
 builder.Services.AddScoped<IParticipanteSalaRepository, ParticipanteSalaRepository>();
 builder.Services.AddScoped<IRespuestaSalaRepository, RespuestaSalaRepository>();
+builder.Services.AddScoped<IAuditoriaFocoRepository, AuditoriaFocoRepository>();
 
 var redisConn = builder.Configuration.GetConnectionString("Redis")
                 ?? builder.Configuration["Redis:ConnectionString"];
@@ -44,6 +46,15 @@ if (!string.IsNullOrWhiteSpace(redisConn))
 }
 
 builder.Services.AddScoped<ISalaCronometroService, SalaCronometroService>();
+
+var evaluacionesBaseUrl = builder.Configuration["Evaluaciones:BaseUrl"]
+                          ?? "http://localhost:5103";
+
+builder.Services.AddHttpClient<IEvaluacionesClient, EvaluacionesClient>(client =>
+{
+    client.BaseAddress = new Uri(evaluacionesBaseUrl.TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
 
 builder.Services.AddScoped<CrearSalaCommandHandler>();
 
