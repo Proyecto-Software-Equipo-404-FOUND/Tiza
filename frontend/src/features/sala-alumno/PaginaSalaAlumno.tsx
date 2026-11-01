@@ -9,6 +9,7 @@ import { IndicadorConexion } from '@/shared/realtime/IndicadorConexion';
 import type { ConexionSala } from '@/shared/realtime/tipos';
 import { useConexionSala } from '@/shared/realtime/useConexionSala';
 import { crearConexionSala } from './crearConexionSala';
+import { TarjetaPregunta } from './TarjetaPregunta';
 import { useSalaAlumno } from './useSalaAlumno';
 
 const esquemaPin = z.string().regex(/^\d{6}$/, 'El PIN tiene 6 dígitos');
@@ -22,13 +23,27 @@ const circulo = (icono: ReactNode) => (
 type Props = {
   /** Solo para pruebas: permite inyectar una conexión falsa */
   conexion?: ConexionSala;
+  /** Solo para pruebas: reemplaza la espera entre reintentos */
+  esperar?: (ms: number) => Promise<void>;
 };
 
-export function PaginaSalaAlumno({ conexion: conexionInyectada }: Props) {
+export function PaginaSalaAlumno({ conexion: conexionInyectada, esperar }: Props) {
   // La conexión tiene que ser estable entre renders (ver useConexionSala)
   const [conexion] = useState(() => conexionInyectada ?? crearConexionSala());
   const { estado, reintentar } = useConexionSala(conexion);
-  const { fase, error, motivoCierre, unirse } = useSalaAlumno(conexion);
+  const {
+    fase,
+    error,
+    motivoCierre,
+    pregunta,
+    respondidas,
+    desfaseMs,
+    enviando,
+    errorEnvio,
+    envioCerrado,
+    unirse,
+    enviarRespuesta,
+  } = useSalaAlumno(conexion, esperar);
   const [pin, setPin] = useState('');
   const [errorPin, setErrorPin] = useState<string | undefined>();
 
@@ -89,7 +104,20 @@ export function PaginaSalaAlumno({ conexion: conexionInyectada }: Props) {
         </Tarjeta>
       )}
 
-      {fase === 'enCurso' && (
+      {fase === 'enCurso' && pregunta && (
+        <TarjetaPregunta
+          key={pregunta.preguntaId}
+          pregunta={pregunta}
+          respondida={respondidas.includes(pregunta.preguntaId)}
+          enviando={enviando}
+          error={errorEnvio}
+          desfaseMs={desfaseMs}
+          cerrada={envioCerrado}
+          onEnviar={(respuesta) => void enviarRespuesta(pregunta.preguntaId, respuesta)}
+        />
+      )}
+
+      {fase === 'enCurso' && !pregunta && (
         <Tarjeta
           titulo='La evaluación empezó'
           subtitulo='En breve vas a ver la primera pregunta.'
