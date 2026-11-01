@@ -4,6 +4,7 @@ import { Spinner } from '@/shared/components/Spinner';
 import { BannerError } from '@/shared/components/BannerError';
 import { Tabla, type Columna } from '@/shared/components/Tabla';
 import { Tarjeta } from '@/shared/components/Tarjeta';
+import { Modal } from '@/shared/components/Modal';
 import { EnlaceBoton } from '@/shared/components/EnlaceBoton';
 import { GraduationCap } from 'lucide-react';
 import { mensajeDeError } from '@/shared/api/errores';
@@ -45,11 +46,19 @@ export function PaginaCohortes() {
   const { cursoId = '' } = useParams();
   const { data: curso } = useCurso(cursoId);
   const { data: cohortes, isPending, isError, error, refetch } = useCohortes(cursoId);
+  // La cohorte se conserva al cerrar la ventana para que el formulario no desaparezca durante la animación de salida
   const [enEdicion, setEnEdicion] = useState<Cohorte | null>(null);
+  const [editando, setEditando] = useState(false);
 
-  // Si se elimina la cohorte que se está editando, se sale de la edición
-  const alEliminar = (id: string) => setEnEdicion((actual) => (actual?.id === id ? null : actual));
-  const columnas = crearColumnas(cursoId, setEnEdicion, alEliminar);
+  const editar = (cohorte: Cohorte) => {
+    setEnEdicion(cohorte);
+    setEditando(true);
+  };
+  // Si se elimina la cohorte que se está editando, se cierra la ventana
+  const alEliminar = (id: string) => {
+    if (enEdicion?.id === id) setEditando(false);
+  };
+  const columnas = crearColumnas(cursoId, editar, alEliminar);
 
   return (
     <main className='mx-auto flex max-w-4xl flex-col gap-4 p-6'>
@@ -60,20 +69,9 @@ export function PaginaCohortes() {
         Cohortes{curso ? ` de ${curso.nombre}` : ''}
       </h1>
 
-      {enEdicion ? (
-        <Tarjeta titulo='Editar cohorte' subtitulo={`Estás editando «${enEdicion.nombre}».`}>
-          <FormularioEditarCohorte
-            key={enEdicion.id}
-            cursoId={cursoId}
-            cohorte={enEdicion}
-            onTerminar={() => setEnEdicion(null)}
-          />
-        </Tarjeta>
-      ) : (
-        <Tarjeta titulo='Nueva cohorte'>
-          <FormularioCohorte cursoId={cursoId} />
-        </Tarjeta>
-      )}
+      <Tarjeta titulo='Nueva cohorte'>
+        <FormularioCohorte cursoId={cursoId} />
+      </Tarjeta>
 
       {isPending && <Spinner texto='Cargando cohortes…' />}
 
@@ -87,6 +85,24 @@ export function PaginaCohortes() {
           textoVacio='Todavía no hay cohortes en este curso.'
         />
       )}
+
+      <Modal
+        abierto={editando}
+        titulo='Editar cohorte'
+        subtitulo={enEdicion ? `Estás editando «${enEdicion.nombre}».` : undefined}
+        onCerrar={() => setEditando(false)}
+        cerrarAlClicAfuera={false}
+        ancho='mediano'
+      >
+        {enEdicion && (
+          <FormularioEditarCohorte
+            key={enEdicion.id}
+            cursoId={cursoId}
+            cohorte={enEdicion}
+            onTerminar={() => setEditando(false)}
+          />
+        )}
+      </Modal>
     </main>
   );
 }
