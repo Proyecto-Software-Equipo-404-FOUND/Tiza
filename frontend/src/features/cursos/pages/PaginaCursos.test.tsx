@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
@@ -94,7 +94,7 @@ describe('PaginaCursos', () => {
       `/cursos/${CURSO_1_ID}/cohortes`,
     );
   });
-  it('al elegir editar muestra el formulario de edición y al cancelar vuelve al de crear', async () => {
+  it('al elegir editar abre la ventana de edición y al cancelar se cierra; el formulario de crear sigue visible', async () => {
     simular({
       data: paginado([
         {
@@ -111,11 +111,12 @@ describe('PaginaCursos', () => {
     expect(screen.getByRole('heading', { name: 'Crear nuevo curso' })).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: 'acciones de Programación I' }));
-    expect(screen.getByRole('heading', { name: 'Editar curso' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Editar curso' })).toBeInTheDocument();
     expect(screen.getByText(/formulario de edición de Programación I/)).toBeInTheDocument();
-    expect(screen.queryByText('formulario')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Crear nuevo curso' })).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: 'cancelar edición' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(screen.getByRole('heading', { name: 'Crear nuevo curso' })).toBeInTheDocument();
   });
 });
