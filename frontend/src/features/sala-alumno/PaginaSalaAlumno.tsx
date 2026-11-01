@@ -31,8 +31,19 @@ export function PaginaSalaAlumno({ conexion: conexionInyectada, esperar }: Props
   // La conexión tiene que ser estable entre renders (ver useConexionSala)
   const [conexion] = useState(() => conexionInyectada ?? crearConexionSala());
   const { estado, reintentar } = useConexionSala(conexion);
-  const { fase, error, motivoCierre, pregunta, respondidas, desfaseMs, enviando, errorEnvio, unirse, enviarRespuesta } =
-    useSalaAlumno(conexion, esperar);
+  const {
+    fase,
+    error,
+    motivoCierre,
+    pregunta,
+    respondidas,
+    desfaseMs,
+    enviando,
+    errorEnvio,
+    envioCerrado,
+    unirse,
+    enviarRespuesta,
+  } = useSalaAlumno(conexion, esperar);
   const [pin, setPin] = useState('');
   const [errorPin, setErrorPin] = useState<string | undefined>();
 
@@ -101,6 +112,7 @@ export function PaginaSalaAlumno({ conexion: conexionInyectada, esperar }: Props
           enviando={enviando}
           error={errorEnvio}
           desfaseMs={desfaseMs}
+          cerrada={envioCerrado}
           onEnviar={(respuesta) => void enviarRespuesta(pregunta.preguntaId, respuesta)}
         />
       )}

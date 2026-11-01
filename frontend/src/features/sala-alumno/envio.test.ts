@@ -60,6 +60,17 @@ describe('enviarConReintentos', () => {
     expect(conexion.invocar).toHaveBeenCalledTimes(2);
   });
 
+  it('no repite el mismo envío ante SECUENCIA_FUERA_DE_ORDEN, aunque el servidor lo marque reintentable', async () => {
+    const rechazo: ResultadoEnvio = {
+      ...aceptada,
+      estado: 'Rechazada',
+      error: { codigo: 'SECUENCIA_FUERA_DE_ORDEN', mensaje: 'x', reintentable: true },
+    };
+    const conexion = conexionCon(async () => rechazo);
+    await expect(enviarConReintentos(conexion, envio, sinEsperar)).resolves.toEqual(rechazo);
+    expect(conexion.invocar).toHaveBeenCalledTimes(1);
+  });
+
   it('no reintenta un rechazo definitivo', async () => {
     const rechazo: ResultadoEnvio = { ...aceptada, estado: 'Rechazada', error: { codigo: 'TIEMPO_AGOTADO', mensaje: 'x', reintentable: false } };
     const conexion = conexionCon(async () => rechazo);

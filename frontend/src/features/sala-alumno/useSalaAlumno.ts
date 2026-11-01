@@ -21,7 +21,21 @@ const MENSAJES_RECHAZO: Record<string, string> = {
   PAYLOAD_INVALIDO: 'Revisá tu respuesta e intentá de nuevo.',
   SECUENCIA_FUERA_DE_ORDEN: 'Sincronizamos tu sala. Enviá tu respuesta de nuevo.',
   IDEMPOTENCY_KEY_REUTILIZADA: 'No pudimos enviar tu respuesta. Probá de nuevo.',
+  SESION_REEMPLAZADA: 'Abriste la sala en otra pestaña o dispositivo. Seguí desde ahí o recargá esta página.',
+  ALUMNO_NO_EN_SALA: 'No encontramos tu sala. Recargá la página e ingresá el PIN de nuevo.',
+  SALA_NO_ENCONTRADA: 'La sala ya no está disponible.',
+  SALA_OTRA_INSTITUCION: 'No podés responder en esta sala.',
 };
+
+// Con estos rechazos reintentar no ayuda: se deja de ofrecer el envío hasta que llegue otra pregunta
+const CIERRAN_EL_ENVIO = new Set([
+  'TIEMPO_AGOTADO',
+  'SALA_FINALIZADA',
+  'SESION_REEMPLAZADA',
+  'ALUMNO_NO_EN_SALA',
+  'SALA_NO_ENCONTRADA',
+  'SALA_OTRA_INSTITUCION',
+]);
 
 const MENSAJE_RED = 'No pudimos enviar tu respuesta. Revisá tu conexión y probá de nuevo.';
 
@@ -38,6 +52,7 @@ export function useSalaAlumno(conexion: ConexionSala, esperar: (ms: number) => P
   const [desfaseMs, setDesfaseMs] = useState(0);
   const [enviando, setEnviando] = useState(false);
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
+  const [envioCerrado, setEnvioCerrado] = useState(false);
 
   // Contador por sala (no por pregunta): la primera respuesta usa 1 y cada aceptada suma 1
   const ultimaSecuencia = useRef(0);
@@ -68,6 +83,7 @@ export function useSalaAlumno(conexion: ConexionSala, esperar: (ms: number) => P
       if (!activo) return;
       setPregunta(carga as PreguntaActual);
       setErrorEnvio(null);
+      setEnvioCerrado(false);
       pendiente.current = null;
       setFase('enCurso');
     });
@@ -119,7 +135,7 @@ export function useSalaAlumno(conexion: ConexionSala, esperar: (ms: number) => P
   );
 
   const resolver = useCallback(
-    async (envio: EnvioPendiente, resultado: ResultadoEnvio) => {
+    async (envio: EnvioPendiente, resultado: ResultadoEnvio, puedeReenviar: boolean): Promise<'reenviar' | void> => {
       const marcarRespondida = () =>
         setRespondidas((previas) => (previas.includes(envio.preguntaId) ? previas : [...previas, envio.preguntaId]));
 
@@ -139,10 +155,25 @@ export function useSalaAlumno(conexion: ConexionSala, esperar: (ms: number) => P
         return;
       }
 
+      if (codigo === 'SECUENCIA_FUERA_DE_ORDEN') {
+        // Repetir el envío no sirve: se pide el estado (trae la última secuencia) y se reenvía UNA vez
+        // la misma respuesta con la misma clave y la secuencia que corresponde
+        await sincronizar();
+        const enEspera = pendiente.current;
+        if (puedeReenviar && enEspera && enEspera.preguntaId === envio.preguntaId) {
+          pendiente.current = { ...enEspera, secuencia: ultimaSecuencia.current + 1 };
+          return 'reenviar';
+        }
+        pendiente.current = null;
+        setErrorEnvio(MENSAJES_RECHAZO[codigo]);
+        return;
+      }
+
       // Un rechazo no consume secuencia ni guarda la clave
       if (codigo !== 'ERROR_INTERNO') pendiente.current = null;
+      if (CIERRAN_EL_ENVIO.has(codigo)) setEnvioCerrado(true);
       setErrorEnvio(MENSAJES_RECHAZO[codigo] ?? resultado.error?.mensaje ?? MENSAJE_RED);
-      if (codigo === 'PREGUNTA_NO_VIGENTE' || codigo === 'SECUENCIA_FUERA_DE_ORDEN') await sincronizar();
+      if (codigo === 'PREGUNTA_NO_VIGENTE') await sincronizar();
     },
     [sincronizar],
   );
@@ -167,7 +198,12 @@ export function useSalaAlumno(conexion: ConexionSala, esperar: (ms: number) => P
       pendiente.current = envio;
 
       try {
-        await resolver(envio, await enviarConReintentos(conexion, envio, esperar));
+        let actual = envio;
+        for (let vuelta = 0; ; vuelta++) {
+          const accion = await resolver(actual, await enviarConReintentos(conexion, actual, esperar), vuelta === 0);
+          if (accion !== 'reenviar' || !pendiente.current) break;
+          actual = pendiente.current;
+        }
       } catch {
         // Sin acuse: el envío queda pendiente para reintentarlo con la misma clave
         setErrorEnvio(MENSAJE_RED);
@@ -178,5 +214,17 @@ export function useSalaAlumno(conexion: ConexionSala, esperar: (ms: number) => P
     [conexion, esperar, resolver],
   );
 
-  return { fase, error, motivoCierre, pregunta, respondidas, desfaseMs, enviando, errorEnvio, unirse, enviarRespuesta };
+  return {
+    fase,
+    error,
+    motivoCierre,
+    pregunta,
+    respondidas,
+    desfaseMs,
+    enviando,
+    errorEnvio,
+    envioCerrado,
+    unirse,
+    enviarRespuesta,
+  };
 }

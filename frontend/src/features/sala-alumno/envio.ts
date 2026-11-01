@@ -3,6 +3,10 @@ import type { EnvioPendiente, ResultadoEnvio } from './tipos';
 
 export const MAX_INTENTOS = 3;
 
+// Rechazos que el servidor marca como reintentables pero que no se arreglan repitiendo el mismo envío:
+// con la misma secuencia vuelven a fallar. Se resuelven sincronizando la sala (ver useSalaAlumno).
+const SIN_REINTENTO_AUTOMATICO = new Set(['SECUENCIA_FUERA_DE_ORDEN']);
+
 export const esperarReal = (ms: number) => new Promise<void>((resolver) => setTimeout(resolver, ms));
 
 // 1 s, 2 s, 4 s… más hasta 0,5 s de variación (sección 8.5 del contrato)
@@ -37,7 +41,10 @@ export async function enviarConReintentos(
         secuencia: envio.secuencia,
       })) as ResultadoEnvio;
 
-      const reintentable = resultado.estado === 'Rechazada' && resultado.error?.reintentable;
+      const reintentable =
+        resultado.estado === 'Rechazada' &&
+        resultado.error?.reintentable &&
+        !SIN_REINTENTO_AUTOMATICO.has(resultado.error.codigo);
       if (!reintentable || intento >= MAX_INTENTOS) return resultado;
     } catch (error) {
       // El servidor pudo haber aceptado el envío: se reintenta con la misma clave

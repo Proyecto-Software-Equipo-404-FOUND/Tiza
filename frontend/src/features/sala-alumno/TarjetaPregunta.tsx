@@ -14,13 +14,15 @@ type Props = {
   enviando: boolean;
   error: string | null;
   desfaseMs: number;
+  /** El servidor ya no acepta respuestas a esta pregunta (tiempo, sala cerrada, sesión reemplazada…) */
+  cerrada?: boolean;
   onEnviar: (respuesta: string) => void;
 };
 
-export function TarjetaPregunta({ pregunta, respondida, enviando, error, desfaseMs, onEnviar }: Props) {
+export function TarjetaPregunta({ pregunta, respondida, enviando, error, desfaseMs, cerrada = false, onEnviar }: Props) {
   const [respuesta, setRespuesta] = useState('');
   const restante = useTiempoRestante(pregunta.fechaLimiteUtc, desfaseMs);
-  const agotado = restante <= 0;
+  const agotado = restante <= 0 || cerrada;
 
   const titulo = `Pregunta ${pregunta.indice} de ${pregunta.totalPreguntas}`;
 
@@ -52,11 +54,14 @@ export function TarjetaPregunta({ pregunta, respondida, enviando, error, desfase
   return (
     <Tarjeta titulo={titulo} subtitulo={`${pregunta.puntajeMaximo} puntos`}>
       <form onSubmit={enviar} noValidate className='flex flex-col gap-5'>
-        <div className='flex items-start justify-between gap-3'>
-          <p id='enunciado' className='font-heading text-xl font-extrabold text-tiza-bosque'>
+        {/* En el celular el cronómetro va arriba del enunciado para no quitarle ancho; en el DOM sigue después */}
+        <div className='flex flex-col-reverse gap-3 sm:flex-row sm:items-start sm:justify-between'>
+          <p id='enunciado' className='min-w-0 flex-1 break-words font-heading text-xl font-extrabold text-tiza-bosque'>
             {pregunta.enunciado}
           </p>
-          <Cronometro limiteUtc={pregunta.fechaLimiteUtc} desfaseMs={desfaseMs} />
+          <div className='shrink-0 self-end sm:self-auto'>
+            <Cronometro limiteUtc={pregunta.fechaLimiteUtc} desfaseMs={desfaseMs} />
+          </div>
         </div>
 
         {pregunta.tipo === 'OpcionMultiple' ? (

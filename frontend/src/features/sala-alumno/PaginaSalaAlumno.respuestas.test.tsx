@@ -210,4 +210,88 @@ describe('PaginaSalaAlumno · responder', () => {
     expect(screen.getByRole('heading', { name: 'La sala finalizó' })).toBeInTheDocument();
     expect(screen.queryByText('¿Cuánto es 2 + 3?')).not.toBeInTheDocument();
   });
+
+  const rechazo = (codigo: string, reintentable = false) =>
+    ({ estado: 'Rechazada', error: { codigo, mensaje: 'x', reintentable } }) as Partial<ResultadoEnvio>;
+
+  it('con TIEMPO_AGOTADO o SALA_FINALIZADA ya no deja volver a enviar', async () => {
+    const { simular } = preparar(async (e) => resultado(e, rechazo('SALA_FINALIZADA')));
+    await entrarYRecibir(simular);
+    await userEvent.click(screen.getByLabelText('5'));
+    await enviar();
+
+    expect(await screen.findByText('La sala ya finalizó.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Enviar respuesta' })).toBeDisabled();
+  });
+
+  it('con SESION_REEMPLAZADA explica que la sala se abrió en otro lado y bloquea el envío', async () => {
+    const { simular } = preparar(async (e) => resultado(e, rechazo('SESION_REEMPLAZADA')));
+    await entrarYRecibir(simular);
+    await userEvent.click(screen.getByLabelText('5'));
+    await enviar();
+
+    expect(await screen.findByText(/Abriste la sala en otra pestaña o dispositivo/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Enviar respuesta' })).toBeDisabled();
+  });
+
+  it('con una respuesta inválida sí deja corregir y volver a enviar', async () => {
+    const { simular } = preparar(async (e) => resultado(e, rechazo('RESPUESTA_INVALIDA')));
+    await entrarYRecibir(simular);
+    await userEvent.click(screen.getByLabelText('5'));
+    await enviar();
+
+    expect(await screen.findByText('Revisá tu respuesta e intentá de nuevo.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Enviar respuesta' })).toBeEnabled();
+  });
+
+  function conSecuenciaDesfasada(rechazosSeguidos: number) {
+    const { conexion, simular, envios } = preparar(async (e) => resultado(e));
+    let recibidos = 0;
+    conexion.invocar = vi.fn(async (metodo: string, ...args: unknown[]) => {
+      if (metodo === 'ObtenerEstadoSala') {
+        act(() =>
+          simular('estadoSala', {
+            salaId: SALA,
+            estado: 'EnCurso',
+            fechaLimiteUtc: enSegundos(1800),
+            preguntaActual: pregunta(),
+            ultimaSecuencia: 2,
+            preguntasRespondidas: [],
+            servidorUtc: new Date().toISOString(),
+          }),
+        );
+        return undefined;
+      }
+      if (metodo !== 'EnviarRespuesta') return undefined;
+      const envio = args[0] as EnvioPendiente;
+      envios.push(envio);
+      recibidos += 1;
+      return recibidos <= rechazosSeguidos ? resultado(envio, rechazo('SECUENCIA_FUERA_DE_ORDEN', true)) : resultado(envio);
+    }) as typeof conexion.invocar;
+    return { simular, envios };
+  }
+
+  it('con SECUENCIA_FUERA_DE_ORDEN sincroniza y reenvía una vez, con la misma clave y la secuencia correcta', async () => {
+    const { simular, envios } = conSecuenciaDesfasada(1);
+    await entrarYRecibir(simular);
+    await userEvent.click(screen.getByLabelText('5'));
+    await enviar();
+
+    expect(await screen.findByText('Tu respuesta fue enviada.')).toBeInTheDocument();
+    expect(envios).toHaveLength(2);
+    expect(envios[0].secuencia).toBe(1);
+    expect(envios[1].secuencia).toBe(3);
+    expect(envios[1].idempotencyKey).toBe(envios[0].idempotencyKey);
+  });
+
+  it('si la secuencia vuelve a fallar no entra en bucle y pide enviar de nuevo', async () => {
+    const { simular, envios } = conSecuenciaDesfasada(99);
+    await entrarYRecibir(simular);
+    await userEvent.click(screen.getByLabelText('5'));
+    await enviar();
+
+    expect(await screen.findByText('Sincronizamos tu sala. Enviá tu respuesta de nuevo.')).toBeInTheDocument();
+    expect(envios).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'Enviar respuesta' })).toBeEnabled();
+  });
 });
