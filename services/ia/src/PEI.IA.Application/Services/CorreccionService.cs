@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using PEI.IA.Application.DTOs;
 using PEI.IA.Application.Interfaces;
+using PEI.IA.Domain.Entities;
 
 namespace PEI.IA.Application.Services;
 
@@ -14,6 +15,8 @@ public class CorreccionService : ICorreccionService
     private readonly ILlmClient _llmClient;
     private readonly IPromptBuilder _promptBuilder;
     private readonly IToolExecutor _toolExecutor;
+    private readonly IEvaluacionesClient? _evaluacionesClient;
+    private readonly ISolicitudCorreccionRepository? _solicitudRepository;
     private readonly ILogger<CorreccionService> _logger;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -25,12 +28,35 @@ public class CorreccionService : ICorreccionService
         ILlmClient llmClient,
         IPromptBuilder promptBuilder,
         IToolExecutor toolExecutor,
+        IEvaluacionesClient? evaluacionesClient,
+        ISolicitudCorreccionRepository? solicitudRepository,
         ILogger<CorreccionService> logger)
     {
         _llmClient = llmClient;
         _promptBuilder = promptBuilder;
         _toolExecutor = toolExecutor;
+        _evaluacionesClient = evaluacionesClient;
+        _solicitudRepository = solicitudRepository;
         _logger = logger;
+    }
+
+    public CorreccionService(
+        ILlmClient llmClient,
+        IPromptBuilder promptBuilder,
+        IToolExecutor toolExecutor,
+        IEvaluacionesClient? evaluacionesClient,
+        ILogger<CorreccionService> logger)
+        : this(llmClient, promptBuilder, toolExecutor, evaluacionesClient, null, logger)
+    {
+    }
+
+    public CorreccionService(
+        ILlmClient llmClient,
+        IPromptBuilder promptBuilder,
+        IToolExecutor toolExecutor,
+        ILogger<CorreccionService> logger)
+        : this(llmClient, promptBuilder, toolExecutor, null, null, logger)
+    {
     }
 
     public async Task<CorregirRespuestaResponse> CorregirAsync(
@@ -41,6 +67,16 @@ public class CorreccionService : ICorreccionService
             "Iniciando corrección para pregunta: '{Enunciado}' (PuntajeMax: {Max})",
             request.PreguntaEnunciado[..Math.Min(60, request.PreguntaEnunciado.Length)],
             request.PuntajeMaximo);
+
+        var institucionId = request.InstitucionId ?? Guid.Empty;
+        var solicitud = SolicitudCorreccion.Crear(
+            institucionId: institucionId,
+            respuestaTexto: request.RespuestaTexto,
+            preguntaEnunciado: request.PreguntaEnunciado,
+            rubricaJson: request.RubricaJson,
+            puntajeMaximo: request.PuntajeMaximo,
+            evaluacionId: request.EvaluacionId,
+            preguntaId: request.PreguntaId);
 
         var systemPrompt = _promptBuilder.BuildSystemPrompt();
         var userPrompt = _promptBuilder.BuildUserPrompt(
@@ -69,11 +105,29 @@ public class CorreccionService : ICorreccionService
             _logger.LogWarning(ex, "Error al invocar LLM externo. Se activará modo fallback.");
         }
 
-        // Si el LLM no respondió o falló la llamada, devolvemos fallback estructurado
+        // Si el LLM no respondió o falló la llamada, devolvemos fallback estructurado y auditamos
         if (llmResult is null)
         {
-            return GenerarFallback(request, "El proveedor LLM no estuvo disponible o no devolvió respuesta.");
+            var fallback = GenerarFallback(request, "El proveedor LLM no estuvo disponible o no devolvió respuesta.");
+            fallback.SolicitudId = solicitud.Id;
+
+            solicitud.RegistrarError("Proveedor LLM no disponible o fallo de conexion.");
+            if (_solicitudRepository != null)
+            {
+                try
+                {
+                    await _solicitudRepository.GuardarAsync(solicitud, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "No se pudo guardar la SolicitudCorreccion fallida en el repositorio.");
+                }
+            }
+
+            return fallback;
         }
+
+        CorregirRespuestaResponse respuesta;
 
         // ── Caso 1: El LLM invocó una tool (Tool Calling de MCP) ──
         if (llmResult.ToolCalls is { Count: > 0 })
@@ -96,17 +150,91 @@ public class CorreccionService : ICorreccionService
             // Parsear nota y justificación de los argumentos de la tool
             var datos = ParsearResultadoDeJson(targetTool.ArgumentosJson, request.PuntajeMaximo);
 
-            return ConstruirRespuesta(datos, llmResult);
+            respuesta = ConstruirRespuesta(datos, llmResult);
         }
-
         // ── Caso 2: El LLM respondió con texto / JSON directo ──
-        if (!string.IsNullOrWhiteSpace(llmResult.Contenido))
+        else if (!string.IsNullOrWhiteSpace(llmResult.Contenido))
         {
             var datos = ParsearResultadoDeJson(llmResult.Contenido, request.PuntajeMaximo);
-            return ConstruirRespuesta(datos, llmResult);
+            respuesta = ConstruirRespuesta(datos, llmResult);
+        }
+        else
+        {
+            var fallback = GenerarFallback(request, "El LLM no invocó ninguna tool ni retornó contenido válido.");
+            fallback.SolicitudId = solicitud.Id;
+
+            solicitud.RegistrarError("El LLM no retorno contenido valido ni tool call.");
+            if (_solicitudRepository != null)
+            {
+                try
+                {
+                    await _solicitudRepository.GuardarAsync(solicitud, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "No se pudo guardar la SolicitudCorreccion fallida en el repositorio.");
+                }
+            }
+
+            return fallback;
         }
 
-        return GenerarFallback(request, "El LLM no invocó ninguna tool ni retornó contenido válido.");
+        // Asociar ID de solicitud al response
+        respuesta.SolicitudId = solicitud.Id;
+
+        // Auditar métricas de ejecución (proveedor, modelo, tokens consumidos, latencia)
+        solicitud.RegistrarResultado(
+            notaSugerida: respuesta.NotaSugerida,
+            justificacion: respuesta.Justificacion,
+            desglosePorCriterioJson: JsonSerializer.Serialize(respuesta.DesglosePorCriterio, JsonOptions),
+            proveedor: respuesta.Proveedor,
+            modelo: respuesta.Modelo,
+            tokensEntrada: respuesta.TokensEntrada,
+            tokensSalida: respuesta.TokensSalida,
+            latenciaMs: respuesta.LatenciaMs,
+            costoEstimadoUsd: 0m);
+
+        if (_solicitudRepository != null)
+        {
+            try
+            {
+                await _solicitudRepository.GuardarAsync(solicitud, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "No se pudo guardar la SolicitudCorreccion exitosa en el repositorio.");
+            }
+        }
+
+        // ── Integración S2-IA-01 / EV-06: Persistir calificación sugerida en Evaluaciones ──
+        if (request.EntregaId.HasValue && _evaluacionesClient != null)
+        {
+            try
+            {
+                var desgloseJson = JsonSerializer.Serialize(respuesta.DesglosePorCriterio, JsonOptions);
+                var registrado = await _evaluacionesClient.RegistrarSugerenciaAsync(
+                    entregaId: request.EntregaId.Value,
+                    notaSugerida: respuesta.NotaSugerida,
+                    justificacion: respuesta.Justificacion,
+                    desgloseJson: desgloseJson,
+                    ct: cancellationToken);
+
+                if (!registrado)
+                {
+                    _logger.LogWarning(
+                        "No se pudo persistir la sugerencia en Evaluaciones para EntregaId={EntregaId}. La respuesta al llamador es igualmente válida.",
+                        request.EntregaId.Value);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "Excepción al registrar sugerencia en Evaluaciones para EntregaId={EntregaId}.",
+                    request.EntregaId.Value);
+            }
+        }
+
+        return respuesta;
     }
 
     private static DatosEvaluacion ParsearResultadoDeJson(string json, decimal puntajeMaximo)

@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { CalendarDays, UserRound, Users } from 'lucide-react';
 import { z } from 'zod';
 import { Boton } from '@/shared/components/Boton';
 import { Campo } from '@/shared/components/Campo';
+import { CampoSelect } from '@/shared/components/CampoSelect';
 import { BannerError } from '@/shared/components/BannerError';
 import { useAviso } from '@/shared/components/Aviso';
 import { ApiError } from '@/shared/api/cliente';
@@ -61,9 +63,10 @@ export function FormularioCohorte({ cursoId }: { cursoId: string }) {
   const hayConflicto = crear.isError && crear.error instanceof ApiError && crear.error.estado === 409;
 
   return (
-    <form onSubmit={enviar} noValidate className='flex flex-col gap-3'>
+    <form onSubmit={enviar} noValidate className='flex flex-col gap-5'>
       <Campo
         etiqueta='Nombre de la cohorte'
+        icono={<Users className='h-5 w-5' aria-hidden='true' />}
         value={nombre}
         onChange={(evento) => setNombre(evento.target.value)}
         error={errores.nombre}
@@ -72,6 +75,7 @@ export function FormularioCohorte({ cursoId }: { cursoId: string }) {
 
       <Campo
         etiqueta='Período'
+        icono={<CalendarDays className='h-5 w-5' aria-hidden='true' />}
         placeholder='2026-1C'
         value={periodo}
         onChange={(evento) => setPeriodo(evento.target.value)}
@@ -79,29 +83,21 @@ export function FormularioCohorte({ cursoId }: { cursoId: string }) {
         disabled={crear.isPending}
       />
 
-      <div className='flex flex-col gap-1'>
-        <label htmlFor='docente-cohorte' className='font-bold text-tiza-bosque'>
-          Docente
-        </label>
-        <select
-          id='docente-cohorte'
-          value={docenteId}
-          onChange={(evento) => setDocenteId(evento.target.value)}
-          disabled={crear.isPending}
-          className='rounded-xl border border-tiza-borde bg-white px-3 py-3 text-tiza-bosque disabled:cursor-not-allowed disabled:opacity-50'
-        >
-          {DOCENTES_SEMILLA.map((docente) => (
-            <option key={docente.id} value={docente.id}>
-              {docente.nombre}
-            </option>
-          ))}
-        </select>
-        {errores.docenteId && (
-          <p role='alert' className='text-sm text-tiza-coral'>
-            {errores.docenteId}
-          </p>
-        )}
-      </div>
+      <CampoSelect
+        etiqueta='Docente'
+        id='docente-cohorte'
+        icono={<UserRound className='h-5 w-5' aria-hidden='true' />}
+        value={docenteId}
+        onChange={(evento) => setDocenteId(evento.target.value)}
+        error={errores.docenteId}
+        disabled={crear.isPending}
+      >
+        {DOCENTES_SEMILLA.map((docente) => (
+          <option key={docente.id} value={docente.id}>
+            {docente.nombre}
+          </option>
+        ))}
+      </CampoSelect>
 
       {crear.isError && (
         <BannerError

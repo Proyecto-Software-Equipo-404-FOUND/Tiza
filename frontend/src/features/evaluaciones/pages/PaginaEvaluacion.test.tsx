@@ -25,7 +25,7 @@ const evaluacion: Evaluacion = {
   id: 'e1',
   institucionId: 'i1',
   titulo: 'Parcial 1',
-  tipo: 'Parcial',
+  tipo: 'Examen',
   estado: 'Publicada',
   cohorteId: 'c1',
   preguntasJson: {
@@ -94,6 +94,13 @@ describe('PaginaEvaluacion', () => {
     simular({ data: evaluacion });
     renderizar();
     expect(screen.getByText(/2 preguntas · 10 puntos en total/)).toBeInTheDocument();
+  });
+
+  it('usa el singular cuando hay una sola pregunta', () => {
+    const una = evaluacion.preguntasJson.preguntas[0];
+    simular({ data: { ...evaluacion, preguntasJson: { version: 1, preguntas: [una] } } });
+    renderizar();
+    expect(screen.getByText(/1 pregunta · /)).toBeInTheDocument();
   });
 
   it('marca la opción correcta de una pregunta de opción múltiple', () => {
