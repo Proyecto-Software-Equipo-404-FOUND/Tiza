@@ -102,4 +102,10 @@ describe('PaginaEvaluaciones', () => {
     expect(filas[1]).toHaveTextContent('Nueva');
     expect(filas[2]).toHaveTextContent('Vieja');
   });
+
+  it('tiene un enlace para crear una evaluación nueva', () => {
+    simular({ data: [] });
+    renderizar();
+    expect(screen.getByRole('link', { name: 'Nueva evaluación' })).toHaveAttribute('href', '/evaluaciones/nueva');
+  });
 });

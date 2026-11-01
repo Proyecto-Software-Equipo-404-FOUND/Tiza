@@ -122,4 +122,16 @@ describe('PaginaEvaluacion', () => {
     renderizar();
     expect(screen.getByText('Esta evaluación todavía no tiene preguntas.')).toBeInTheDocument();
   });
+
+  it('ofrece editar solo cuando está en borrador', () => {
+    simular({ data: { ...evaluacion, estado: 'Borrador' } });
+    renderizar();
+    expect(screen.getByRole('link', { name: 'Editar borrador' })).toHaveAttribute('href', '/evaluaciones/e1/editar');
+  });
+
+  it('una evaluación publicada no ofrece editar', () => {
+    simular({ data: { ...evaluacion, estado: 'Publicada' } });
+    renderizar();
+    expect(screen.queryByRole('link', { name: 'Editar borrador' })).not.toBeInTheDocument();
+  });
 });
