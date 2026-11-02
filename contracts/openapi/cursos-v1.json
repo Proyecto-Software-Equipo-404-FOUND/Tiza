@@ -929,6 +929,361 @@
           }
         }
       }
+    },
+    "/api/v1/cursos/{cursoId}/materiales": {
+      "post": {
+        "tags": [
+          "Materiales"
+        ],
+        "summary": "Sube un apunte PDF al curso y extrae su texto.",
+        "description": "El archivo se guarda en el almacenamiento de archivos (en local, una carpeta; en la nube, Supabase Storage o R2), nunca en PostgreSQL. El texto se extrae con PdfPig y se guarda junto a la ficha. Validaciones en orden: es PDF (415), tamaño hasta 10 MB (400, RN-MAT-03), hasta 30 páginas (400, RN-MAT-03), tiene texto seleccionable (400, RN-MAT-04). Permisos (RN-MAT-01/02): Administrador de la institución, o Docente asignado a alguna cohorte activa del curso. Alumno → 403.",
+        "operationId": "SubirMaterial",
+        "parameters": [
+          {
+            "name": "cursoId",
+            "in": "path",
+            "required": true,
+            "description": "UUID del curso.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "archivo"
+                ],
+                "properties": {
+                  "archivo": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Archivo PDF, máximo 10 MB y 30 páginas."
+                  },
+                  "titulo": {
+                    "type": "string",
+                    "maxLength": 150,
+                    "description": "Título visible. Si no se envía, se usa el nombre del archivo sin extensión."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Material subido y procesado. Header Location: /api/v1/cursos/{cursoId}/materiales/{id}.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialCursoDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Supera 10 MB o 30 páginas, o el PDF no tiene texto seleccionable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "El PDF no tiene texto seleccionable. Subí un PDF generado desde un procesador de texto, no escaneado.",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autenticado.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "No autenticado.",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso (Alumno, o Docente que no da clases en el curso).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "No tenés permiso para gestionar el material de este curso.",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El curso no existe, está dado de baja o es de otra institución.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Curso no encontrado.",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "El archivo no es un PDF.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Solo se aceptan archivos PDF.",
+                  "status": 415
+                }
+              }
+            }
+          }
+        },
+        "x-estado": "planificado",
+        "x-issue": "S2-CU-01 (#137)"
+      },
+      "get": {
+        "tags": [
+          "Materiales"
+        ],
+        "summary": "Lista los apuntes del curso.",
+        "description": "Devuelve las fichas sin el texto extraído, de la más nueva a la más vieja. Solo materiales activos. Permisos (RN-MAT-01/02): Administrador de la institución, o Docente asignado a alguna cohorte activa del curso. Alumno → 403.",
+        "operationId": "ListarMateriales",
+        "parameters": [
+          {
+            "name": "cursoId",
+            "in": "path",
+            "required": true,
+            "description": "UUID del curso.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista (vacía si no hay apuntes).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MaterialCursoDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autenticado.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "No autenticado.",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso (Alumno, o Docente que no da clases en el curso).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "No tenés permiso para gestionar el material de este curso.",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Curso inexistente o de otra institución.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Curso no encontrado.",
+                  "status": 404
+                }
+              }
+            }
+          }
+        },
+        "x-estado": "planificado",
+        "x-issue": "S2-CU-01 (#137)"
+      }
+    },
+    "/api/v1/cursos/{cursoId}/materiales/{id}": {
+      "delete": {
+        "tags": [
+          "Materiales"
+        ],
+        "summary": "Da de baja un apunte.",
+        "description": "Baja lógica. No afecta a las evaluaciones ya generadas con este apunte, porque sus preguntas viven en Evaluaciones (RN-MAT-05). El archivo puede borrarse del almacenamiento. Permisos (RN-MAT-01/02): Administrador de la institución, o Docente asignado a alguna cohorte activa del curso. Alumno → 403.",
+        "operationId": "EliminarMaterial",
+        "parameters": [
+          {
+            "name": "cursoId",
+            "in": "path",
+            "required": true,
+            "description": "UUID del curso.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "UUID del material.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Material dado de baja, sin contenido."
+          },
+          "401": {
+            "description": "No autenticado.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "No autenticado.",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso (Alumno, o Docente que no da clases en el curso).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "No tenés permiso para gestionar el material de este curso.",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Material o curso inexistente, o de otra institución.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Material no encontrado.",
+                  "status": 404
+                }
+              }
+            }
+          }
+        },
+        "x-estado": "planificado",
+        "x-issue": "S2-CU-01 (#137)"
+      }
+    },
+    "/api/v1/materiales/{id}/texto": {
+      "get": {
+        "tags": [
+          "Materiales"
+        ],
+        "summary": "[Interno] Devuelve el texto extraído de un apunte.",
+        "description": "Consumidor: IA, Recurso MCP apunte://{materialId} (S3-IA-01, generación de preguntas). Endpoint interno entre servicios: no se publica en el gateway. El alumno nunca accede (RN-MAT-02). Solo materiales en estado Listo.",
+        "operationId": "ObtenerTextoMaterial",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "UUID del material.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Texto del apunte.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TextoMaterialDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autenticado.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "No autenticado.",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Material inexistente, dado de baja o de otra institución.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Material no encontrado.",
+                  "status": 404
+                }
+              }
+            }
+          }
+        },
+        "x-estado": "planificado",
+        "x-issue": "S2-CU-01 (#137)"
+      }
     }
   },
   "components": {
@@ -1233,7 +1588,112 @@
             "type": "string"
           }
         }
+      },
+      "MaterialCursoDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "cursoId",
+          "titulo",
+          "nombreArchivo",
+          "tamanoBytes",
+          "cantidadPaginas",
+          "estado",
+          "subidoPorId",
+          "fechaSubidaUtc"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "institucionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cursoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "nombreArchivo": {
+            "type": "string"
+          },
+          "tamanoBytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10485760
+          },
+          "cantidadPaginas": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 30
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "Procesando",
+              "Listo",
+              "Error"
+            ],
+            "description": "Listo cuando el texto ya fue extraído. Si la extracción es síncrona, se devuelve directamente Listo."
+          },
+          "subidoPorId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Claim sub de quien lo subió."
+          },
+          "fechaSubidaUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "example": {
+          "id": "7d1e2f3a-4b5c-4d6e-8f70-81a2b3c4d5e6",
+          "institucionId": "11111111-1111-1111-1111-111111111111",
+          "cursoId": "c0a80101-0000-4000-8000-000000000001",
+          "titulo": "Unidad 3 - Volcanes",
+          "nombreArchivo": "unidad3-volcanes.pdf",
+          "tamanoBytes": 1843200,
+          "cantidadPaginas": 10,
+          "estado": "Listo",
+          "subidoPorId": "11111111-0000-0000-0000-000000000002",
+          "fechaSubidaUtc": "2026-11-05T13:20:00Z"
+        }
+      },
+      "TextoMaterialDto": {
+        "type": "object",
+        "required": [
+          "materialId",
+          "titulo",
+          "cantidadPaginas",
+          "texto"
+        ],
+        "properties": {
+          "materialId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "cantidadPaginas": {
+            "type": "integer"
+          },
+          "texto": {
+            "type": "string",
+            "description": "Texto completo extraído con PdfPig, páginas separadas por un salto de línea doble."
+          }
+        }
       }
     }
-  }
+  },
+  "tags": [
+    {
+      "name": "Materiales",
+      "description": "Apuntes PDF del docente (S2-CU-01). Planificado: contrato acordado antes de programar."
+    }
+  ]
 }
