@@ -27,6 +27,10 @@
     {
       "name": "Interno",
       "description": "Endpoints entre servicios. No se exponen por el gateway."
+    },
+    {
+      "name": "Resultados",
+      "description": "Consulta de entregas y resultados para el docente (S2-EV-03)."
     }
   ],
   "paths": {
@@ -347,6 +351,236 @@
           }
         }
       }
+    },
+    "/interno/salas/{salaId}/entregas": {
+      "post": {
+        "tags": [
+          "Interno"
+        ],
+        "summary": "Recibe el lote de entregas de una sala finalizada.",
+        "description": "Consumidor: Sala en vivo (S2-SA-03, #140). Proveedor: Evaluaciones (S2-EV-01, #143). Idempotente: como máximo una entrega por (salaId, alumnoId); un reintento devuelve 200 con lo ya guardado. Corrige automáticamente el multiple choice. Sala reintenta solo ante error de red o 5xx. Endpoint interno: no se publica en el gateway.",
+        "operationId": "RecibirLoteEntregas",
+        "x-estado": "planificado",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SalaId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoteEntregasRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Lote procesado (o ya recibido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoteEntregasResultado"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No cumple lote-entregas-v1 o salaId no coincide con la ruta.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "El salaId del cuerpo no coincide con la ruta.",
+                  "status": 400,
+                  "errores": []
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La evaluación no existe, no está publicada o es de otra institución.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "No existe una evaluación publicada con ese id.",
+                  "status": 404,
+                  "errores": []
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/evaluaciones/{id}/entregas": {
+      "get": {
+        "tags": [
+          "Resultados"
+        ],
+        "summary": "Lista las entregas de una evaluación, una por alumno.",
+        "description": "Consumidor: Frontend, pantalla de resultados (S2-FE-05, #148). Proveedor: S2-EV-03 (#147). Solo lectura: aprobar la nota es S3-EV-01. Solo Docente o Administrador de la institución del token; Alumno → 403 (RN-CMP-01). Otra institución → 404.",
+        "operationId": "ListarEntregas",
+        "x-estado": "planificado",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/EvaluacionId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Entregas (vacío si todavía no se tomó).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EntregaResumen"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin token.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "No autenticado.",
+                  "status": 401,
+                  "errores": []
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no puede ver resultados.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Solo docentes y administradores pueden ver los resultados.",
+                  "status": 403,
+                  "errores": []
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Evaluación inexistente o de otra institución.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Evaluación no encontrada.",
+                  "status": 404,
+                  "errores": []
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/evaluaciones/{id}/entregas/{entregaId}": {
+      "get": {
+        "tags": [
+          "Resultados"
+        ],
+        "summary": "Detalle de una entrega: cada respuesta, la justificación de la IA y las alertas de foco.",
+        "description": "Consumidor: Frontend (S2-FE-05, #148). Proveedor: S2-EV-03 (#147). Solo Docente o Administrador de la institución del token; Alumno → 403 (RN-CMP-01). Otra institución → 404.",
+        "operationId": "ObtenerEntrega",
+        "x-estado": "planificado",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/EvaluacionId"
+          },
+          {
+            "$ref": "#/components/parameters/EntregaIdConsulta"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalle de la entrega.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntregaDetalle"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin token.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "No autenticado.",
+                  "status": 401,
+                  "errores": []
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no puede ver resultados.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Solo docentes y administradores pueden ver los resultados.",
+                  "status": 403,
+                  "errores": []
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Evaluación o entrega inexistente, o de otra institución.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Entrega no encontrada.",
+                  "status": 404,
+                  "errores": []
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -376,6 +610,26 @@
         "in": "path",
         "required": true,
         "description": "Identificador de la entrega del alumno (EntregaExamen.Id), el mismo que Evaluaciones le envió a IA al pedir la corrección.",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "SalaId": {
+        "name": "salaId",
+        "in": "path",
+        "required": true,
+        "description": "Sala en vivo que finalizó.",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "EntregaIdConsulta": {
+        "name": "entregaId",
+        "in": "path",
+        "required": true,
+        "description": "Identificador de la entrega.",
         "schema": {
           "type": "string",
           "format": "uuid"
@@ -850,6 +1104,399 @@
           "yaExistia": false,
           "estadoEntrega": "Corregida"
         }
+      },
+      "AlertasFocoResumen": {
+        "type": "object",
+        "required": [
+          "amarillas",
+          "rojas"
+        ],
+        "properties": {
+          "amarillas": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Salidas de pantalla de menos de 3 s."
+          },
+          "rojas": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Salidas de 3 s o más."
+          }
+        },
+        "description": "Indicador para el docente. No modifica la nota ni el orden (RN-CMP-07)."
+      },
+      "EntregaResumen": {
+        "type": "object",
+        "required": [
+          "entregaId",
+          "alumnoId",
+          "salaId",
+          "estado",
+          "fechaEntregaUtc",
+          "alertasFoco"
+        ],
+        "properties": {
+          "entregaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "alumnoId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Claim sub del alumno. El nombre se obtiene de Identidad (GET /api/usuarios/{id})."
+          },
+          "salaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "PendienteCorreccion",
+              "Corregida",
+              "CorreccionManual"
+            ]
+          },
+          "respondioAlgo": {
+            "type": "boolean",
+            "description": "false si ingresó a la sala y no respondió nada."
+          },
+          "notaMultipleChoice": {
+            "type": "number",
+            "nullable": true,
+            "description": "Puntaje automático de las preguntas de opción múltiple; null si el examen no tiene."
+          },
+          "puntajeMaximoMultipleChoice": {
+            "type": "number",
+            "nullable": true
+          },
+          "notaSugeridaAbiertas": {
+            "type": "number",
+            "nullable": true,
+            "description": "Suma de las notas SUGERIDAS por la IA en preguntas abiertas. Siempre se muestra como sugerida, nunca como nota final (RN-CMP-03). null mientras falte alguna."
+          },
+          "puntajeMaximoAbiertas": {
+            "type": "number",
+            "nullable": true
+          },
+          "fechaEntregaUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "alertasFoco": {
+            "$ref": "#/components/schemas/AlertasFocoResumen"
+          }
+        },
+        "example": {
+          "entregaId": "e1a2b3c4-d5e6-4f70-8a9b-0c1d2e3f4a5b",
+          "alumnoId": "11111111-0000-0000-0000-000000000003",
+          "salaId": "6a2b7c3d-8e9f-4a01-b2c3-d4e5f6a7b8c9",
+          "estado": "Corregida",
+          "respondioAlgo": true,
+          "notaMultipleChoice": 1,
+          "puntajeMaximoMultipleChoice": 1,
+          "notaSugeridaAbiertas": 3.5,
+          "puntajeMaximoAbiertas": 4,
+          "fechaEntregaUtc": "2026-11-13T14:35:00Z",
+          "alertasFoco": {
+            "amarillas": 0,
+            "rojas": 1
+          }
+        }
+      },
+      "RespuestaEntrega": {
+        "type": "object",
+        "required": [
+          "preguntaId",
+          "enunciado",
+          "tipo",
+          "puntajeMaximo"
+        ],
+        "properties": {
+          "preguntaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "enunciado": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "OpcionMultiple",
+              "Abierta"
+            ]
+          },
+          "puntajeMaximo": {
+            "type": "number"
+          },
+          "respuesta": {
+            "type": "string",
+            "nullable": true,
+            "description": "Texto (abierta) o UUID de la opción elegida (opción múltiple). null si no respondió."
+          },
+          "opcionElegidaTexto": {
+            "type": "string",
+            "nullable": true,
+            "description": "Solo opción múltiple."
+          },
+          "esCorrecta": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Solo opción múltiple."
+          },
+          "puntajeObtenido": {
+            "type": "number",
+            "nullable": true,
+            "description": "Solo opción múltiple (corrección automática)."
+          },
+          "notaSugerida": {
+            "type": "number",
+            "nullable": true,
+            "description": "Solo abiertas: nota sugerida por la IA."
+          },
+          "justificacionIA": {
+            "type": "string",
+            "nullable": true,
+            "description": "Solo abiertas."
+          },
+          "desglosePorCriterio": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "type": "object",
+              "properties": {
+                "criterio": {
+                  "type": "string"
+                },
+                "puntaje": {
+                  "type": "number"
+                },
+                "comentario": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "estadoCorreccion": {
+            "type": "string",
+            "enum": [
+              "Automatica",
+              "SugeridaIA",
+              "PendienteIA",
+              "Manual",
+              "SinRespuesta"
+            ]
+          }
+        }
+      },
+      "AlertaFocoDetalle": {
+        "type": "object",
+        "required": [
+          "tipoEvento",
+          "duracionMs",
+          "severidad",
+          "registradoUtc"
+        ],
+        "properties": {
+          "preguntaId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "tipoEvento": {
+            "type": "string"
+          },
+          "duracionMs": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "severidad": {
+            "type": "string",
+            "enum": [
+              "Amarillo",
+              "Roja"
+            ]
+          },
+          "registradoUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "EntregaDetalle": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EntregaResumen"
+          },
+          {
+            "type": "object",
+            "required": [
+              "respuestas",
+              "alertas"
+            ],
+            "properties": {
+              "respuestas": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/RespuestaEntrega"
+                },
+                "description": "Una por pregunta de la evaluación, en orden, aunque no se haya respondido."
+              },
+              "alertas": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AlertaFocoDetalle"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "LoteEntregasRequest": {
+        "type": "object",
+        "description": "Esquema normativo completo: contracts/schemas/lote-entregas-v1.schema.json (S2-CT-01). Acá se resume para la documentación OpenAPI.",
+        "required": [
+          "version",
+          "loteId",
+          "salaId",
+          "evaluacionId",
+          "institucionId",
+          "finalizadaUtc",
+          "motivoCierre",
+          "entregas"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "enum": [
+              1
+            ]
+          },
+          "loteId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "salaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "evaluacionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "institucionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "finalizadaUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "motivoCierre": {
+            "type": "string",
+            "enum": [
+              "Docente",
+              "TiempoAgotado"
+            ]
+          },
+          "entregas": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "object",
+              "required": [
+                "alumnoId",
+                "respuestas",
+                "alertasFoco"
+              ],
+              "properties": {
+                "alumnoId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "respuestas": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "alertasFoco": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "LoteEntregasResultado": {
+        "type": "object",
+        "description": "Esquema normativo completo: contracts/schemas/resultado-lote-entregas-v1.schema.json.",
+        "required": [
+          "loteId",
+          "salaId",
+          "entregasRecibidas",
+          "entregasNuevas",
+          "entregasYaExistentes",
+          "entregas"
+        ],
+        "properties": {
+          "loteId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "salaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "entregasRecibidas": {
+            "type": "integer"
+          },
+          "entregasNuevas": {
+            "type": "integer"
+          },
+          "entregasYaExistentes": {
+            "type": "integer"
+          },
+          "entregas": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "alumnoId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "entregaId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "estado": {
+                  "type": "string",
+                  "enum": [
+                    "PendienteCorreccion",
+                    "Corregida"
+                  ]
+                },
+                "notaMultipleChoice": {
+                  "type": "number",
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT institucional de Identidad (identidad-v1.json, JwtInstitucional). Los endpoints existentes todavía usan X-Institucion-Id y migran a Bearer en S2-ID-01 (#134)."
       }
     }
   }
