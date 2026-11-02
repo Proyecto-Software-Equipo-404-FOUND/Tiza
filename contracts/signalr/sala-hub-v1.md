@@ -421,7 +421,7 @@ documentan para que Frontend 2 y QA puedan construir el panel y las pruebas desd
 | `UnirseASalaDocente(salaId)` | `{ salaId: UUID }` o UUID posicional | Valida que el docente pertenezca a la institución de la sala; agrega la conexión a `{salaId}:docentes`; envía `estadoSala` al llamador | `NO_AUTORIZADO`, `SALA_NO_ENCONTRADA`, `SALA_FINALIZADA` |
 | `IniciarSala()` | ninguno | Pasa la sala a `EnCurso`, fija `iniciadaUtc`, publica la primera pregunta y emite `salaIniciada` + `preguntaActual` | `NO_AUTORIZADO`, `SALA_NO_ENCONTRADA`, `SALA_YA_INICIADA`, `SIN_PREGUNTAS` |
 | `AvanzarPregunta(preguntaId?)` | UUID opcional | Cierra la pregunta vigente y publica la siguiente (o la indicada). Emite `preguntaActual`. Si no se indica, avanza en orden | `NO_AUTORIZADO`, `PREGUNTA_INEXISTENTE`, `SALA_NO_INICIADA`, `SALA_FINALIZADA` |
-| `FinalizarSala(motivo?)` | `Docente` o `TiempoAgotado` | Pasa la sala a `Finalizada`, fija `finalizadaUtc` y emite `salaFinalizada` una sola vez | `NO_AUTORIZADO`, `SALA_NO_ENCONTRADA` |
+| `FinalizarSala(motivo?)` | `Docente` o `TiempoAgotado` | Pasa la sala a `Finalizada`, fija `finalizadaUtc`, emite `salaFinalizada` una sola vez y envía las entregas a Evaluaciones (ver 5.6) | `NO_AUTORIZADO`, `SALA_NO_ENCONTRADA` |
 
 `IniciarSala`, `AvanzarPregunta` y `FinalizarSala` deben ser **idempotentes**: repetir la
 llamada con el mismo estado no debe duplicar eventos ni romper la sala. Si la sala ya está
@@ -434,17 +434,35 @@ errores de control.
 
 ### 5.5 Estado de implementación y brechas
 
-| Elemento | Código actual | Contrato v1 | Brecha / tarea |
-| --- | --- | --- | --- |
-| `UnirseASala` | `Task UnirseASala(int pin)`; `HubException`; grupo `salaId.ToString()` | Método estable; idealmente idempotente para reconexión y con códigos estables | SA-04; ajuste en S2-SA-02 |
-| Claim de institución | `SalaHub` lee `InstitucionId` | Identidad emite `institucion_id` | SA-04 / SA-06 |
-| `UnirseASalaDocente` | No existe | Método nuevo | SA-06 |
-| `EnviarRespuesta` | No existe | Método + payload + `ResultadoEnvioRespuesta` | S2-SA-01 |
-| `ObtenerEstadoSala` | No existe | Método nuevo | S2-SA-02 |
-| `IniciarSala` / `AvanzarPregunta` / `FinalizarSala` | No existen | Métodos del docente | SA-06 |
-| Eventos del hub | No existen; el fake de tests simula `alumnoIngreso` con un string | 7 eventos con payload objeto | SA-06 / FE2-02 |
-| Tabla `RespuestaSala` | No existe | Índices únicos e idempotencia | S2-SA-01 |
-| Contrato escrito | Este documento | Congelado | SA-05 |
+Actualizado el 01/11/2026 contra `main` (S2-CT-01, #165).
+
+| Elemento | Estado en `main` | Brecha / tarea |
+| --- | --- | --- |
+| `UnirseASala(pin)` | ✅ Implementado | — |
+| `UnirseASalaDocente(salaId)` | ✅ Implementado | — |
+| `EnviarRespuesta(payload)` | ✅ Implementado con `RespuestaSala` idempotente | — (S2-SA-01, #119) |
+| `ObtenerEstadoSala()` | ✅ Implementado, con reconexión y sesión única | — (S2-SA-02, #125) |
+| `RegistrarEventoFoco(payload)` | ✅ Implementado con `AuditoriaFoco` | Documentar su payload en este contrato |
+| `IniciarSala()` / `AvanzarPregunta()` | ✅ Implementados | — |
+| `FinalizarSala(motivo?)` | ❌ No existe | S2-SA-03 (#140) |
+| Evento `salaFinalizada` | ❌ No se emite | S2-SA-03 (#140) |
+| Envío de entregas a Evaluaciones | ❌ No existe | S2-SA-03 (#140) + S2-EV-01 (#143) |
+| Crear sala por HTTP | ✅ `POST /api/v1/salas` | Ver `contracts/openapi/sala-en-vivo-v1.json`: falta exigir token y validar la evaluación |
+
+### 5.6 Entrega de respuestas a Evaluaciones al finalizar
+
+Cuando la sala pasa a `Finalizada` (por `FinalizarSala` o porque venció `FechaVencimiento`),
+Sala en vivo envía **un único lote por sala** a Evaluaciones:
+
+- Endpoint: `POST /interno/salas/{salaId}/entregas` (interno, no pasa por el gateway).
+- Cuerpo: `contracts/schemas/lote-entregas-v1.schema.json`. Una entrega por cada alumno que
+  ingresó, con sus respuestas aceptadas y sus eventos de foco, aunque no haya respondido nada.
+- Respuesta: `contracts/schemas/resultado-lote-entregas-v1.schema.json`.
+- `loteId` se genera una vez por sala y se reutiliza en los reintentos. Evaluaciones no
+  duplica entregas: guarda como máximo una por `(salaId, alumnoId)`.
+- Sala reintenta solo ante error de red o 5xx (3 intentos). Si no lo logra, marca la sala
+  como `EntregaPendiente` y lo registra en el log. El Outbox definitivo es S3-SA-01.
+- `motivoCierre` del lote usa los mismos valores que `motivo` de `salaFinalizada`.
 
 ## 6. Eventos del servidor
 
@@ -1147,5 +1165,3 @@ public async Task<ResultadoEnvioRespuesta> EnviarRespuesta(EnviarRespuestaReques
 
 Este pseudocódigo es ilustrativo: la transacción, el manejo de `DbUpdateException` y la
 resolución de carreras deben implementarse en S2-SA-01, no copiarse sin esos controles.
-
-
