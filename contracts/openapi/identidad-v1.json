@@ -1,0 +1,1237 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "PEI Identidad API",
+    "version": "v1",
+    "description": "Contrato del microservicio de Identidad de Tiza (S2-CT-01, #165). Fuente: código de main al 01/11/2026 y docs/ID07-SWAGGER-POSTMAN.md. Las operaciones con x-estado: planificado todavía no están implementadas: el contrato se acuerda antes de programar (contrato primero). Consumidores: Frontend (login, sesión, usuarios) y los 5 servicios (claims del JWT, ver JwtInstitucional)."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Gateway YARP"
+    },
+    {
+      "url": "http://localhost:5293",
+      "description": "Servicio directo (desarrollo local)"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Autenticación"
+    },
+    {
+      "name": "Usuarios"
+    },
+    {
+      "name": "Comprobación de roles"
+    },
+    {
+      "name": "Plataforma",
+      "description": "Administración global (AdministradorGlobal). Se puede deshabilitar por configuración."
+    }
+  ],
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "Autenticación"
+        ],
+        "summary": "Inicia sesión con email y contraseña de la institución.",
+        "description": "Devuelve un access token (JWT, 15 minutos) y un refresh token. Respuestas con Cache-Control: no-store. Rate limit: política login.",
+        "operationId": "Login",
+        "responses": {
+          "200": {
+            "description": "Sesión iniciada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/PeticionInvalida"
+          },
+          "401": {
+            "$ref": "#/components/responses/NoAutenticado"
+          },
+          "415": {
+            "$ref": "#/components/responses/TipoNoSoportado"
+          },
+          "429": {
+            "$ref": "#/components/responses/DemasiadosIntentos"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorInterno"
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "tags": [
+          "Autenticación"
+        ],
+        "summary": "Renueva la sesión con el refresh token.",
+        "description": "Rota el refresh token: el anterior queda inválido. Un refresh token ya usado o revocado responde 401.",
+        "operationId": "Refresh",
+        "responses": {
+          "200": {
+            "description": "Sesión renovada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/PeticionInvalida"
+          },
+          "401": {
+            "$ref": "#/components/responses/NoAutenticado"
+          },
+          "415": {
+            "$ref": "#/components/responses/TipoNoSoportado"
+          },
+          "429": {
+            "$ref": "#/components/responses/DemasiadosIntentos"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorInterno"
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": [
+          "Autenticación"
+        ],
+        "summary": "Cierra la sesión revocando el refresh token.",
+        "description": "Idempotente: un token ya revocado también responde 204.",
+        "operationId": "Logout",
+        "responses": {
+          "204": {
+            "description": "Sesión cerrada, sin cuerpo."
+          },
+          "400": {
+            "$ref": "#/components/responses/PeticionInvalida"
+          },
+          "415": {
+            "$ref": "#/components/responses/TipoNoSoportado"
+          },
+          "429": {
+            "$ref": "#/components/responses/DemasiadosIntentos"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorInterno"
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "tags": [
+          "Usuarios"
+        ],
+        "summary": "Registra un docente o un alumno en la institución del administrador.",
+        "description": "Solo Administrador institucional. El usuario se crea en la institución del token (claim institucion_id). Email repetido → 409.",
+        "operationId": "Register",
+        "responses": {
+          "201": {
+            "description": "Usuario creado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioRegistrado"
+                },
+                "example": {
+                  "id": "11111111-0000-0000-0000-000000000005",
+                  "message": "Usuario registrado correctamente."
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/PeticionInvalida"
+          },
+          "401": {
+            "$ref": "#/components/responses/NoAutenticado"
+          },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflicto"
+          },
+          "415": {
+            "$ref": "#/components/responses/TipoNoSoportado"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorInterno"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/administrador": {
+      "get": {
+        "tags": [
+          "Comprobación de roles"
+        ],
+        "summary": "Comprueba que el token sea de Administrador.",
+        "description": "Endpoint de prueba de autorización.",
+        "operationId": "SoloAdministrador",
+        "responses": {
+          "200": {
+            "description": "Autorizado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mensaje"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/NoAutenticado"
+          },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorInterno"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/auth/docente": {
+      "get": {
+        "tags": [
+          "Comprobación de roles"
+        ],
+        "summary": "Comprueba que el token sea de Docente.",
+        "description": "Endpoint de prueba de autorización.",
+        "operationId": "SoloDocente",
+        "responses": {
+          "200": {
+            "description": "Autorizado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mensaje"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/NoAutenticado"
+          },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorInterno"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/auth/alumno": {
+      "get": {
+        "tags": [
+          "Comprobación de roles"
+        ],
+        "summary": "Comprueba que el token sea de Alumno.",
+        "description": "Endpoint de prueba de autorización.",
+        "operationId": "SoloAlumno",
+        "responses": {
+          "200": {
+            "description": "Autorizado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mensaje"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/NoAutenticado"
+          },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorInterno"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/usuarios": {
+      "get": {
+        "tags": [
+          "Usuarios"
+        ],
+        "summary": "[Planificado S2-ID-10, #91] Lista los usuarios activos de la institución, filtrables por rol.",
+        "description": "Consumidores: Frontend (cohortes, matrículas, resultados). Solo Administrador o Docente; Alumno → 403. Devuelve únicamente usuarios activos de la institución del token, ordenados por apellido y nombre. Nunca incluye el hash de la contraseña.",
+        "operationId": "ListarUsuarios",
+        "responses": {
+          "200": {
+            "description": "Usuarios de la institución.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UsuarioResumen"
+                  }
+                },
+                "example": [
+                  {
+                    "id": "11111111-0000-0000-0000-000000000003",
+                    "nombre": "Ana",
+                    "apellido": "Pérez",
+                    "email": "alumno1@a.test",
+                    "rol": "Alumno"
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/PeticionInvalida"
+          },
+          "401": {
+            "$ref": "#/components/responses/NoAutenticado"
+          },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorInterno"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "rol",
+            "in": "query",
+            "required": false,
+            "description": "Filtra por rol. Sin rol devuelve todos.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Administrador",
+                "Docente",
+                "Alumno"
+              ]
+            }
+          }
+        ],
+        "x-estado": "planificado"
+      }
+    },
+    "/api/usuarios/{id}": {
+      "get": {
+        "tags": [
+          "Usuarios"
+        ],
+        "summary": "[Planificado S2-ID-10, #91] Obtiene un usuario de la institución.",
+        "description": "Inexistente o de otra institución → 404 (no revela que existe).",
+        "operationId": "ObtenerUsuario",
+        "responses": {
+          "200": {
+            "description": "Usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioResumen"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/NoAutenticado"
+          },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
+          },
+          "404": {
+            "$ref": "#/components/responses/NoEncontrado"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorInterno"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "x-estado": "planificado"
+      }
+    },
+    "/api/usuarios/alumnos/importacion": {
+      "post": {
+        "tags": [
+          "Usuarios"
+        ],
+        "summary": "[Planificado S2-ID-02, #135] Alta masiva de alumnos desde un CSV.",
+        "description": "Solo Administrador. CSV con columnas nombre,apellido,email (máximo 200 filas). Crea los alumnos en la institución del token; las filas con error no frenan a las demás; un email existente se omite. Cada alumno recibe la invitación por el outbox para definir su contraseña.",
+        "operationId": "ImportarAlumnos",
+        "responses": {
+          "200": {
+            "description": "Resumen de la importación.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultadoImportacion"
+                },
+                "example": {
+                  "creados": 28,
+                  "omitidos": 1,
+                  "errores": [
+                    {
+                      "fila": 7,
+                      "motivo": "Email inválido"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/PeticionInvalida"
+          },
+          "401": {
+            "$ref": "#/components/responses/NoAutenticado"
+          },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
+          },
+          "415": {
+            "$ref": "#/components/responses/TipoNoSoportado"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorInterno"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "x-estado": "planificado",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "archivo"
+                ],
+                "properties": {
+                  "archivo": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Archivo .csv en UTF-8."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plataforma/auth/login": {
+      "post": {
+        "tags": [
+          "Plataforma"
+        ],
+        "summary": "Inicia sesión como administrador global de la plataforma.",
+        "description": "Devuelve un token de plataforma (identity_type=platform), distinto del institucional. Si la plataforma está deshabilitada en la configuración → 404.",
+        "operationId": "LoginPlataforma",
+        "responses": {
+          "200": {
+            "description": "Sesión de plataforma.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenPlataforma"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/PeticionInvalida"
+          },
+          "401": {
+            "$ref": "#/components/responses/NoAutenticado"
+          },
+          "404": {
+            "$ref": "#/components/responses/NoEncontrado"
+          },
+          "415": {
+            "$ref": "#/components/responses/TipoNoSoportado"
+          },
+          "429": {
+            "$ref": "#/components/responses/DemasiadosIntentos"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorInterno"
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plataforma/instituciones": {
+      "post": {
+        "tags": [
+          "Plataforma"
+        ],
+        "summary": "Crea una institución y la invitación de su administrador.",
+        "description": "Solo AdministradorGlobal. Código repetido → 409.",
+        "operationId": "CrearInstitucion",
+        "responses": {
+          "201": {
+            "description": "Institución creada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstitucionCreada"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/PeticionInvalida"
+          },
+          "401": {
+            "$ref": "#/components/responses/NoAutenticado"
+          },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
+          },
+          "404": {
+            "$ref": "#/components/responses/NoEncontrado"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflicto"
+          },
+          "415": {
+            "$ref": "#/components/responses/TipoNoSoportado"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorInterno"
+          }
+        },
+        "security": [
+          {
+            "PlatformBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearInstitucionRequest"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Plataforma"
+        ],
+        "summary": "Lista las instituciones.",
+        "description": "Solo AdministradorGlobal. Paginado.",
+        "operationId": "ListarInstituciones",
+        "responses": {
+          "200": {
+            "description": "Instituciones.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InstitucionResumen"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/PeticionInvalida"
+          },
+          "401": {
+            "$ref": "#/components/responses/NoAutenticado"
+          },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
+          },
+          "404": {
+            "$ref": "#/components/responses/NoEncontrado"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorInterno"
+          }
+        },
+        "security": [
+          {
+            "PlatformBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "pagina",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          }
+        ]
+      }
+    },
+    "/api/plataforma/invitaciones/activar": {
+      "post": {
+        "tags": [
+          "Plataforma"
+        ],
+        "summary": "Activa la cuenta del administrador invitado y define su contraseña.",
+        "description": "Token de invitación inválido, usado o vencido → 400/404.",
+        "operationId": "ActivarAdministrador",
+        "responses": {
+          "204": {
+            "description": "Cuenta activada, sin cuerpo."
+          },
+          "400": {
+            "$ref": "#/components/responses/PeticionInvalida"
+          },
+          "401": {
+            "$ref": "#/components/responses/NoAutenticado"
+          },
+          "404": {
+            "$ref": "#/components/responses/NoEncontrado"
+          },
+          "415": {
+            "$ref": "#/components/responses/TipoNoSoportado"
+          },
+          "429": {
+            "$ref": "#/components/responses/DemasiadosIntentos"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorInterno"
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivarAdministradorRequest"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "Bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT institucional emitido por /api/auth/login (ver JwtInstitucional)."
+      },
+      "PlatformBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT de plataforma (identity_type=platform, role=AdministradorGlobal)."
+      }
+    },
+    "schemas": {
+      "LoginRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 150
+          },
+          "password": {
+            "type": "string",
+            "description": "Máximo 72 bytes en UTF-8."
+          }
+        },
+        "example": {
+          "email": "docente@a.test",
+          "password": "********"
+        }
+      },
+      "RefreshRequest": {
+        "type": "object",
+        "required": [
+          "refreshToken"
+        ],
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "maxLength": 256
+          }
+        }
+      },
+      "SessionResponse": {
+        "type": "object",
+        "required": [
+          "accessToken",
+          "refreshToken",
+          "tokenType",
+          "accessTokenExpiresAt",
+          "refreshTokenExpiresAt"
+        ],
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "JWT institucional. Ver JwtInstitucional."
+          },
+          "refreshToken": {
+            "type": "string"
+          },
+          "tokenType": {
+            "type": "string",
+            "enum": [
+              "Bearer"
+            ]
+          },
+          "accessTokenExpiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "refreshTokenExpiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "password",
+          "nombre",
+          "apellido",
+          "rol"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 150
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "description": "Contraseña. Máximo 72 bytes en UTF-8 (límite de BCrypt)."
+          },
+          "nombre": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "apellido": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "rol": {
+            "type": "string",
+            "enum": [
+              "Docente",
+              "Alumno"
+            ]
+          }
+        }
+      },
+      "UsuarioRegistrado": {
+        "type": "object",
+        "required": [
+          "id",
+          "message"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "Mensaje": {
+        "type": "object",
+        "properties": {
+          "mensaje": {
+            "type": "string"
+          }
+        }
+      },
+      "UsuarioResumen": {
+        "type": "object",
+        "required": [
+          "id",
+          "nombre",
+          "apellido",
+          "email",
+          "rol"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Mismo valor que el claim sub. Es el AlumnoId/DocenteId que usan Cursos, Sala y Evaluaciones."
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "apellido": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "rol": {
+            "type": "string",
+            "enum": [
+              "Administrador",
+              "Docente",
+              "Alumno"
+            ]
+          }
+        }
+      },
+      "ResultadoImportacion": {
+        "type": "object",
+        "required": [
+          "creados",
+          "omitidos",
+          "errores"
+        ],
+        "properties": {
+          "creados": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "omitidos": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Filas con un email que ya existía."
+          },
+          "errores": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "fila",
+                "motivo"
+              ],
+              "properties": {
+                "fila": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "motivo": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "TokenPlataforma": {
+        "type": "object",
+        "required": [
+          "accessToken",
+          "tokenType"
+        ],
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "tokenType": {
+            "type": "string",
+            "enum": [
+              "Bearer"
+            ]
+          }
+        }
+      },
+      "CrearInstitucionRequest": {
+        "type": "object",
+        "required": [
+          "nombre",
+          "codigo",
+          "emailAdministrador",
+          "nombreAdministrador",
+          "apellidoAdministrador"
+        ],
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "maxLength": 150
+          },
+          "codigo": {
+            "type": "string",
+            "maxLength": 30
+          },
+          "emailAdministrador": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 150
+          },
+          "nombreAdministrador": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "apellidoAdministrador": {
+            "type": "string",
+            "maxLength": 100
+          }
+        }
+      },
+      "InstitucionCreada": {
+        "type": "object",
+        "required": [
+          "institucionId",
+          "administradorId"
+        ],
+        "properties": {
+          "institucionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "administradorId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "InstitucionResumen": {
+        "type": "object",
+        "required": [
+          "id",
+          "nombre",
+          "codigo",
+          "activo"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "activo": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ActivarAdministradorRequest": {
+        "type": "object",
+        "required": [
+          "token",
+          "password"
+        ],
+        "properties": {
+          "token": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "description": "Contraseña. Máximo 72 bytes en UTF-8 (límite de BCrypt)."
+          }
+        }
+      },
+      "JwtInstitucional": {
+        "type": "object",
+        "description": "Claims del access token institucional (HS256, 15 minutos). Es el contrato que leen TODOS los servicios: configurar MapInboundClaims=false, NameClaimType=sub y RoleClaimType=role. Issuer PEI.Identidad, Audience PEI.",
+        "required": [
+          "sub",
+          "institucion_id",
+          "role",
+          "email",
+          "jti",
+          "iat",
+          "exp",
+          "iss",
+          "aud"
+        ],
+        "properties": {
+          "sub": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Id del usuario."
+          },
+          "institucion_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Institución (tenant). Todos los servicios filtran por este valor."
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "Administrador",
+              "Docente",
+              "Alumno"
+            ]
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "jti": {
+            "type": "string"
+          },
+          "iat": {
+            "type": "integer"
+          },
+          "exp": {
+            "type": "integer"
+          },
+          "iss": {
+            "type": "string",
+            "enum": [
+              "PEI.Identidad"
+            ]
+          },
+          "aud": {
+            "type": "string",
+            "enum": [
+              "PEI"
+            ]
+          }
+        }
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "description": "Solo en 400 de validación (ValidationProblemDetails)."
+          }
+        }
+      }
+    },
+    "responses": {
+      "PeticionInvalida": {
+        "description": "Datos inválidos (ProblemDetails o ValidationProblemDetails con errors).",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      },
+      "NoAutenticado": {
+        "description": "Credenciales o token inválidos, vencidos o ausentes.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      },
+      "SinPermiso": {
+        "description": "El token es válido pero el rol no tiene permiso.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      },
+      "NoEncontrado": {
+        "description": "No existe, es de otra institución, o la función de plataforma está deshabilitada.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      },
+      "Conflicto": {
+        "description": "Ya existe (email o código repetido).",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      },
+      "TipoNoSoportado": {
+        "description": "Content-Type distinto de application/json.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      },
+      "DemasiadosIntentos": {
+        "description": "Se superó el límite de intentos (rate limit login).",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      },
+      "ErrorInterno": {
+        "description": "Error inesperado del servidor.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    }
+  }
+}
