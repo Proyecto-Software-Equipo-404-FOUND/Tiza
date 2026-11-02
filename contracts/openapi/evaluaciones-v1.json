@@ -23,6 +23,10 @@
     {
       "name": "Evaluaciones",
       "description": "CRUD y publicación de evaluaciones."
+    },
+    {
+      "name": "Interno",
+      "description": "Endpoints entre servicios. No se exponen por el gateway."
     }
   ],
   "paths": {
@@ -261,6 +265,88 @@
           }
         }
       }
+    },
+    "/interno/entregas/{entregaId}/calificacion-sugerida": {
+      "post": {
+        "tags": [
+          "Interno"
+        ],
+        "summary": "Registra la nota sugerida por la IA para una pregunta abierta de una entrega.",
+        "description": "Consumidor: IA (herramienta MCP RegistrarCalificacionSugerida, S2-IA-01). Proveedor: Evaluaciones (S2-EV-02). Es el camino oficial por el que la nota sugerida llega a Evaluaciones; la respuesta directa de POST /api/v1/correcciones solo se usa para detectar fallos. La nota se guarda siempre como SUGERIDA, nunca como nota final (RN-CMP-03). Idempotente por (entregaId, preguntaId): si ya hay nota para esa pregunta, responde 200 con yaExistia=true y no la modifica. Reglas en orden: datos inválidos o justificación vacía (400), entrega o pregunta inexistente (404), la pregunta no es Abierta (400), nota mayor al puntajeMaximo de la pregunta (400), nota final ya aprobada por el docente (409). Endpoint interno: no se publica en el gateway (S2-ID-01).",
+        "operationId": "RegistrarCalificacionSugerida",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/EntregaId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalificacionSugeridaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Nota sugerida registrada, o ya existente (yaExistia=true).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalificacionSugeridaRegistrada"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos: justificación vacía, nota negativa o mayor al puntaje máximo, o la pregunta no es Abierta.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "La nota sugerida (5) supera el puntaje máximo de la pregunta (4).",
+                  "status": 400,
+                  "errores": []
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La entrega o la pregunta no existen.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "No existe la entrega o la pregunta indicada.",
+                  "status": 404,
+                  "errores": []
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El docente ya aprobó la nota final de esa pregunta: la sugerencia ya no se puede registrar.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "La nota final de esta pregunta ya fue aprobada por el docente.",
+                  "status": 409,
+                  "errores": []
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -280,6 +366,16 @@
         "in": "path",
         "required": true,
         "description": "Identificador de la evaluación.",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "EntregaId": {
+        "name": "entregaId",
+        "in": "path",
+        "required": true,
+        "description": "Identificador de la entrega del alumno (EntregaExamen.Id), el mismo que Evaluaciones le envió a IA al pedir la corrección.",
         "schema": {
           "type": "string",
           "format": "uuid"
@@ -672,6 +768,88 @@
           }
         },
         "additionalProperties": true
+      },
+      "CalificacionSugeridaRequest": {
+        "type": "object",
+        "required": [
+          "preguntaId",
+          "notaSugerida",
+          "justificacion"
+        ],
+        "description": "Lo que envía IA desde la herramienta MCP RegistrarCalificacionSugerida. Del alumno no viaja ningún dato: solo identificadores de la entrega y la pregunta.",
+        "properties": {
+          "preguntaId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Pregunta abierta corregida (id en PreguntasJson). Obligatorio: una entrega puede tener varias preguntas abiertas."
+          },
+          "notaSugerida": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Nota sugerida por la IA. Evaluaciones valida que no supere el puntajeMaximo de esa pregunta."
+          },
+          "justificacion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000,
+            "description": "Justificación pedagógica. No puede estar vacía."
+          },
+          "desgloseJson": {
+            "type": "string",
+            "nullable": true,
+            "description": "Desglose por criterio de la rúbrica serializado como JSON: [{ criterio, puntaje, comentario }]. Opcional."
+          }
+        },
+        "example": {
+          "preguntaId": "9c3d4e5f-6071-4c8d-8e9f-1a2b3c4d5e6f",
+          "notaSugerida": 3.5,
+          "justificacion": "Explica correctamente el ascenso del magma pero no menciona las placas tectónicas.",
+          "desgloseJson": "[{\"criterio\":\"Define el concepto correctamente\",\"puntaje\":2,\"comentario\":\"Correcto\"},{\"criterio\":\"Relaciona con placas tectónicas\",\"puntaje\":1.5,\"comentario\":\"Incompleto\"}]"
+        }
+      },
+      "CalificacionSugeridaRegistrada": {
+        "type": "object",
+        "required": [
+          "entregaId",
+          "preguntaId",
+          "notaSugerida",
+          "yaExistia",
+          "estadoEntrega"
+        ],
+        "properties": {
+          "entregaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "preguntaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "notaSugerida": {
+            "type": "number",
+            "description": "Nota guardada. En un reintento es la que ya estaba, no la recibida."
+          },
+          "yaExistia": {
+            "type": "boolean",
+            "description": "true si esa pregunta de esa entrega ya tenía nota sugerida: no se modificó (idempotencia)."
+          },
+          "estadoEntrega": {
+            "type": "string",
+            "enum": [
+              "PendienteCorreccion",
+              "Corregida",
+              "CorreccionManual"
+            ],
+            "description": "Corregida cuando todas las preguntas abiertas de la entrega tienen nota sugerida."
+          }
+        },
+        "example": {
+          "entregaId": "e1a2b3c4-d5e6-4f70-8a9b-0c1d2e3f4a5b",
+          "preguntaId": "9c3d4e5f-6071-4c8d-8e9f-1a2b3c4d5e6f",
+          "notaSugerida": 3.5,
+          "yaExistia": false,
+          "estadoEntrega": "Corregida"
+        }
       }
     }
   }
