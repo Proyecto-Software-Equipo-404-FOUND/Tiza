@@ -5,6 +5,7 @@ import { PaginaCursos } from '@/features/cursos/pages/PaginaCursos';
 import { PaginaEvaluacion } from '@/features/evaluaciones/pages/PaginaEvaluacion';
 import { PaginaEvaluaciones } from '@/features/evaluaciones/pages/PaginaEvaluaciones';
 import { PaginaMatriculas } from '@/features/matriculas/PaginaMatriculas';
+import { PaginaSalaAlumno } from '@/features/sala-alumno/PaginaSalaAlumno';
 import { Layout } from './Layout';
 import { PaginaErrorRuta } from './PaginaErrorRuta';
 import { PaginaInicio } from './PaginaInicio';
@@ -45,6 +46,11 @@ export const rutas: RouteObject[] = [
                   { path: '/evaluaciones', element: <PaginaEvaluaciones /> },
                   { path: '/evaluaciones/:evaluacionId', element: <PaginaEvaluacion /> },
                 ],
+              },
+              {
+                // Solo alumnos
+                element: <RutaProtegida roles={['alumno']} />,
+                children: [{ path: '/sala', element: <PaginaSalaAlumno /> }],
               },
             ],
           },
