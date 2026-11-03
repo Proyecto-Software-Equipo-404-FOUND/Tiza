@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import type { KeyboardEvent, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Boton } from './Boton';
 
@@ -11,8 +11,6 @@ type Props = {
   textoConfirmar?: string;
   textoCancelar?: string;
   variante?: 'principal' | 'peligro';
-  /** Mientras es true, el botón de confirmar muestra «Cargando…» y no se puede cerrar */
-  cargando?: boolean;
   onConfirmar: () => void;
   onCancelar: () => void;
 };
@@ -29,7 +27,6 @@ export function ModalConfirmacion({
   textoConfirmar = 'Sí, eliminar',
   textoCancelar = 'Cancelar',
   variante = 'peligro',
-  cargando = false,
   onConfirmar,
   onCancelar,
 }: Props) {
@@ -40,6 +37,7 @@ export function ModalConfirmacion({
   const idMensaje = useId();
   const panel = useRef<HTMLDivElement>(null);
   const anterior = useRef<HTMLElement | null>(null);
+  const seAbrio = useRef(false);
 
   useEffect(() => {
     if (abierto) {
@@ -55,6 +53,7 @@ export function ModalConfirmacion({
   // Al abrir se recuerda qué botón estaba enfocado y al cerrar se le devuelve el foco
   useEffect(() => {
     if (abierto) {
+      seAbrio.current = true;
       anterior.current = document.activeElement as HTMLElement | null;
     } else {
       anterior.current?.focus();
@@ -65,6 +64,52 @@ export function ModalConfirmacion({
   useEffect(() => {
     if (abierto) panel.current?.querySelector('button')?.focus();
   }, [abierto]);
+
+  // Si al borrar desaparece el botón de origen (por ejemplo, la fila), el foco no se pierde en el body:
+  // pasa al título de la página
+  useEffect(
+    () => () => {
+      if (!seAbrio.current) return;
+      const activo = document.activeElement;
+      if (activo && activo !== document.body) return;
+      const destino = document.querySelector<HTMLElement>('main h1') ?? document.querySelector<HTMLElement>('main');
+      if (!destino) return;
+      destino.tabIndex = -1;
+      destino.focus({ preventScroll: true });
+    },
+    [],
+  );
+
+  // Escape y Tab se escuchan en todo el documento: si se hizo clic en el texto del cartel el foco
+  // queda en el body y, de otro modo, el teclado no llegaría hasta acá
+  useEffect(() => {
+    if (!abierto) return;
+    const alTeclear = (e: globalThis.KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onCancelar();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      const botones = Array.from(panel.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? []);
+      if (botones.length === 0) return;
+      const primero = botones[0];
+      const ultimo = botones[botones.length - 1];
+      const dentro = panel.current?.contains(document.activeElement) ?? false;
+      if (!dentro) {
+        e.preventDefault();
+        (e.shiftKey ? ultimo : primero).focus();
+      } else if (e.shiftKey && document.activeElement === primero) {
+        e.preventDefault();
+        ultimo.focus();
+      } else if (!e.shiftKey && document.activeElement === ultimo) {
+        e.preventDefault();
+        primero.focus();
+      }
+    };
+    document.addEventListener('keydown', alTeclear);
+    return () => document.removeEventListener('keydown', alTeclear);
+  }, [abierto, onCancelar]);
 
   // Mientras está abierto no se mueve la página de atrás
   useEffect(() => {
@@ -79,31 +124,6 @@ export function ModalConfirmacion({
   // Si está abierto se dibuja en este mismo render; «montado» solo mantiene el cartel durante la salida
   if (!abierto && !montado) return null;
 
-  const cerrar = () => {
-    if (!cargando) onCancelar();
-  };
-
-  const alTeclear = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Escape') {
-      e.stopPropagation();
-      cerrar();
-      return;
-    }
-    if (e.key !== 'Tab') return;
-    // El foco se queda dentro del cartel
-    const botones = Array.from(panel.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? []);
-    if (botones.length === 0) return;
-    const primero = botones[0];
-    const ultimo = botones[botones.length - 1];
-    if (e.shiftKey && document.activeElement === primero) {
-      e.preventDefault();
-      ultimo.focus();
-    } else if (!e.shiftKey && document.activeElement === ultimo) {
-      e.preventDefault();
-      primero.focus();
-    }
-  };
-
   const mostrar = visible && abierto;
 
   return createPortal(
@@ -112,9 +132,8 @@ export function ModalConfirmacion({
         mostrar ? 'opacity-100' : 'opacity-0'
       }`}
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget) cerrar();
+        if (e.target === e.currentTarget) onCancelar();
       }}
-      onKeyDown={alTeclear}
     >
       <div
         ref={panel}
@@ -133,10 +152,10 @@ export function ModalConfirmacion({
           {mensaje}
         </div>
         <div className='mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end'>
-          <Boton type='button' variante='secundario' onClick={cerrar} disabled={cargando}>
+          <Boton type='button' variante='secundario' onClick={onCancelar}>
             {textoCancelar}
           </Boton>
-          <Boton type='button' variante={variante} cargando={cargando} onClick={onConfirmar}>
+          <Boton type='button' variante={variante} onClick={onConfirmar}>
             {textoConfirmar}
           </Boton>
         </div>

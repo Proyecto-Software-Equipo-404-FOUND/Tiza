@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { ModalConfirmacion } from './ModalConfirmacion';
 
-function Ejemplo({ onConfirmar = vi.fn(), cargando = false }: { onConfirmar?: () => void; cargando?: boolean }) {
+function Ejemplo({ onConfirmar = vi.fn() }: { onConfirmar?: () => void }) {
   const [abierto, setAbierto] = useState(false);
   return (
     <>
@@ -13,7 +13,6 @@ function Ejemplo({ onConfirmar = vi.fn(), cargando = false }: { onConfirmar?: ()
         abierto={abierto}
         titulo='¿Eliminar curso?'
         mensaje='No se puede deshacer.'
-        cargando={cargando}
         onCancelar={() => setAbierto(false)}
         onConfirmar={() => {
           setAbierto(false);
@@ -93,18 +92,51 @@ describe('ModalConfirmacion', () => {
     expect(screen.getByRole('button', { name: 'Sí, eliminar' })).toHaveFocus();
   });
 
-  it('mientras está cargando no se puede cancelar ni cerrar con Escape', async () => {
-    function Abierto() {
+  it('Escape también cierra si se hizo clic en el texto del cartel', async () => {
+    render(<Ejemplo />);
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir' }));
+    await userEvent.click(screen.getByText('No se puede deshacer.'));
+    await userEvent.keyboard('{Escape}');
+    await sinCartel();
+  });
+
+  it('con el foco afuera, Tab lo devuelve al cartel', async () => {
+    render(<Ejemplo />);
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir' }));
+    await userEvent.click(screen.getByText('No se puede deshacer.'));
+    await userEvent.tab();
+    expect(screen.getByRole('button', { name: 'Cancelar' })).toHaveFocus();
+  });
+
+  it('si desaparece el botón de origen, el foco pasa al título de la página', async () => {
+    function Lista() {
+      const [hay, setHay] = useState(true);
+      const [abierto, setAbierto] = useState(false);
       return (
-        <ModalConfirmacion abierto titulo='T' mensaje='M' cargando onCancelar={onCancelar} onConfirmar={() => undefined} />
+        <main>
+          <h1>Cursos</h1>
+          {hay && (
+            <>
+              <button onClick={() => setAbierto(true)}>Eliminar fila</button>
+              <ModalConfirmacion
+                abierto={abierto}
+                titulo='¿Eliminar?'
+                mensaje='M'
+                onCancelar={() => setAbierto(false)}
+                onConfirmar={() => {
+                  setAbierto(false);
+                  setTimeout(() => setHay(false), 0);
+                }}
+              />
+            </>
+          )}
+        </main>
       );
     }
-    const onCancelar = vi.fn();
-    render(<Abierto />);
-    expect(screen.getByRole('button', { name: 'Cancelar' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Cargando…' })).toBeDisabled();
-
-    await userEvent.keyboard('{Escape}');
-    expect(onCancelar).not.toHaveBeenCalled();
+    render(<Lista />);
+    await userEvent.click(screen.getByRole('button', { name: 'Eliminar fila' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Sí, eliminar' }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Eliminar fila' })).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Cursos' })).toHaveFocus());
   });
 });
