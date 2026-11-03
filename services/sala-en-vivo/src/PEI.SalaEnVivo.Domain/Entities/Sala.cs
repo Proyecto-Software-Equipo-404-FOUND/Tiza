@@ -12,6 +12,29 @@ namespace PEI.SalaEnVivo.Domain.Entities
         public int CapacidadMaxima { get; set; }
         public int CantidadParticipantes { get; set; }
         public Guid EvaluacionId { get; set; }
+        public Guid? PreguntaActualId { get; set; }
+        public int IndicePreguntaActual { get; set; }
+
+        public void Iniciar()
+        {
+            Estado = "EnCurso";
+        }
+
+        public void EstablecerPreguntaActual(Guid preguntaId, int indice)
+        {
+            if (preguntaId == Guid.Empty)
+            {
+                throw new ArgumentException("La pregunta actual no puede ser vacía.", nameof(preguntaId));
+            }
+
+            if (indice < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(indice), "El índice de la pregunta debe ser mayor o igual a 1.");
+            }
+
+            PreguntaActualId = preguntaId;
+            IndicePreguntaActual = indice;
+        }
 
         public void SetCapacidadMaxima(int capacidad)
         {

@@ -22,6 +22,7 @@ namespace PEI.SalaEnVivo.Application.UseCases.Salas.Handlers
             var sala = new Sala
             {
                 InstitucionId = command.InstitucionId,
+                EvaluacionId = command.EvaluacionId,
                 CodigoPIN = await CrearPIN(cancellationToken),
                 FechaVencimiento = DateTime.UtcNow.AddHours(2),
                 Estado = "Activa",

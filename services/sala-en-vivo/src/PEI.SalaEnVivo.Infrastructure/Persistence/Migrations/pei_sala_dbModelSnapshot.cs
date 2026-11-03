@@ -22,6 +22,48 @@ namespace PEI.SalaEnVivo.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("PEI.SalaEnVivo.Domain.Entities.AuditoriaFoco", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AlumnoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("DuracionMs")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("InstitucionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("PreguntaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("RegistradoUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SalaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Severidad")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("TipoEvento")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SalaId", "AlumnoId", "RegistradoUtc")
+                        .HasDatabaseName("ix_auditoria_foco_sala_alumno");
+
+                    b.ToTable("AuditoriaFoco", (string)null);
+                });
+
             modelBuilder.Entity("PEI.SalaEnVivo.Domain.Entities.ParticipanteSala", b =>
                 {
                     b.Property<Guid>("Id")
@@ -115,7 +157,13 @@ namespace PEI.SalaEnVivo.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("FechaVencimiento")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("IndicePreguntaActual")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("InstitucionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("PreguntaActualId")
                         .HasColumnType("uuid");
 
                     b.Property<int[]>("Version")
@@ -128,6 +176,17 @@ namespace PEI.SalaEnVivo.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("Sala");
+                });
+
+            modelBuilder.Entity("PEI.SalaEnVivo.Domain.Entities.AuditoriaFoco", b =>
+                {
+                    b.HasOne("PEI.SalaEnVivo.Domain.Entities.Sala", "Sala")
+                        .WithMany()
+                        .HasForeignKey("SalaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Sala");
                 });
 
             modelBuilder.Entity("PEI.SalaEnVivo.Domain.Entities.ParticipanteSala", b =>

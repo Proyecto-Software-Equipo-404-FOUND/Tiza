@@ -1,9 +1,12 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using PEI.Cursos.Application.Interfaces;
 using PEI.Cursos.Domain.Entities;
+using PEI.Cursos.Domain.Enums;
 using PEI.Cursos.Infrastructure.Persistence;
 
 namespace PEI.Cursos.Infrastructure.Persistence.Repositories;
@@ -37,5 +40,24 @@ public class MatriculacionRepository : IMatriculacionRepository
     public async Task AddAsync(Matriculacion matriculacion, CancellationToken cancellationToken = default)
     {
         await _context.Matriculaciones.AddAsync(matriculacion, cancellationToken);
+    }
+
+    /* Recupera las matriculaciones de una cohorte con AsNoTracking para optimizar la consulta de lectura.
+    Aplica el filtro de estado si se solicita y aprovecha el Global Query Filter multi-tenant de CursosDbContext. */
+    public async Task<IReadOnlyList<Matriculacion>> GetByCohorteIdAsync(
+        Guid cohorteId,
+        bool soloActivas = true,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Matriculaciones
+            .AsNoTracking()
+            .Where(m => m.CohorteId == cohorteId);
+
+        if (soloActivas)
+        {
+            query = query.Where(m => m.Estado == EstadoMatriculacion.Activa);
+        }
+
+        return await query.ToListAsync(cancellationToken);
     }
 }

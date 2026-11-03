@@ -16,8 +16,8 @@ namespace PEI.IA.Infrastructure.LlmClients;
 public class OpenAiCompatibleClient : ILlmClient
 {
     private readonly HttpClient _httpClient;
-    private readonly LlmSettings _settings;
-    private readonly ILogger<OpenAiCompatibleClient> _logger;
+    private readonly LlmProviderConfig _config;
+    private readonly ILogger _logger;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -30,16 +30,38 @@ public class OpenAiCompatibleClient : ILlmClient
         HttpClient httpClient,
         LlmSettings settings,
         ILogger<OpenAiCompatibleClient> logger)
+        : this(httpClient, new LlmProviderConfig
+        {
+            Provider = settings.Provider,
+            ApiKey = settings.ApiKey,
+            BaseUrl = settings.BaseUrl,
+            Model = settings.Model,
+            Temperature = settings.Temperature,
+            MaxTokens = settings.MaxTokens,
+            TimeoutMs = settings.TimeoutMs,
+            Prioridad = 1
+        }, logger)
+    {
+    }
+
+    public OpenAiCompatibleClient(
+        HttpClient httpClient,
+        LlmProviderConfig config,
+        ILogger logger)
     {
         _httpClient = httpClient;
-        _settings = settings;
+        _config = config;
         _logger = logger;
 
-        _httpClient.BaseAddress = new Uri(_settings.BaseUrl.TrimEnd('/') + "/");
-        if (!string.IsNullOrEmpty(_settings.ApiKey))
+        _httpClient.BaseAddress = new Uri(_config.BaseUrl.TrimEnd('/') + "/");
+        if (!string.IsNullOrEmpty(_config.ApiKey))
         {
             _httpClient.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", _settings.ApiKey);
+                new AuthenticationHeaderValue("Bearer", _config.ApiKey);
+        }
+        if (_config.TimeoutMs > 0)
+        {
+            _httpClient.Timeout = TimeSpan.FromMilliseconds(_config.TimeoutMs);
         }
     }
 
@@ -59,10 +81,10 @@ public class OpenAiCompatibleClient : ILlmClient
 
         var requestBody = new Dictionary<string, object>
         {
-            ["model"] = _settings.Model,
+            ["model"] = _config.Model,
             ["messages"] = messages,
-            ["temperature"] = _settings.Temperature,
-            ["max_tokens"] = _settings.MaxTokens,
+            ["temperature"] = _config.Temperature,
+            ["max_tokens"] = _config.MaxTokens,
         };
 
         // Agregar tools si se proporcionaron
@@ -86,7 +108,7 @@ public class OpenAiCompatibleClient : ILlmClient
         var jsonContent = JsonSerializer.Serialize(requestBody, JsonOptions);
 
         _logger.LogDebug("[LLM {Provider}/{Model}] Enviando request ({Bytes} bytes)",
-            _settings.Provider, _settings.Model, jsonContent.Length);
+            _config.Provider, _config.Model, jsonContent.Length);
 
         var httpContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
         var response = await _httpClient.PostAsync("chat/completions", httpContent, cancellationToken);
@@ -98,18 +120,20 @@ public class OpenAiCompatibleClient : ILlmClient
         if (!response.IsSuccessStatusCode)
         {
             _logger.LogError("[LLM {Provider}] Error {Status}: {Body}",
-                _settings.Provider, response.StatusCode, responseJson[..Math.Min(500, responseJson.Length)]);
+                _config.Provider, response.StatusCode, responseJson[..Math.Min(500, responseJson.Length)]);
 
             throw new HttpRequestException(
-                $"Error del proveedor LLM {_settings.Provider}: {response.StatusCode} - {responseJson[..Math.Min(200, responseJson.Length)]}");
+                $"Error del proveedor LLM {_config.Provider}: {response.StatusCode} - {responseJson[..Math.Min(200, responseJson.Length)]}",
+                null,
+                response.StatusCode);
         }
 
         var chatResponse = JsonSerializer.Deserialize<ChatCompletionResponse>(responseJson, JsonOptions);
 
         var result = new LlmCompletionResult
         {
-            Proveedor = _settings.Provider,
-            Modelo = chatResponse?.Model ?? _settings.Model,
+            Proveedor = _config.Provider,
+            Modelo = chatResponse?.Model ?? _config.Model,
             TokensEntrada = chatResponse?.Usage?.PromptTokens ?? 0,
             TokensSalida = chatResponse?.Usage?.CompletionTokens ?? 0,
             LatenciaMs = sw.ElapsedMilliseconds

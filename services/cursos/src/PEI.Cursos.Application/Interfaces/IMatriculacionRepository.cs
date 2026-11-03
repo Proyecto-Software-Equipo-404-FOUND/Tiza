@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using PEI.Cursos.Domain.Entities;
@@ -12,4 +13,5 @@ public interface IMatriculacionRepository
     Task<Matriculacion?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<bool> ExisteMatriculacionAsync(Guid cohorteId, Guid alumnoId, CancellationToken cancellationToken = default);
     Task AddAsync(Matriculacion matriculacion, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Matriculacion>> GetByCohorteIdAsync(Guid cohorteId, bool soloActivas = true, CancellationToken cancellationToken = default);
 }
