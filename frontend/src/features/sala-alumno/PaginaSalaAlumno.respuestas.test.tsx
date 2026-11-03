@@ -55,6 +55,7 @@ function preparar(alEnviar: (envio: EnvioPendiente, intento: number) => Promise<
 async function entrarYRecibir(simular: (e: string, ...a: unknown[]) => void, p: PreguntaActual = pregunta()) {
   await waitFor(() => expect(screen.getByRole('button', { name: 'Entrar' })).toBeEnabled());
   await userEvent.type(screen.getByLabelText('PIN'), '123456');
+  await userEvent.click(screen.getByLabelText('Entendí el aviso y acepto'));
   await userEvent.click(screen.getByRole('button', { name: 'Entrar' }));
   await screen.findByRole('heading', { name: 'Estás en la sala' });
   act(() => {
@@ -207,7 +208,7 @@ describe('PaginaSalaAlumno · responder', () => {
     const { simular } = preparar(async (e) => resultado(e));
     await entrarYRecibir(simular);
     act(() => simular('salaFinalizada', { salaId: SALA, finalizadaUtc: new Date().toISOString(), motivo: 'Docente' }));
-    expect(screen.getByRole('heading', { name: 'La sala finalizó' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Examen entregado' })).toBeInTheDocument();
     expect(screen.queryByText('¿Cuánto es 2 + 3?')).not.toBeInTheDocument();
   });
 

@@ -9,7 +9,9 @@ import { IndicadorConexion } from '@/shared/realtime/IndicadorConexion';
 import type { ConexionSala } from '@/shared/realtime/tipos';
 import { useConexionSala } from '@/shared/realtime/useConexionSala';
 import { crearConexionSala } from './crearConexionSala';
+import { AvisoIntegridad } from './AvisoIntegridad';
 import { TarjetaPregunta } from './TarjetaPregunta';
+import { useIntegridadFoco } from './useIntegridadFoco';
 import { useSalaAlumno } from './useSalaAlumno';
 
 const esquemaPin = z.string().regex(/^\d{6}$/, 'El PIN tiene 6 dígitos');
@@ -44,17 +46,22 @@ export function PaginaSalaAlumno({ conexion: conexionInyectada, esperar }: Props
     unirse,
     enviarRespuesta,
   } = useSalaAlumno(conexion, esperar);
+  useIntegridadFoco(conexion, {
+    activo: fase === 'enCurso',
+    preguntaId: pregunta?.preguntaId ?? null,
+    puedeEnviar: estado === 'conectado',
+  });
   const [pin, setPin] = useState('');
   const [errorPin, setErrorPin] = useState<string | undefined>();
+  const [aceptoAviso, setAceptoAviso] = useState(false);
+  const [errorAviso, setErrorAviso] = useState<string | undefined>();
 
   const enviar = (evento: FormEvent) => {
     evento.preventDefault();
     const resultado = esquemaPin.safeParse(pin);
-    if (!resultado.success) {
-      setErrorPin(resultado.error.issues[0].message);
-      return;
-    }
-    setErrorPin(undefined);
+    setErrorPin(resultado.success ? undefined : resultado.error.issues[0].message);
+    setErrorAviso(aceptoAviso ? undefined : 'Tenés que aceptar el aviso para entrar.');
+    if (!resultado.success || !aceptoAviso) return;
     void unirse(Number(resultado.data));
   };
 
@@ -85,6 +92,15 @@ export function PaginaSalaAlumno({ conexion: conexionInyectada, esperar }: Props
               onChange={(evento) => setPin(evento.target.value.replace(/\D/g, ''))}
               error={errorPin}
               disabled={fase === 'uniendo'}
+            />
+            <AvisoIntegridad
+              aceptado={aceptoAviso}
+              onCambiar={(valor) => {
+                setAceptoAviso(valor);
+                if (valor) setErrorAviso(undefined);
+              }}
+              error={errorAviso}
+              deshabilitado={fase === 'uniendo'}
             />
             {error && <BannerError mensaje={error} />}
             <Boton type='submit' cargando={fase === 'uniendo'} disabled={estado !== 'conectado'}>
@@ -117,6 +133,10 @@ export function PaginaSalaAlumno({ conexion: conexionInyectada, esperar }: Props
         />
       )}
 
+      {fase === 'enCurso' && (
+        <p className='text-center text-xs text-tiza-bosque/70'>Se registra si salís de esta pantalla.</p>
+      )}
+
       {fase === 'enCurso' && !pregunta && (
         <Tarjeta
           titulo='La evaluación empezó'
@@ -127,7 +147,7 @@ export function PaginaSalaAlumno({ conexion: conexionInyectada, esperar }: Props
 
       {fase === 'finalizada' && (
         <Tarjeta
-          titulo='La sala finalizó'
+          titulo='Examen entregado'
           subtitulo={
             motivoCierre === 'TiempoAgotado' ? 'Se terminó el tiempo.' : 'Tu docente cerró la sala.'
           }
