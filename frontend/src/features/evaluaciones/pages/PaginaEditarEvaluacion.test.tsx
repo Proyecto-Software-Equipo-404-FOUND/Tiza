@@ -110,11 +110,11 @@ describe('PaginaEditarEvaluacion', () => {
     expect(await screen.findByText('DETALLE')).toBeInTheDocument();
   });
 
-  it('ante un 409 «Recargar» vuelve a pedir los datos y sale de la edición', async () => {
+  it('ante un 409 «Volver al detalle» vuelve a pedir los datos y sale de la edición', async () => {
     const { reset } = simular({}, { error: new ApiError(409, { status: 409, title: 'Conflicto' }) });
     renderizar();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Recargar' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Volver al detalle' }));
     expect(reset).toHaveBeenCalledTimes(1);
     expect(await screen.findByText('DETALLE')).toBeInTheDocument();
   });

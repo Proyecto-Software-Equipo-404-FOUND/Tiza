@@ -118,7 +118,7 @@ export function FormularioEvaluacion({ inicial, textoEnviar, enviando, error, on
         <BannerError
           mensaje={mensajeDeError(error)}
           onReintentar={hayConflicto ? onRecargar : undefined}
-          textoBoton='Recargar'
+          textoBoton='Volver al detalle'
         />
       )}
 

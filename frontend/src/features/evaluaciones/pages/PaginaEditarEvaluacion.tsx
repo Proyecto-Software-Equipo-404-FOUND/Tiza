@@ -20,7 +20,8 @@ export function PaginaEditarEvaluacion() {
 
   const irAlDetalle = () => navegar(`/evaluaciones/${evaluacionId}`);
 
-  // Ante un 409 (por ejemplo, alguien la publicó mientras editabas) se vuelve a pedir y se sale de la edición
+  // Ante un 409 (por ejemplo, alguien la publicó mientras editabas) el botón dice «Volver al detalle»:
+  // se vuelve a pedir la evaluación y se sale de la edición
   const recargar = () => {
     actualizar.reset();
     cliente.invalidateQueries({ queryKey: ['evaluaciones'] });

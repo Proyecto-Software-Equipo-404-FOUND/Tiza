@@ -7,6 +7,7 @@ import {
   type ErroresBorrador,
   type PreguntaBorrador,
 } from '../borrador';
+import { etiquetaPuntos } from '../formato';
 
 type Props = {
   pregunta: PreguntaBorrador;
@@ -220,7 +221,7 @@ export function EditorPregunta({ pregunta, numero, errores, deshabilitado, onCam
           ))}
           {pregunta.criterios.length > 0 && (
             <p className='text-sm text-tiza-bosque/70'>
-              Los criterios suman {suma} de {Number.isFinite(maximo) ? maximo : 0} puntos.
+              Los criterios suman {suma} de {etiquetaPuntos(Number.isFinite(maximo) ? maximo : 0)}.
             </p>
           )}
           <Boton

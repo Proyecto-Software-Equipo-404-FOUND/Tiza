@@ -106,6 +106,11 @@ describe('FormularioEvaluacion', () => {
     await userEvent.type(screen.getByLabelText('Criterio 1 de la pregunta 1'), 'Define bien');
     await userEvent.type(screen.getByLabelText('Puntaje del criterio 1 de la pregunta 1'), '3');
     expect(screen.getByText('Los criterios suman 3 de 5 puntos.')).toBeInTheDocument();
+    await userEvent.clear(puntaje);
+    await userEvent.type(puntaje, '1');
+    expect(screen.getByText('Los criterios suman 3 de 1 punto.')).toBeInTheDocument();
+    await userEvent.clear(puntaje);
+    await userEvent.type(puntaje, '5');
 
     await guardar();
     const [pregunta] = onEnviar.mock.calls[0][0].preguntasJson.preguntas;
@@ -143,13 +148,13 @@ describe('FormularioEvaluacion', () => {
     expect(screen.getByLabelText('Tipo')).toHaveValue('Parcial');
   });
 
-  it('ante un 409 ofrece «Recargar» y no «Reintentar»', async () => {
+  it('ante un 409 ofrece «Volver al detalle» y no «Reintentar»', async () => {
     const onRecargar = vi.fn();
     mostrar({ error: new ApiError(409, { status: 409, title: 'Conflicto' }), onRecargar });
 
     expect(screen.getByText(/Alguien modificó este dato/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Reintentar' })).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Recargar' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Volver al detalle' }));
     expect(onRecargar).toHaveBeenCalledTimes(1);
   });
 
