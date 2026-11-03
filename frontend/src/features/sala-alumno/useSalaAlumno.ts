@@ -53,11 +53,17 @@ export function useSalaAlumno(conexion: ConexionSala, esperar: (ms: number) => P
   const [enviando, setEnviando] = useState(false);
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
   const [envioCerrado, setEnvioCerrado] = useState(false);
+  const [recuperando, setRecuperando] = useState(false);
+  const [errorRecuperacion, setErrorRecuperacion] = useState<string | null>(null);
 
   // Contador por sala (no por pregunta): la primera respuesta usa 1 y cada aceptada suma 1
   const ultimaSecuencia = useRef(0);
   // Envío cuyo resultado se desconoce: un reintento usa la misma clave y secuencia
   const pendiente = useRef<EnvioPendiente | null>(null);
+  // La fase y la recuperación se leen desde el oyente de conexión, que no se vuelve a crear
+  const faseActual = useRef<FaseSala>('ingreso');
+  faseActual.current = fase;
+  const recuperarRef = useRef<() => Promise<void>>(async () => {});
 
   useEffect(() => {
     // `escuchar` no devuelve cómo dejar de escuchar: al desmontar se ignoran los eventos
@@ -67,6 +73,15 @@ export function useSalaAlumno(conexion: ConexionSala, esperar: (ms: number) => P
       if (!activo) return;
       const estado = carga as EstadoSalaEvento;
       ultimaSecuencia.current = estado.ultimaSecuencia ?? ultimaSecuencia.current;
+      // Si el servidor ya tiene la respuesta que quedó sin acuse, o la pregunta cambió, no se reenvía
+      const enEspera = pendiente.current;
+      if (
+        enEspera &&
+        (estado.preguntasRespondidas?.includes(enEspera.preguntaId) ||
+          (estado.preguntaActual && estado.preguntaActual.preguntaId !== enEspera.preguntaId))
+      ) {
+        pendiente.current = null;
+      }
       setRespondidas((previas) => [...new Set([...previas, ...(estado.preguntasRespondidas ?? [])])]);
       setPregunta(estado.preguntaActual ?? null);
       // El reloj del servidor es la referencia: se guarda la diferencia con el del navegador
@@ -96,8 +111,24 @@ export function useSalaAlumno(conexion: ConexionSala, esperar: (ms: number) => P
       if (activo) setError((carga as ErrorAsincronoEvento).mensaje);
     });
 
+    // Tras un corte (automático o con «Reintentar»), al volver la conexión se recupera la sala
+    let huboCorte = false;
+    const dejarDeEscucharEstado = conexion.alCambiarEstado((estado) => {
+      if (!activo) return;
+      if (estado === 'reconectando' || estado === 'desconectado') {
+        huboCorte = true;
+        return;
+      }
+      if (estado === 'conectado' && huboCorte) {
+        huboCorte = false;
+        // Antes de entrar con el PIN no hay nada que recuperar
+        if (faseActual.current === 'espera' || faseActual.current === 'enCurso') void recuperarRef.current();
+      }
+    });
+
     return () => {
       activo = false;
+      dejarDeEscucharEstado();
     };
   }, [conexion]);
 
@@ -129,7 +160,7 @@ export function useSalaAlumno(conexion: ConexionSala, esperar: (ms: number) => P
   const sincronizar = useCallback(
     () =>
       conexion.invocar('ObtenerEstadoSala').catch(() => {
-        // todavía no está implementado en el servidor (S2-SA-02)
+        // si falla se ignora: el estado vuelve a pedirse en la próxima reconexión o al reintentar
       }),
     [conexion],
   );
@@ -214,6 +245,37 @@ export function useSalaAlumno(conexion: ConexionSala, esperar: (ms: number) => P
     [conexion, esperar, resolver],
   );
 
+  /**
+   * Vuelve a pedir el estado de la sala (el servidor reubica la conexión nueva sin PIN) y, si había
+   * una respuesta sin acuse, la reenvía con la misma clave y secuencia: si el servidor ya la tenía
+   * responde «Duplicada» y no se guarda dos veces.
+   */
+  const recuperar = useCallback(async () => {
+    setRecuperando(true);
+    setErrorRecuperacion(null);
+    try {
+      await conexion.invocar('ObtenerEstadoSala');
+    } catch (falla) {
+      const codigo = codigoDeError(falla);
+      if (codigo === 'ALUMNO_NO_EN_SALA' || codigo === 'SALA_NO_ENCONTRADA' || codigo === 'NO_AUTENTICADO') {
+        // No se puede recuperar: se vuelve a pedir el PIN
+        pendiente.current = null;
+        setError(mensajeDeCodigo(codigo));
+        setFase('ingreso');
+      } else {
+        setErrorRecuperacion('No pudimos actualizar tu sala. Revisá tu conexión y probá de nuevo.');
+      }
+      return;
+    } finally {
+      setRecuperando(false);
+    }
+
+    setErrorRecuperacion(null);
+    const enEspera = pendiente.current;
+    if (enEspera) await enviarRespuesta(enEspera.preguntaId, enEspera.respuesta);
+  }, [conexion, enviarRespuesta]);
+  recuperarRef.current = recuperar;
+
   return {
     fase,
     error,
@@ -224,6 +286,9 @@ export function useSalaAlumno(conexion: ConexionSala, esperar: (ms: number) => P
     enviando,
     errorEnvio,
     envioCerrado,
+    recuperando,
+    errorRecuperacion,
+    recuperar,
     unirse,
     enviarRespuesta,
   };

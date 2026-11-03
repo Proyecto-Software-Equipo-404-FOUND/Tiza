@@ -7,6 +7,7 @@ export type CodigoSala =
   | 'SALA_OTRA_INSTITUCION'
   | 'SALA_LLENA'
   | 'ALUMNO_YA_EN_SALA'
+  | 'ALUMNO_NO_EN_SALA'
   | 'SALA_FINALIZADA'
   | 'ERROR_INTERNO';
 
