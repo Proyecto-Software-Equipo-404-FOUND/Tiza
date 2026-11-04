@@ -48,6 +48,8 @@ vi.mock('@/features/evaluaciones/api/evaluaciones', () => ({
   obtenerEvaluacion: vi.fn(),
   crearEvaluacion: vi.fn(),
   actualizarEvaluacion: vi.fn(),
+  publicarEvaluacion: vi.fn(),
+  eliminarEvaluacion: vi.fn(),
 }));
 
 vi.mock('@/features/sala-alumno/crearConexionSala', async () => {

@@ -107,6 +107,67 @@ export const handlersEvaluaciones = [
     return HttpResponse.json(nueva, { status: 201, headers: { Location: `/api/v1/evaluaciones/${nueva.id}` } });
   }),
 
+  // Reglas del contrato, en orden: cohorte obligatoria (400), inexistente (404), versión distinta (409),
+  // estado distinto de Borrador (409), sin preguntas (400)
+  http.post('*/api/v1/evaluaciones/:id/publicar', async ({ params, request }) => {
+    const institucionId = institucionDe(request);
+    if (!institucionId) return sinInstitucion();
+    const { versionEsperada, cohorteId } = (await request.json()) as { versionEsperada?: number; cohorteId?: string };
+    if (!cohorteId) {
+      return HttpResponse.json(
+        { title: 'Petición inválida', status: 400, detail: 'La cohorte es obligatoria.' },
+        { status: 400 },
+      );
+    }
+    const evaluacion = evaluaciones.find((e) => e.id === params.id && e.institucionId === institucionId);
+    if (!evaluacion) return HttpResponse.json({ title: 'No encontrada', status: 404 }, { status: 404 });
+    if (versionEsperada !== evaluacion.version) {
+      return HttpResponse.json(
+        { title: 'Conflicto', status: 409, detail: 'La evaluación cambió. Recargala e intentá de nuevo.' },
+        { status: 409 },
+      );
+    }
+    if (evaluacion.estado !== 'Borrador') {
+      return HttpResponse.json(
+        { title: 'Conflicto', status: 409, detail: 'Solo se pueden publicar evaluaciones en estado Borrador.' },
+        { status: 409 },
+      );
+    }
+    if (evaluacion.preguntasJson.preguntas.length === 0) {
+      return HttpResponse.json(
+        { title: 'Petición inválida', status: 400, detail: 'La evaluación no tiene preguntas.' },
+        { status: 400 },
+      );
+    }
+    Object.assign(evaluacion, {
+      estado: 'Publicada',
+      cohorteId,
+      version: evaluacion.version + 1,
+      fechaActualizacion: new Date().toISOString(),
+    });
+    return HttpResponse.json(evaluacion);
+  }),
+
+  // Solo se borra un Borrador: si no, 409 como en el contrato
+  http.delete('*/api/v1/evaluaciones/:id', ({ params, request }) => {
+    const institucionId = institucionDe(request);
+    if (!institucionId) return sinInstitucion();
+    const indice = evaluaciones.findIndex((e) => e.id === params.id && e.institucionId === institucionId);
+    if (indice === -1) return HttpResponse.json({ title: 'No encontrada', status: 404 }, { status: 404 });
+    if (evaluaciones[indice].estado !== 'Borrador') {
+      return HttpResponse.json(
+        {
+          title: 'La operación no se puede realizar en el estado actual.',
+          status: 409,
+          detail: 'Solo se pueden borrar evaluaciones en estado Borrador.',
+        },
+        { status: 409 },
+      );
+    }
+    evaluaciones.splice(indice, 1);
+    return new HttpResponse(null, { status: 204 });
+  }),
+
   // Solo se modifica un Borrador. Truco para probar el 409 en pantalla: ponerle de título «conflicto».
   // El contrato no dice si el PUT sube la versión: acá se deja igual.
   http.put('*/api/v1/evaluaciones/:id', async ({ params, request }) => {

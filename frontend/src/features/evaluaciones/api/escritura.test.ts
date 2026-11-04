@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { pedir } from '@/shared/api/cliente';
-import { actualizarEvaluacion, crearEvaluacion } from './evaluaciones';
+import { actualizarEvaluacion, crearEvaluacion, eliminarEvaluacion, publicarEvaluacion } from './evaluaciones';
 
 vi.mock('@/shared/api/cliente', () => ({ pedir: vi.fn().mockResolvedValue({}) }));
 
@@ -26,6 +26,25 @@ describe('api de evaluaciones (escritura)', () => {
       headers: { 'X-Institucion-Id': 'inst-1' },
       method: 'PUT',
       body: JSON.stringify(datos),
+    });
+  });
+});
+
+describe('api de evaluaciones (publicar y borrar)', () => {
+  it('publica con POST, la versión esperada y la cohorte', async () => {
+    await publicarEvaluacion('e1', 'inst-1', { versionEsperada: 3, cohorteId: 'c1' });
+    expect(pedir).toHaveBeenCalledWith('/api/v1/evaluaciones/e1/publicar', {
+      headers: { 'X-Institucion-Id': 'inst-1' },
+      method: 'POST',
+      body: JSON.stringify({ versionEsperada: 3, cohorteId: 'c1' }),
+    });
+  });
+
+  it('borra con DELETE, sin cuerpo y con la misma cabecera', async () => {
+    await eliminarEvaluacion('e1', 'inst-1');
+    expect(pedir).toHaveBeenCalledWith('/api/v1/evaluaciones/e1', {
+      headers: { 'X-Institucion-Id': 'inst-1' },
+      method: 'DELETE',
     });
   });
 });
