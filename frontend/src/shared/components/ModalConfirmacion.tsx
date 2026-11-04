@@ -12,8 +12,6 @@ type Props = {
   textoConfirmar?: string;
   textoCancelar?: string;
   variante?: 'principal' | 'peligro';
-  /** Mientras es true, el botón de confirmar muestra «Cargando…» y no se puede cerrar */
-  cargando?: boolean;
   onConfirmar: () => void;
   onCancelar: () => void;
 };
@@ -26,17 +24,16 @@ export function ModalConfirmacion({
   textoConfirmar = 'Sí, eliminar',
   textoCancelar = 'Cancelar',
   variante = 'peligro',
-  cargando = false,
   onConfirmar,
   onCancelar,
 }: Props) {
   return (
-    <Modal abierto={abierto} titulo={titulo} descripcion={mensaje} onCerrar={onCancelar} cerrable={!cargando}>
+    <Modal abierto={abierto} titulo={titulo} descripcion={mensaje} onCerrar={onCancelar}>
       <div className='flex flex-col-reverse gap-3 sm:flex-row sm:justify-end'>
-        <Boton type='button' variante='secundario' onClick={onCancelar} disabled={cargando}>
+        <Boton type='button' variante='secundario' onClick={onCancelar}>
           {textoCancelar}
         </Boton>
-        <Boton type='button' variante={variante} cargando={cargando} onClick={onConfirmar}>
+        <Boton type='button' variante={variante} onClick={onConfirmar}>
           {textoConfirmar}
         </Boton>
       </div>

@@ -7,6 +7,8 @@ import { ApiError } from '@/shared/api/cliente';
 import type { Evaluacion } from '../tipos';
 
 vi.mock('../hooks/useEvaluacion', () => ({ useEvaluacion: vi.fn() }));
+vi.mock('../components/PublicarEvaluacion', () => ({ PublicarEvaluacion: () => <p>PUBLICAR</p> }));
+vi.mock('../components/EliminarEvaluacion', () => ({ EliminarEvaluacion: () => <p>ELIMINAR</p> }));
 
 type Estado = ReturnType<typeof useEvaluacion>;
 
@@ -103,6 +105,14 @@ describe('PaginaEvaluacion', () => {
     expect(screen.getByText(/1 pregunta · /)).toBeInTheDocument();
   });
 
+  it('usa el singular con un solo punto', () => {
+    const una = { ...evaluacion.preguntasJson.preguntas[0], puntajeMaximo: 1 };
+    simular({ data: { ...evaluacion, preguntasJson: { version: 1, preguntas: [una] } } });
+    renderizar();
+    expect(screen.getByText(/1 pregunta · 1 punto en total/)).toBeInTheDocument();
+    expect(screen.getByText('1 pto')).toBeInTheDocument();
+  });
+
   it('marca la opción correcta de una pregunta de opción múltiple', () => {
     simular({ data: evaluacion });
     renderizar();
@@ -121,5 +131,30 @@ describe('PaginaEvaluacion', () => {
     simular({ data: { ...evaluacion, preguntasJson: { version: 1, preguntas: [] } } });
     renderizar();
     expect(screen.getByText('Esta evaluación todavía no tiene preguntas.')).toBeInTheDocument();
+  });
+
+  it('ofrece editar solo cuando está en borrador', () => {
+    simular({ data: { ...evaluacion, estado: 'Borrador' } });
+    renderizar();
+    expect(screen.getByRole('link', { name: 'Editar borrador' })).toHaveAttribute('href', '/evaluaciones/e1/editar');
+  });
+
+  it('una evaluación publicada no ofrece editar', () => {
+    simular({ data: { ...evaluacion, estado: 'Publicada' } });
+    renderizar();
+    expect(screen.queryByRole('link', { name: 'Editar borrador' })).not.toBeInTheDocument();
+  });
+
+  it('un borrador muestra las acciones de publicar y eliminar; uno publicado no', () => {
+    simular({ data: { ...evaluacion, estado: 'Borrador' } });
+    const { unmount } = renderizar();
+    expect(screen.getByText('PUBLICAR')).toBeInTheDocument();
+    expect(screen.getByText('ELIMINAR')).toBeInTheDocument();
+    unmount();
+
+    simular({ data: { ...evaluacion, estado: 'Publicada' } });
+    renderizar();
+    expect(screen.queryByText('PUBLICAR')).not.toBeInTheDocument();
+    expect(screen.queryByText('ELIMINAR')).not.toBeInTheDocument();
   });
 });

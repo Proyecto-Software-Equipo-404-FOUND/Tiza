@@ -87,4 +87,52 @@ describe('Modal', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }));
     await sinVentana();
   });
+
+  it('Escape también cierra si se hizo clic en un texto de la ventana', async () => {
+    render(<Ejemplo />);
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir' }));
+    await userEvent.click(screen.getByText('Estás editando «Programación I».'));
+    await userEvent.keyboard('{Escape}');
+    await sinVentana();
+  });
+
+  it('con el foco afuera, Tab lo devuelve a la ventana', async () => {
+    render(<Ejemplo />);
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir' }));
+    await userEvent.click(screen.getByText('Estás editando «Programación I».'));
+    await userEvent.tab();
+    expect(screen.getByLabelText('Nombre')).toHaveFocus();
+  });
+
+  it('si desaparece el botón de origen, el foco pasa al título de la página', async () => {
+    function Lista() {
+      const [hay, setHay] = useState(true);
+      const [abierto, setAbierto] = useState(false);
+      return (
+        <main>
+          <h1>Cursos</h1>
+          {hay && (
+            <>
+              <button onClick={() => setAbierto(true)}>Editar fila</button>
+              <Modal abierto={abierto} titulo='Editar' onCerrar={() => setAbierto(false)}>
+                <button
+                  onClick={() => {
+                    setAbierto(false);
+                    setTimeout(() => setHay(false), 0);
+                  }}
+                >
+                  Borrar
+                </button>
+              </Modal>
+            </>
+          )}
+        </main>
+      );
+    }
+    render(<Lista />);
+    await userEvent.click(screen.getByRole('button', { name: 'Editar fila' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Borrar' }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Editar fila' })).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Cursos' })).toHaveFocus());
+  });
 });

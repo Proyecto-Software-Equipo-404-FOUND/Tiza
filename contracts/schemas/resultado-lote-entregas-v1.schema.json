@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tiza.pei.edu.ar/contracts/schemas/resultado-lote-entregas-v1.schema.json",
+  "title": "LoteEntregasResponse",
+  "description": "Respuesta 200 de POST /interno/salas/{salaId}/entregas. Se devuelve tanto en el primer envío como en un reintento del mismo lote (idempotente). Errores: 400 PAYLOAD_INVALIDO (no cumple lote-entregas-v1 o salaId no coincide con la ruta), 404 EVALUACION_NO_ENCONTRADA (no existe, no está publicada o es de otra institución), 401 si falta la credencial interna. Sala en vivo reintenta solo ante errores de red o 5xx, nunca ante 4xx.",
+  "type": "object",
+  "required": ["loteId", "salaId", "entregasRecibidas", "entregasNuevas", "entregasYaExistentes", "entregas"],
+  "properties": {
+    "loteId": { "type": "string", "format": "uuid" },
+    "salaId": { "type": "string", "format": "uuid" },
+    "entregasRecibidas": { "type": "integer", "minimum": 0, "description": "Cantidad de entregas que traía el lote." },
+    "entregasNuevas": { "type": "integer", "minimum": 0, "description": "Entregas creadas en este envío." },
+    "entregasYaExistentes": { "type": "integer", "minimum": 0, "description": "Entregas que ya estaban guardadas (reintento); no se modificaron." },
+    "entregas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["alumnoId", "entregaId", "estado"],
+        "properties": {
+          "alumnoId": { "type": "string", "format": "uuid" },
+          "entregaId": { "type": "string", "format": "uuid" },
+          "estado": {
+            "type": "string",
+            "enum": ["PendienteCorreccion", "Corregida"],
+            "description": "PendienteCorreccion si tiene respuestas abiertas para la IA; Corregida si solo tenía multiple choice o ninguna respuesta."
+          },
+          "notaMultipleChoice": {
+            "type": ["number", "null"],
+            "minimum": 0,
+            "description": "Puntaje obtenido en las preguntas de opción múltiple; null si la evaluación no tiene."
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "loteId": "0b6f5a2e-8c1d-4e7a-9f30-2d4c6e8a1b35",
+      "salaId": "6a2b7c3d-8e9f-4a01-b2c3-d4e5f6a7b8c9",
+      "entregasRecibidas": 2,
+      "entregasNuevas": 2,
+      "entregasYaExistentes": 0,
+      "entregas": [
+        { "alumnoId": "11111111-0000-0000-0000-000000000003", "entregaId": "e1a2b3c4-d5e6-4f70-8a9b-0c1d2e3f4a5b", "estado": "PendienteCorreccion", "notaMultipleChoice": 1 },
+        { "alumnoId": "11111111-0000-0000-0000-000000000004", "entregaId": "f2b3c4d5-e6f7-4081-9bac-1d2e3f4a5b6c", "estado": "Corregida", "notaMultipleChoice": 0 }
+      ]
+    }
+  ]
+}

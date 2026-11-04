@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import type { KeyboardEvent, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
 type Props = {
@@ -44,6 +44,7 @@ export function Modal({
   const idDescripcion = useId();
   const panel = useRef<HTMLDivElement>(null);
   const anterior = useRef<HTMLElement | null>(null);
+  const seAbrio = useRef(false);
 
   useEffect(() => {
     if (abierto) {
@@ -59,6 +60,7 @@ export function Modal({
   // Al abrir se recuerda qué botón estaba enfocado y al cerrar se le devuelve el foco
   useEffect(() => {
     if (abierto) {
+      seAbrio.current = true;
       anterior.current = document.activeElement as HTMLElement | null;
     } else {
       anterior.current?.focus();
@@ -81,32 +83,57 @@ export function Modal({
     };
   }, [montado]);
 
+  // Si al cerrar desaparece el botón de origen (por ejemplo, la fila que se acaba de borrar),
+  // el foco no se pierde en el body: pasa al título de la página
+  useEffect(
+    () => () => {
+      if (!seAbrio.current) return;
+      const activo = document.activeElement;
+      if (activo && activo !== document.body) return;
+      const destino = document.querySelector<HTMLElement>('main h1') ?? document.querySelector<HTMLElement>('main');
+      if (!destino) return;
+      destino.tabIndex = -1;
+      destino.focus({ preventScroll: true });
+    },
+    [],
+  );
+
+  // Escape y Tab se escuchan en todo el documento: si se hizo clic en un texto de la ventana el foco
+  // queda en el body y, de otro modo, el teclado no llegaría hasta acá
+  useEffect(() => {
+    if (!abierto) return;
+    const alTeclear = (e: globalThis.KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (cerrable) onCerrar();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      const campos = Array.from(panel.current?.querySelectorAll<HTMLElement>(FOCUSABLES) ?? []);
+      if (campos.length === 0) return;
+      const primero = campos[0];
+      const ultimo = campos[campos.length - 1];
+      const dentro = panel.current?.contains(document.activeElement) ?? false;
+      if (!dentro) {
+        e.preventDefault();
+        (e.shiftKey ? ultimo : primero).focus();
+      } else if (e.shiftKey && document.activeElement === primero) {
+        e.preventDefault();
+        ultimo.focus();
+      } else if (!e.shiftKey && document.activeElement === ultimo) {
+        e.preventDefault();
+        primero.focus();
+      }
+    };
+    document.addEventListener('keydown', alTeclear);
+    return () => document.removeEventListener('keydown', alTeclear);
+  }, [abierto, cerrable, onCerrar]);
+
   // Si está abierta se dibuja en este mismo render; «montado» solo la mantiene durante la salida
   if (!abierto && !montado) return null;
 
   const cerrar = () => {
     if (cerrable) onCerrar();
-  };
-
-  const alTeclear = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Escape') {
-      e.stopPropagation();
-      cerrar();
-      return;
-    }
-    if (e.key !== 'Tab') return;
-    // El foco se queda dentro de la ventana
-    const campos = Array.from(panel.current?.querySelectorAll<HTMLElement>(FOCUSABLES) ?? []);
-    if (campos.length === 0) return;
-    const primero = campos[0];
-    const ultimo = campos[campos.length - 1];
-    if (e.shiftKey && document.activeElement === primero) {
-      e.preventDefault();
-      ultimo.focus();
-    } else if (!e.shiftKey && document.activeElement === ultimo) {
-      e.preventDefault();
-      primero.focus();
-    }
   };
 
   const mostrar = visible && abierto;
@@ -119,7 +146,6 @@ export function Modal({
       onMouseDown={(e) => {
         if (cerrarAlClicAfuera && e.target === e.currentTarget) cerrar();
       }}
-      onKeyDown={alTeclear}
     >
       <div
         ref={panel}
