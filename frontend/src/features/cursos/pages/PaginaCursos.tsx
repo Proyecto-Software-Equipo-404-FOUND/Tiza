@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { ChevronRight, GraduationCap, Pencil, Sparkles, Users } from 'lucide-react';
+import { ChevronRight, GraduationCap, Sparkles, Users } from 'lucide-react';
 import { useCursos } from '../hooks/useCursos';
 import { Spinner } from '@/shared/components/Spinner';
 import { BannerError } from '@/shared/components/BannerError';
@@ -7,6 +7,7 @@ import { Tabla, type Columna } from '@/shared/components/Tabla';
 import { mensajeDeError } from '@/shared/api/errores';
 import type { Curso } from '@/shared/api/tipos';
 import { Tarjeta } from '@/shared/components/Tarjeta';
+import { Modal } from '@/shared/components/Modal';
 import { EnlaceBoton } from '@/shared/components/EnlaceBoton';
 import { FormularioCurso } from '../components/FormularioCurso';
 import { AccionesCurso } from '../components/AccionesCurso';
@@ -54,11 +55,19 @@ const circulo = (icono: ReactNode) => (
 
 export function PaginaCursos() {
   const { data: resultado, isPending, isError, error, refetch } = useCursos();
+  // El curso se conserva al cerrar la ventana para que el formulario no desaparezca durante la animación de salida
   const [enEdicion, setEnEdicion] = useState<Curso | null>(null);
+  const [editando, setEditando] = useState(false);
 
-  // Si se elimina el curso que se está editando, se sale de la edición
-  const alEliminar = (id: string) => setEnEdicion((actual) => (actual?.id === id ? null : actual));
-  const columnas = crearColumnas(setEnEdicion, alEliminar);
+  const editar = (curso: Curso) => {
+    setEnEdicion(curso);
+    setEditando(true);
+  };
+  // Si se elimina el curso que se está editando, se cierra la ventana
+  const alEliminar = (id: string) => {
+    if (enEdicion?.id === id) setEditando(false);
+  };
+  const columnas = crearColumnas(editar, alEliminar);
 
   return (
     <main className='mx-auto flex max-w-6xl flex-col gap-6 p-6'>
@@ -70,27 +79,13 @@ export function PaginaCursos() {
       </header>
 
       <div className='grid grid-cols-1 items-start gap-6 lg:grid-cols-[2fr_3fr]'>
-        {enEdicion ? (
-          <Tarjeta
-            titulo='Editar curso'
-            subtitulo={`Estás editando «${enEdicion.nombre}».`}
-            icono={circulo(<Pencil className='h-6 w-6' aria-hidden='true' />)}
-          >
-            <FormularioEditarCurso
-              key={enEdicion.id}
-              curso={enEdicion}
-              onTerminar={() => setEnEdicion(null)}
-            />
-          </Tarjeta>
-        ) : (
-          <Tarjeta
-            titulo='Crear nuevo curso'
-            subtitulo='Completá la información para crear un nuevo curso.'
-            icono={circulo(<GraduationCap className='h-6 w-6' aria-hidden='true' />)}
-          >
-            <FormularioCurso />
-          </Tarjeta>
-        )}
+        <Tarjeta
+          titulo='Crear nuevo curso'
+          subtitulo='Completá la información para crear un nuevo curso.'
+          icono={circulo(<GraduationCap className='h-6 w-6' aria-hidden='true' />)}
+        >
+          <FormularioCurso />
+        </Tarjeta>
 
         <Tarjeta
           titulo='Tus cursos activos'
@@ -123,6 +118,19 @@ export function PaginaCursos() {
           </p>
         </Tarjeta>
       </div>
+
+      <Modal
+        abierto={editando}
+        titulo='Editar curso'
+        subtitulo={enEdicion ? `Estás editando «${enEdicion.nombre}».` : undefined}
+        onCerrar={() => setEditando(false)}
+        cerrarAlClicAfuera={false}
+        ancho='mediano'
+      >
+        {enEdicion && (
+          <FormularioEditarCurso key={enEdicion.id} curso={enEdicion} onTerminar={() => setEditando(false)} />
+        )}
+      </Modal>
     </main>
   );
 }
