@@ -9,7 +9,7 @@ import { Tarjeta } from '@/shared/components/Tarjeta';
 import { EliminarEvaluacion } from '../components/EliminarEvaluacion';
 import { InsigniaEstado } from '../components/InsigniaEstado';
 import { PublicarEvaluacion } from '../components/PublicarEvaluacion';
-import { etiquetaTipoPregunta, formatearFecha, puntajeTotal } from '../formato';
+import { etiquetaPuntos, etiquetaTipoPregunta, formatearFecha, puntajeTotal } from '../formato';
 import { useEvaluacion } from '../hooks/useEvaluacion';
 import type { Criterio, Pregunta } from '../tipos';
 
@@ -31,7 +31,7 @@ function TarjetaPregunta({ pregunta, numero }: { pregunta: Pregunta; numero: num
             {etiquetaTipoPregunta(pregunta.tipo)}
           </span>
           <span className='rounded-full bg-tiza-fondo px-3 py-1 text-tiza-bosque'>
-            {pregunta.puntajeMaximo} pts
+            {etiquetaPuntos(pregunta.puntajeMaximo, true)}
           </span>
         </span>
       </div>
@@ -104,7 +104,7 @@ export function PaginaEvaluacion() {
             <p>
               {evaluacion.preguntasJson.preguntas.length}{' '}
               {evaluacion.preguntasJson.preguntas.length === 1 ? 'pregunta' : 'preguntas'} ·{' '}
-              {puntajeTotal(evaluacion.preguntasJson.preguntas)} puntos en total
+              {etiquetaPuntos(puntajeTotal(evaluacion.preguntasJson.preguntas))} en total
             </p>
           </Tarjeta>
 

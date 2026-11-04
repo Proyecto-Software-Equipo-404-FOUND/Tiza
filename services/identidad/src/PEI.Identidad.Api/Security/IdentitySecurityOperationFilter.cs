@@ -14,6 +14,19 @@ public sealed class IdentitySecurityOperationFilter : IOperationFilter
     public void Apply(OpenApiOperation operation, OperationFilterContext context)
     {
         var type = context.MethodInfo.DeclaringType;
+        // S2-ID-10: /api/usuarios usa el JWT institucional (Administrador o Docente).
+        if (type == typeof(UsuariosController))
+        {
+            operation.Security = new List<OpenApiSecurityRequirement>
+            {
+                new()
+                {
+                    [new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" } }] = Array.Empty<string>()
+                }
+            };
+            operation.Description = "Identidad institucional. Rol autorizado: Administrador o Docente. Solo devuelve usuarios activos de la institución del token.";
+            return;
+        }
         if (type != typeof(AuthController) && type != typeof(PlataformaController)) return;
         var platform = type == typeof(PlataformaController);
         var method = context.MethodInfo.Name;

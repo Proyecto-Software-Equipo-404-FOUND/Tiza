@@ -22,9 +22,7 @@ export function conexionReal(hub: HubConnection): ConexionSala {
     },
     detener: () => hub.stop(),
     escuchar: (evento, manejador) => hub.on(evento, manejador),
-    invocar: async (metodo, ...args) => {
-      await hub.invoke(metodo, ...args);
-    },
+    invocar: (metodo, ...args) => hub.invoke(metodo, ...args),
     alCambiarEstado: (manejador) => {
       oyentes.add(manejador);
       return () => {

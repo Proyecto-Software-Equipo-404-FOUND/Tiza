@@ -16,6 +16,9 @@ public class CalificacionSugerida : Entity<Guid>
     /// <summary>Desglose de puntajes y comentarios por cada criterio de la rúbrica (en formato JSON).</summary>
     public string DesglosePorCriterioJson { get; set; } = "[]";
 
+    /// <summary>Identificador de la entrega evaluada (referencia al microservicio de Evaluaciones, requerido por EV-06).</summary>
+    public Guid EntregaId { get; set; }
+
     /// <summary>Identificador opcional de la pregunta evaluada.</summary>
     public Guid? PreguntaId { get; set; }
 

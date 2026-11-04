@@ -10,6 +10,7 @@ namespace PEI.SalaEnVivo.Infrastructure.Persistence
         public DbSet<Sala> Sala => Set<Sala>();
         public DbSet<ParticipanteSala> ParticipanteSala => Set<ParticipanteSala>();
         public DbSet<RespuestaSala> RespuestasSala => Set<RespuestaSala>();
+        public DbSet<AuditoriaFoco> AuditoriaFoco => Set<AuditoriaFoco>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -53,6 +54,28 @@ namespace PEI.SalaEnVivo.Infrastructure.Persistence
                     .HasDatabaseName("ux_respuesta_sala_secuencia");
 
                 r.HasOne(x => x.Sala)
+                    .WithMany()
+                    .HasForeignKey(x => x.SalaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<AuditoriaFoco>(a =>
+            {
+                a.ToTable("AuditoriaFoco");
+                a.HasKey(x => x.Id);
+
+                a.Property(x => x.TipoEvento)
+                    .IsRequired()
+                    .HasMaxLength(64);
+
+                a.Property(x => x.Severidad)
+                    .IsRequired()
+                    .HasMaxLength(16);
+
+                a.HasIndex(x => new { x.SalaId, x.AlumnoId, x.RegistradoUtc })
+                    .HasDatabaseName("ix_auditoria_foco_sala_alumno");
+
+                a.HasOne(x => x.Sala)
                     .WithMany()
                     .HasForeignKey(x => x.SalaId)
                     .OnDelete(DeleteBehavior.Cascade);
