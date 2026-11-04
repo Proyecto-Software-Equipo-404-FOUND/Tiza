@@ -46,6 +46,8 @@ vi.mock('@/features/matriculas/api/matriculas', () => ({
 vi.mock('@/features/evaluaciones/api/evaluaciones', () => ({
   listarEvaluaciones: vi.fn().mockResolvedValue([]),
   obtenerEvaluacion: vi.fn(),
+  crearEvaluacion: vi.fn(),
+  actualizarEvaluacion: vi.fn(),
 }));
 
 vi.mock('@/features/sala-alumno/crearConexionSala', async () => {
@@ -171,5 +173,17 @@ describe('rutas de la aplicación', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Salir' }));
 
     expect(screen.getByRole('heading', { name: 'Ingresar a Tiza' })).toBeInTheDocument();
+  });
+
+  it('un docente entra a crear una evaluación', async () => {
+    iniciarComo('docente');
+    mostrar('/evaluaciones/nueva');
+    expect(await screen.findByRole('heading', { level: 1, name: 'Nueva evaluación' })).toBeInTheDocument();
+  });
+
+  it('un alumno no entra a crear una evaluación', () => {
+    iniciarComo('alumno');
+    mostrar('/evaluaciones/nueva');
+    expect(screen.getByText('No tenés permiso para ver esta página.')).toBeInTheDocument();
   });
 });

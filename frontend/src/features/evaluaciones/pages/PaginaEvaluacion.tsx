@@ -1,12 +1,13 @@
-import { Check } from 'lucide-react';
+import { Check, Pencil } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { mensajeDeError } from '@/shared/api/errores';
 import { BannerError } from '@/shared/components/BannerError';
+import { EnlaceBoton } from '@/shared/components/EnlaceBoton';
 import { Spinner } from '@/shared/components/Spinner';
 import { Tabla, type Columna } from '@/shared/components/Tabla';
 import { Tarjeta } from '@/shared/components/Tarjeta';
 import { InsigniaEstado } from '../components/InsigniaEstado';
-import { etiquetaTipoPregunta, formatearFecha, puntajeTotal } from '../formato';
+import { etiquetaPuntos, etiquetaTipoPregunta, formatearFecha, puntajeTotal } from '../formato';
 import { useEvaluacion } from '../hooks/useEvaluacion';
 import type { Criterio, Pregunta } from '../tipos';
 
@@ -28,7 +29,7 @@ function TarjetaPregunta({ pregunta, numero }: { pregunta: Pregunta; numero: num
             {etiquetaTipoPregunta(pregunta.tipo)}
           </span>
           <span className='rounded-full bg-tiza-fondo px-3 py-1 text-tiza-bosque'>
-            {pregunta.puntajeMaximo} pts
+            {etiquetaPuntos(pregunta.puntajeMaximo, true)}
           </span>
         </span>
       </div>
@@ -76,21 +77,32 @@ export function PaginaEvaluacion() {
 
       {evaluacion && (
         <>
-          <header>
-            <h1 className='font-heading text-4xl font-extrabold text-tiza-bosque'>{evaluacion.titulo}</h1>
-            <p className='mt-3 flex flex-wrap items-center gap-3 text-sm text-tiza-bosque/80'>
-              <InsigniaEstado estado={evaluacion.estado} />
-              <span>{evaluacion.tipo}</span>
-              <span>Versión {evaluacion.version}</span>
-              <span>Actualizada el {formatearFecha(evaluacion.fechaActualizacion)}</span>
-            </p>
+          <header className='flex flex-wrap items-start justify-between gap-4'>
+            <div>
+              <h1 className='font-heading text-4xl font-extrabold text-tiza-bosque'>{evaluacion.titulo}</h1>
+              <p className='mt-3 flex flex-wrap items-center gap-3 text-sm text-tiza-bosque/80'>
+                <InsigniaEstado estado={evaluacion.estado} />
+                <span>{evaluacion.tipo}</span>
+                <span>Versión {evaluacion.version}</span>
+                <span>Actualizada el {formatearFecha(evaluacion.fechaActualizacion)}</span>
+              </p>
+            </div>
+            {evaluacion.estado === 'Borrador' && (
+              <EnlaceBoton
+                to={`/evaluaciones/${evaluacion.id}/editar`}
+                icono={<Pencil className='h-4 w-4' aria-hidden='true' />}
+                className='whitespace-nowrap'
+              >
+                Editar borrador
+              </EnlaceBoton>
+            )}
           </header>
 
           <Tarjeta titulo='Resumen'>
             <p>
               {evaluacion.preguntasJson.preguntas.length}{' '}
               {evaluacion.preguntasJson.preguntas.length === 1 ? 'pregunta' : 'preguntas'} ·{' '}
-              {puntajeTotal(evaluacion.preguntasJson.preguntas)} puntos en total
+              {etiquetaPuntos(puntajeTotal(evaluacion.preguntasJson.preguntas))} en total
             </p>
           </Tarjeta>
 
