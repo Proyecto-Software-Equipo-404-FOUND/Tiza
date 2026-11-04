@@ -2,6 +2,7 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { crearConexionFalsa } from '@/shared/realtime/conexionFalsa';
+import { TEXTO_AVISO_INTEGRIDAD } from './AvisoIntegridad';
 import { PaginaSalaAlumno } from './PaginaSalaAlumno';
 
 const SALA = '11111111-1111-4111-8111-111111111111';
@@ -18,6 +19,7 @@ const botonEntrar = () => screen.getByRole('button', { name: 'Entrar' });
 async function escribirYEntrar(pin: string) {
   await waitFor(() => expect(botonEntrar()).toBeEnabled());
   await userEvent.type(screen.getByLabelText('PIN'), pin);
+  await userEvent.click(screen.getByLabelText('Entendí el aviso y acepto'));
   await userEvent.click(botonEntrar());
 }
 
@@ -26,6 +28,22 @@ describe('PaginaSalaAlumno', () => {
     preparar();
     expect(screen.getByRole('heading', { name: 'Entrar a una sala' })).toBeInTheDocument();
     expect(await screen.findByText('Conectado')).toBeInTheDocument();
+  });
+
+  it('muestra el aviso de integridad y no deja entrar hasta aceptarlo', async () => {
+    const { conexion } = preparar();
+    expect(screen.getByText(TEXTO_AVISO_INTEGRIDAD)).toBeInTheDocument();
+    await waitFor(() => expect(botonEntrar()).toBeEnabled());
+    await userEvent.type(screen.getByLabelText('PIN'), '123456');
+    await userEvent.click(botonEntrar());
+
+    expect(screen.getByText('Tenés que aceptar el aviso para entrar.')).toBeInTheDocument();
+    expect(conexion.invocar).not.toHaveBeenCalled();
+
+    await userEvent.click(screen.getByLabelText('Entendí el aviso y acepto'));
+    expect(screen.queryByText('Tenés que aceptar el aviso para entrar.')).not.toBeInTheDocument();
+    await userEvent.click(botonEntrar());
+    expect(conexion.invocar).toHaveBeenCalledWith('UnirseASala', 123456);
   });
 
   it('solo acepta dígitos al escribir', async () => {
@@ -119,7 +137,7 @@ describe('PaginaSalaAlumno', () => {
       }),
     );
 
-    expect(screen.getByRole('heading', { name: 'La sala finalizó' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Examen entregado' })).toBeInTheDocument();
     expect(screen.getByText('Se terminó el tiempo.')).toBeInTheDocument();
   });
 });
