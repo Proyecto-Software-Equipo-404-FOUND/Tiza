@@ -16,10 +16,21 @@ type Props = {
   desfaseMs: number;
   /** El servidor ya no acepta respuestas a esta pregunta (tiempo, sala cerrada, sesión reemplazada…) */
   cerrada?: boolean;
+  /** Sin conexión con la sala: se puede seguir escribiendo, pero no enviar hasta reconectar */
+  sinConexion?: boolean;
   onEnviar: (respuesta: string) => void;
 };
 
-export function TarjetaPregunta({ pregunta, respondida, enviando, error, desfaseMs, cerrada = false, onEnviar }: Props) {
+export function TarjetaPregunta({
+  pregunta,
+  respondida,
+  enviando,
+  error,
+  desfaseMs,
+  cerrada = false,
+  sinConexion = false,
+  onEnviar,
+}: Props) {
   const [respuesta, setRespuesta] = useState('');
   const restante = useTiempoRestante(pregunta.fechaLimiteUtc, desfaseMs);
   const agotado = restante <= 0 || cerrada;
@@ -48,7 +59,7 @@ export function TarjetaPregunta({ pregunta, respondida, enviando, error, desfase
 
   const enviar = (evento: FormEvent) => {
     evento.preventDefault();
-    if (respuesta.trim() && !enviando && !agotado) onEnviar(respuesta);
+    if (respuesta.trim() && !enviando && !agotado && !sinConexion) onEnviar(respuesta);
   };
 
   return (
@@ -109,7 +120,13 @@ export function TarjetaPregunta({ pregunta, respondida, enviando, error, desfase
         {error && <BannerError mensaje={error} />}
         {agotado && !error && <BannerError mensaje='Se terminó el tiempo para responder.' />}
 
-        <Boton type='submit' cargando={enviando} disabled={!respuesta.trim() || agotado}>
+        {sinConexion && !agotado && (
+          <p role='status' className='text-sm text-tiza-bosque/80'>
+            Sin conexión. Podés seguir escribiendo: vas a poder enviar cuando se recupere.
+          </p>
+        )}
+
+        <Boton type='submit' cargando={enviando} disabled={!respuesta.trim() || agotado || sinConexion}>
           Enviar respuesta
         </Boton>
       </form>

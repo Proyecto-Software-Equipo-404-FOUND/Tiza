@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { BannerError } from '@/shared/components/BannerError';
 import { Boton } from '@/shared/components/Boton';
 import { Campo } from '@/shared/components/Campo';
+import { Spinner } from '@/shared/components/Spinner';
 import { Tarjeta } from '@/shared/components/Tarjeta';
 import { IndicadorConexion } from '@/shared/realtime/IndicadorConexion';
 import type { ConexionSala } from '@/shared/realtime/tipos';
@@ -43,6 +44,9 @@ export function PaginaSalaAlumno({ conexion: conexionInyectada, esperar }: Props
     enviando,
     errorEnvio,
     envioCerrado,
+    recuperando,
+    errorRecuperacion,
+    recuperar,
     unirse,
     enviarRespuesta,
   } = useSalaAlumno(conexion, esperar);
@@ -51,6 +55,7 @@ export function PaginaSalaAlumno({ conexion: conexionInyectada, esperar }: Props
     preguntaId: pregunta?.preguntaId ?? null,
     puedeEnviar: estado === 'conectado',
   });
+  const enSala = fase === 'espera' || fase === 'enCurso';
   const [pin, setPin] = useState('');
   const [errorPin, setErrorPin] = useState<string | undefined>();
   const [aceptoAviso, setAceptoAviso] = useState(false);
@@ -73,6 +78,22 @@ export function PaginaSalaAlumno({ conexion: conexionInyectada, esperar }: Props
       </header>
 
       <IndicadorConexion estado={estado} onReintentar={reintentar} />
+
+      {enSala && estado === 'reconectando' && (
+        <p className='text-sm text-tiza-bosque/80'>
+          No cierres esta pestaña. Las respuestas que ya enviaste están guardadas y, cuando vuelva la conexión, te
+          llevamos a la pregunta en curso.
+        </p>
+      )}
+      {enSala && estado === 'desconectado' && (
+        <p className='text-sm text-tiza-bosque/80'>
+          Si «Reintentar» no funciona, recargá la página y entrá de nuevo con el PIN.
+        </p>
+      )}
+      {recuperando && <Spinner texto='Recuperando tu sala…' />}
+      {enSala && errorRecuperacion && (
+        <BannerError mensaje={errorRecuperacion} onReintentar={() => void recuperar()} />
+      )}
 
       {(fase === 'ingreso' || fase === 'uniendo') && (
         <Tarjeta
@@ -129,6 +150,7 @@ export function PaginaSalaAlumno({ conexion: conexionInyectada, esperar }: Props
           error={errorEnvio}
           desfaseMs={desfaseMs}
           cerrada={envioCerrado}
+          sinConexion={estado !== 'conectado'}
           onEnviar={(respuesta) => void enviarRespuesta(pregunta.preguntaId, respuesta)}
         />
       )}
