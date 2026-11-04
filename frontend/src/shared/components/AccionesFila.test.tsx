@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { AccionesFila } from './AccionesFila';
@@ -22,7 +22,7 @@ describe('AccionesFila', () => {
     const { onEliminar } = mostrar();
     await userEvent.click(screen.getByRole('button', { name: 'Eliminar Programación I' }));
 
-    expect(screen.getByText('¿Eliminar?')).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: '¿Eliminar «Programación I»?' })).toBeInTheDocument();
     expect(onEliminar).not.toHaveBeenCalled();
   });
 
@@ -34,12 +34,13 @@ describe('AccionesFila', () => {
     expect(onEliminar).toHaveBeenCalledTimes(1);
   });
 
-  it('cancelar vuelve a los botones sin eliminar', async () => {
+  it('cancelar cierra el cartel sin eliminar', async () => {
     const { onEliminar } = mostrar();
     await userEvent.click(screen.getByRole('button', { name: 'Eliminar Programación I' }));
     await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
 
     expect(onEliminar).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(screen.getByRole('button', { name: 'Editar Programación I' })).toBeInTheDocument();
   });
 
