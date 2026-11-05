@@ -43,6 +43,7 @@ export function PaginaSalaAlumno({ conexion: conexionInyectada, esperar }: Props
     desfaseMs,
     enviando,
     errorEnvio,
+    respuestaEnEspera,
     envioCerrado,
     recuperando,
     errorRecuperacion,
@@ -56,6 +57,7 @@ export function PaginaSalaAlumno({ conexion: conexionInyectada, esperar }: Props
     puedeEnviar: estado === 'conectado',
   });
   const enSala = fase === 'espera' || fase === 'enCurso';
+  const enEsperaDeRed = respuestaEnEspera && (estado !== 'conectado' || recuperando);
   const [pin, setPin] = useState('');
   const [errorPin, setErrorPin] = useState<string | undefined>();
   const [aceptoAviso, setAceptoAviso] = useState(false);
@@ -147,7 +149,9 @@ export function PaginaSalaAlumno({ conexion: conexionInyectada, esperar }: Props
           pregunta={pregunta}
           respondida={respondidas.includes(pregunta.preguntaId)}
           enviando={enviando}
-          error={errorEnvio}
+          // Mientras la respuesta espera la conexión no es un error: se avisa que se enviará sola
+          error={enEsperaDeRed ? null : errorEnvio}
+          respuestaEnEspera={enEsperaDeRed}
           desfaseMs={desfaseMs}
           cerrada={envioCerrado}
           sinConexion={estado !== 'conectado'}

@@ -204,4 +204,44 @@ describe('PaginaSalaAlumno · reconexión', () => {
     expect(pedidosDeEstado()).toBe(2);
     expect(screen.queryByText(/No pudimos actualizar tu sala/)).not.toBeInTheDocument();
   });
+
+  it('si el servidor responde NO_AUTORIZADO al recuperar, vuelve a pedir el PIN', async () => {
+    const { simular, cortarYVolver } = preparar(async (metodo) => {
+      if (metodo === 'ObtenerEstadoSala') throw new Error('NO_AUTORIZADO: No pertenece a esta sala.');
+      return undefined;
+    });
+    await entrar(simular);
+
+    cortarYVolver();
+
+    expect(await screen.findByRole('heading', { name: 'Entrar a una sala' })).toBeInTheDocument();
+    expect(screen.getByText('No tenés permiso para entrar a esta sala.')).toBeInTheDocument();
+  });
+
+  it('durante el corte avisa que la respuesta se enviará sola, sin mostrarlo como error', async () => {
+    let enviosRecibidos = 0;
+    const { simular, simularEstado } = preparar(async (metodo, emitir, ...args) => {
+      if (metodo === 'EnviarRespuesta') {
+        enviosRecibidos += 1;
+        if (enviosRecibidos <= 3) throw new Error('Failed to fetch');
+        return aceptada(args[0] as EnvioPendiente);
+      }
+      if (metodo === 'ObtenerEstadoSala') emitir('estadoSala', estado());
+      return undefined;
+    });
+    await entrar(simular);
+    await userEvent.click(screen.getByLabelText('5'));
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar respuesta' }));
+    await screen.findByText(/No pudimos enviar tu respuesta/);
+
+    act(() => simularEstado('reconectando'));
+
+    expect(screen.getByText('Tu respuesta se enviará cuando vuelva la conexión.')).toBeInTheDocument();
+    expect(screen.queryByText(/No pudimos enviar tu respuesta/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Sin conexión\./)).not.toBeInTheDocument();
+
+    act(() => simularEstado('conectado'));
+    expect(await screen.findByText('Tu respuesta fue enviada.')).toBeInTheDocument();
+    expect(screen.queryByText('Tu respuesta se enviará cuando vuelva la conexión.')).not.toBeInTheDocument();
+  });
 });

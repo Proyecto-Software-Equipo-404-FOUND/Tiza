@@ -22,6 +22,7 @@ export function crearConexion(obtenerToken: () => string | null | Promise<string
   return new HubConnectionBuilder()
     .withUrl(`${URL_BASE}/hubs/sala`, { accessTokenFactory: async () => (await obtenerToken()) ?? '' })
     .withAutomaticReconnect(politicaReintentos)
-    .configureLogging(LogLevel.Information)
+    // Con WebSockets el token viaja en la URL y en Information la librería puede mostrarla en consola
+    .configureLogging(import.meta.env.DEV ? LogLevel.Information : LogLevel.Warning)
     .build();
 }

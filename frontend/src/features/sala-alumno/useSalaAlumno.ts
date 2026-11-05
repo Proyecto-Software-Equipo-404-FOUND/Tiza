@@ -37,6 +37,9 @@ const CIERRAN_EL_ENVIO = new Set([
   'SALA_OTRA_INSTITUCION',
 ]);
 
+// Con estos errores al pedir el estado la sala no se puede recuperar: se vuelve a pedir el PIN
+const SIN_RECUPERACION = new Set(['ALUMNO_NO_EN_SALA', 'SALA_NO_ENCONTRADA', 'NO_AUTENTICADO', 'NO_AUTORIZADO']);
+
 const MENSAJE_RED = 'No pudimos enviar tu respuesta. Revisá tu conexión y probá de nuevo.';
 
 /**
@@ -52,6 +55,8 @@ export function useSalaAlumno(conexion: ConexionSala, esperar: (ms: number) => P
   const [desfaseMs, setDesfaseMs] = useState(0);
   const [enviando, setEnviando] = useState(false);
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
+  // Hay una respuesta sin acuse que se reenvía sola cuando vuelva la conexión
+  const [respuestaEnEspera, setRespuestaEnEspera] = useState(false);
   const [envioCerrado, setEnvioCerrado] = useState(false);
   const [recuperando, setRecuperando] = useState(false);
   const [errorRecuperacion, setErrorRecuperacion] = useState<string | null>(null);
@@ -213,6 +218,7 @@ export function useSalaAlumno(conexion: ConexionSala, esperar: (ms: number) => P
     async (preguntaId: string, respuesta: string) => {
       const texto = respuesta.trim();
       setErrorEnvio(null);
+      setRespuestaEnEspera(false);
       setEnviando(true);
 
       // Reintento manual del mismo contenido: se conserva la clave y la secuencia
@@ -238,6 +244,7 @@ export function useSalaAlumno(conexion: ConexionSala, esperar: (ms: number) => P
       } catch {
         // Sin acuse: el envío queda pendiente para reintentarlo con la misma clave
         setErrorEnvio(MENSAJE_RED);
+        setRespuestaEnEspera(true);
       } finally {
         setEnviando(false);
       }
@@ -257,9 +264,11 @@ export function useSalaAlumno(conexion: ConexionSala, esperar: (ms: number) => P
       await conexion.invocar('ObtenerEstadoSala');
     } catch (falla) {
       const codigo = codigoDeError(falla);
-      if (codigo === 'ALUMNO_NO_EN_SALA' || codigo === 'SALA_NO_ENCONTRADA' || codigo === 'NO_AUTENTICADO') {
+      // El contrato (5.3) también prevé NO_AUTORIZADO: la sesión ya no pertenece a esta sala
+      if (SIN_RECUPERACION.has(codigo)) {
         // No se puede recuperar: se vuelve a pedir el PIN
         pendiente.current = null;
+        setRespuestaEnEspera(false);
         setError(mensajeDeCodigo(codigo));
         setFase('ingreso');
       } else {
@@ -285,6 +294,7 @@ export function useSalaAlumno(conexion: ConexionSala, esperar: (ms: number) => P
     desfaseMs,
     enviando,
     errorEnvio,
+    respuestaEnEspera,
     envioCerrado,
     recuperando,
     errorRecuperacion,

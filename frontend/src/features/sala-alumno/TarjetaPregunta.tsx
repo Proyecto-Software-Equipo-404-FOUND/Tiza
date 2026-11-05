@@ -18,6 +18,8 @@ type Props = {
   cerrada?: boolean;
   /** Sin conexión con la sala: se puede seguir escribiendo, pero no enviar hasta reconectar */
   sinConexion?: boolean;
+  /** La respuesta ya se intentó enviar y se reenvía sola cuando vuelva la conexión */
+  respuestaEnEspera?: boolean;
   onEnviar: (respuesta: string) => void;
 };
 
@@ -29,6 +31,7 @@ export function TarjetaPregunta({
   desfaseMs,
   cerrada = false,
   sinConexion = false,
+  respuestaEnEspera = false,
   onEnviar,
 }: Props) {
   const [respuesta, setRespuesta] = useState('');
@@ -120,7 +123,12 @@ export function TarjetaPregunta({
         {error && <BannerError mensaje={error} />}
         {agotado && !error && <BannerError mensaje='Se terminó el tiempo para responder.' />}
 
-        {sinConexion && !agotado && (
+        {respuestaEnEspera && !agotado && (
+          <p role='status' className='text-sm text-tiza-bosque/80'>
+            Tu respuesta se enviará cuando vuelva la conexión.
+          </p>
+        )}
+        {sinConexion && !respuestaEnEspera && !agotado && (
           <p role='status' className='text-sm text-tiza-bosque/80'>
             Sin conexión. Podés seguir escribiendo: vas a poder enviar cuando se recupere.
           </p>
