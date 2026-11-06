@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { abrirSala } from './salas';
+import { abrirSala, validarCapacidad } from './salas';
 
 describe('abrirSala', () => {
   const pedido = vi.fn();
@@ -39,5 +39,20 @@ describe('abrirSala', () => {
     });
 
     await expect(abrirSala({ evaluacionId: 'ev-x', capacidadMaxima: 40 })).rejects.toMatchObject({ estado: 404 });
+  });
+});
+
+describe('validarCapacidad', () => {
+  it('acepta enteros entre 1 y 100', () => {
+    expect(validarCapacidad('1')).toEqual({ valor: 1 });
+    expect(validarCapacidad(' 40 ')).toEqual({ valor: 40 });
+    expect(validarCapacidad('100')).toEqual({ valor: 100 });
+  });
+
+  it('rechaza vacío, decimales y fuera de rango', () => {
+    expect(validarCapacidad('').error).toBe('Ingresá la capacidad de la sala.');
+    expect(validarCapacidad('2.5').error).toBe('Ingresá un número entero.');
+    expect(validarCapacidad('0').error).toContain('entre 1 y 100');
+    expect(validarCapacidad('101').error).toContain('entre 1 y 100');
   });
 });
