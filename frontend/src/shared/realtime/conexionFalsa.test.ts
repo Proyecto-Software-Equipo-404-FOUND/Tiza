@@ -7,9 +7,17 @@ describe('conexionFalsa', () => {
     const manejador = vi.fn();
     conexion.escuchar('alumnoIngreso', manejador);
 
-    simular('alumnoIngreso', 'Alumno 1 A');
+    // Payload del contrato 6.1
+    const ingreso = {
+      salaId: '11111111-1111-4111-8111-111111111111',
+      alumnoId: 'aaaaaaaa-0000-4000-8000-000000000001',
+      alias: 'Alumno 1',
+      totalConectados: 1,
+      ingresoUtc: '2026-11-05T22:00:00Z',
+    };
+    simular('alumnoIngreso', ingreso);
 
-    expect(manejador).toHaveBeenCalledWith('Alumno 1 A');
+    expect(manejador).toHaveBeenCalledWith(ingreso);
   });
 
   it('no falla si nadie escucha el evento', () => {
