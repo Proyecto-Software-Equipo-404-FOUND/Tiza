@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '@/shared/api/cliente';
-import { mensajeAbrirSala } from './errores';
+import { codigoDeError, mensajeAbrirSala, mensajeAccionSala } from './errores';
 
 const error = (estado: number, title?: string) => new ApiError(estado, { status: estado, title });
 
@@ -27,5 +27,41 @@ describe('mensajeAbrirSala', () => {
     expect(mensajeAbrirSala(error(401))).toBe('Tu sesión venció. Ingresá de nuevo.');
     expect(mensajeAbrirSala(error(500))).toBe('Algo salió mal. Probá de nuevo.');
     expect(mensajeAbrirSala(new Error('Failed to fetch'))).toBe('Algo salió mal. Probá de nuevo.');
+  });
+});
+
+describe('codigoDeError', () => {
+  it('toma el código de un mensaje «CODIGO: mensaje»', () => {
+    expect(codigoDeError(new Error('SALA_YA_INICIADA: La sala ya fue iniciada.'))).toBe('SALA_YA_INICIADA');
+  });
+
+  it('lo encuentra aunque venga con texto antes', () => {
+    expect(
+      codigoDeError(
+        new Error("An unexpected error occurred invoking 'IniciarSala' on the server. SIN_PREGUNTAS: Sin preguntas."),
+      ),
+    ).toBe('SIN_PREGUNTAS');
+  });
+
+  it('un mensaje sin código o un corte de red cae en ERROR_INTERNO', () => {
+    expect(codigoDeError(new Error('Alumno no identificado.'))).toBe('ERROR_INTERNO');
+    expect(codigoDeError(new Error('Failed to fetch'))).toBe('ERROR_INTERNO');
+    expect(codigoDeError(undefined)).toBe('ERROR_INTERNO');
+  });
+});
+
+describe('mensajeAccionSala', () => {
+  it('explica los códigos del docente', () => {
+    expect(mensajeAccionSala(new Error('SIN_PREGUNTAS: x'))).toBe('La evaluación no tiene preguntas para tomar.');
+    expect(mensajeAccionSala(new Error('NO_AUTORIZADO: x'))).toBe('No tenés permiso para conducir esta sala.');
+  });
+
+  it('un código desconocido o un corte usa el mensaje general', () => {
+    expect(mensajeAccionSala(new Error('OTRO_CODIGO: x'))).toBe(
+      'No pudimos completar la acción. Revisá tu conexión y probá de nuevo.',
+    );
+    expect(mensajeAccionSala(new Error('Failed to fetch'))).toBe(
+      'No pudimos completar la acción. Revisá tu conexión y probá de nuevo.',
+    );
   });
 });
