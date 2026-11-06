@@ -17,3 +17,220 @@ h1, h2, h3, h4, h5, h6 {
   outline: 2px solid #2F7D5B;
   outline-offset: 2px;
 }
+
+/* Inicio: estrellas que titilan y lápiz que escribe. Sin movimiento si la persona lo pidió así:
+   en ese caso la línea queda escrita y el lápiz quieto. */
+.inicio-chispa {
+  transform-origin: 0 0;
+}
+
+.inicio-estrella {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .inicio-estrella {
+    animation: inicio-titilar 3s ease-in-out infinite;
+  }
+  .inicio-estrella-2 {
+    animation-duration: 3.8s;
+    animation-delay: -1.2s;
+  }
+  .inicio-estrella-3 {
+    animation-duration: 2.6s;
+    animation-delay: -0.5s;
+  }
+  .inicio-estrella-4 {
+    animation-duration: 4.4s;
+    animation-delay: -2.4s;
+  }
+
+  .inicio-chispa {
+    animation: inicio-chispa 1.8s ease-in-out infinite;
+  }
+  .inicio-chispa-2 {
+    animation-delay: -0.6s;
+  }
+  .inicio-chispa-3 {
+    animation-delay: -1.2s;
+  }
+
+  .inicio-tilde {
+    stroke-dasharray: 100;
+    animation: 7s linear infinite;
+  }
+  .inicio-tilde-1 {
+    animation-name: inicio-tilde-1;
+  }
+  .inicio-tilde-2 {
+    animation-name: inicio-tilde-2;
+  }
+  .inicio-tilde-3 {
+    animation-name: inicio-tilde-3;
+  }
+  .inicio-lapiz-avance {
+    animation: inicio-lapiz-avance 7s linear infinite;
+  }
+  .inicio-lapiz-trazo {
+    transform-origin: 0 0;
+    animation: inicio-lapiz-trazo 7s ease-in-out infinite;
+  }
+}
+
+/* Las chispas se alejan y crecen, y vuelven a achicarse */
+@keyframes inicio-chispa {
+  0%,
+  100% {
+    transform: scale(0.55);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+/* Se prenden, se apagan casi del todo y vuelven */
+@keyframes inicio-titilar {
+  0%,
+  35% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  65% {
+    opacity: 0.12;
+    transform: scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Ciclo de 7 s. Los dos primeros tildes salen rápido y el tercero despacio; después se borran y vuelve a empezar.
+   El lápiz y cada tilde comparten los mismos porcentajes para que la punta vaya sobre el trazo. */
+@keyframes inicio-tilde-1 {
+  0%,
+  4% {
+    stroke-dashoffset: 100;
+    opacity: 1;
+  }
+  6% {
+    stroke-dashoffset: 67;
+  }
+  9%,
+  85% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  95%,
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes inicio-tilde-2 {
+  0%,
+  15% {
+    stroke-dashoffset: 100;
+    opacity: 1;
+  }
+  17% {
+    stroke-dashoffset: 67;
+  }
+  20%,
+  85% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  95%,
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes inicio-tilde-3 {
+  0%,
+  28% {
+    stroke-dashoffset: 100;
+    opacity: 1;
+  }
+  34% {
+    stroke-dashoffset: 67;
+  }
+  44%,
+  85% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  95%,
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+
+/* Posiciones de la punta relativas al reposo (330, 260). En los tramos de viaje el movimiento es suave;
+   en los trazos es lineal para coincidir con el tilde. */
+@keyframes inicio-lapiz-avance {
+  0% {
+    transform: translate(0, 0);
+    animation-timing-function: ease-in-out;
+  }
+  4% {
+    transform: translate(-107px, -160px);
+  }
+  6% {
+    transform: translate(-101px, -153px);
+  }
+  9% {
+    transform: translate(-89px, -167px);
+    animation-timing-function: ease-in-out;
+  }
+  15% {
+    transform: translate(-107px, -102px);
+  }
+  17% {
+    transform: translate(-101px, -95px);
+  }
+  20% {
+    transform: translate(-89px, -109px);
+    animation-timing-function: ease-in-out;
+  }
+  28% {
+    transform: translate(-107px, -44px);
+  }
+  34% {
+    transform: translate(-101px, -37px);
+  }
+  44% {
+    transform: translate(-89px, -51px);
+    animation-timing-function: ease-in-out;
+  }
+  54%,
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+/* El lápiz se inclina un poco en el vértice de cada tilde */
+@keyframes inicio-lapiz-trazo {
+  0%,
+  4%,
+  9%,
+  15%,
+  20%,
+  28%,
+  44%,
+  100% {
+    transform: rotate(0deg);
+  }
+  6%,
+  17%,
+  34% {
+    transform: rotate(-4deg);
+  }
+}
