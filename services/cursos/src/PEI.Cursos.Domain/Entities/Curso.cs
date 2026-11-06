@@ -18,6 +18,9 @@ public class Curso : BaseEntity
     Es virtual para soportar lazy loading y se inicializa vacía para prevenir NullReferenceException. */
     public virtual ICollection<Cohorte> Cohortes { get; private set; } = new List<Cohorte>();
 
+    // Coleccion de navegacion hacia los materiales y apuntes de estudio asociados al curso.
+    public virtual ICollection<MaterialCurso> Materiales { get; private set; } = new List<MaterialCurso>();
+
     /* Constructor de negocio. Exige los datos obligatorios e impide instanciar
     un curso en estado inconsistente o sin tenant asignado. */
     public Curso(Guid institucionId, string nombre, string area)
