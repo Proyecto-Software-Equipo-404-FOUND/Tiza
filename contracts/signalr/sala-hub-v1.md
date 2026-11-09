@@ -145,7 +145,7 @@ el contrato; la implementación puede llegar después.
 | Grupo | Miembros | Eventos que recibe |
 | --- | --- | --- |
 | `{salaId}` | Alumnos y docentes unidos a la sala | `salaIniciada`, `preguntaActual`, `salaFinalizada` |
-| `{salaId}:docentes` | Solo docentes de la sala | `alumnoIngreso`, `respuestaRegistrada` |
+| `{salaId}:docentes` | Solo docentes de la sala | `alumnoIngreso`, `alumnoSalio`, `alumnosConectados`, `respuestaRegistrada` |
 
 SA-04 ya agrega al alumno usando `salaId.ToString()` como nombre de grupo. El contrato
 mantiene ese nombre para el grupo de sala (`{salaId}`) y reserva `{salaId}:docentes` para
@@ -159,6 +159,7 @@ SA-06. No cambiar el nombre sin migrar a todos los clientes.
 | `UnirseASalaDocente(salaId)` | No | Sí | No |
 | `EnviarRespuesta(payload)` | Sí | No | No |
 | `ObtenerEstadoSala()` | Sí | Sí | No |
+| `ObtenerAlumnosConectados()` | No | Sí | No |
 | `IniciarSala()` | No | Sí | No |
 | `AvanzarPregunta(preguntaId?)` | No | Sí | No |
 | `FinalizarSala(motivo?)` | No | Sí | No |
@@ -177,6 +178,7 @@ Un alumno no puede enviar respuestas de otro alumno ni de otra institución. El
 | `UnirseASalaDocente(salaId)` | Cliente → Servidor | Docente | `void` | SA-06 |
 | `EnviarRespuesta(payload)` | Cliente → Servidor | Alumno | `ResultadoEnvioRespuesta` | S2-SA-01 |
 | `ObtenerEstadoSala()` | Cliente → Servidor | Alumno/Docente | `EstadoSala` | S2-SA-02 |
+| `ObtenerAlumnosConectados()` | Cliente → Servidor | Docente | `PresenciaSala` | SA-07 |
 | `IniciarSala()` | Cliente → Servidor | Docente | `void` | SA-06 |
 | `AvanzarPregunta(preguntaId?)` | Cliente → Servidor | Docente | `void` | SA-06 |
 | `FinalizarSala(motivo?)` | Cliente → Servidor | Docente | `void` | SA-06 |
@@ -443,6 +445,7 @@ Actualizado el 01/11/2026 contra `main` (S2-CT-01, #165).
 | `EnviarRespuesta(payload)` | ✅ Implementado con `RespuestaSala` idempotente | — (S2-SA-01, #119) |
 | `ObtenerEstadoSala()` | ✅ Implementado, con reconexión y sesión única | — (S2-SA-02, #125) |
 | `RegistrarEventoFoco(payload)` | ✅ Implementado con `AuditoriaFoco` | Documentar su payload en este contrato |
+| `ObtenerAlumnosConectados()` | ✅ Implementado (SA-07) | Lista efímera desde Redis; ver sección 5.7 |
 | `IniciarSala()` / `AvanzarPregunta()` | ✅ Implementados | — |
 | `FinalizarSala(motivo?)` | ❌ No existe | S2-SA-03 (#140) |
 | Evento `salaFinalizada` | ❌ No se emite | S2-SA-03 (#140) |
@@ -464,6 +467,26 @@ Sala en vivo envía **un único lote por sala** a Evaluaciones:
   como `EntregaPendiente` y lo registra en el log. El Outbox definitivo es S3-SA-01.
 - `motivoCierre` del lote usa los mismos valores que `motivo` de `salaFinalizada`.
 
+### 5.7 `ObtenerAlumnosConectados()`
+
+```text
+ObtenerAlumnosConectados() -> PresenciaSala
+```
+
+- **Rol:** docente unido a la sala.
+- **Uso:** pintar el listado de alumnos conectados en el panel docente y refrescarlo
+  manualmente tras una reconexión.
+- **Efecto:** no modifica datos. Lee la presencia efímera de Redis para la sala
+  (`sala:{salaId}:presencia`). Si Redis no está disponible, el servicio degrada a su
+  respaldo en memoria y lo registra en el log; no devuelve un error por infraestructura.
+- **Payload de respuesta:** ver `alumnosConectados` en la sección 6.8.
+- **Errores:** `NO_AUTORIZADO` (rol distinto de docente o conexión sin sala),
+  `ERROR_INTERNO` si no se puede componer la respuesta.
+- **Privacidad:** solo devuelve `alumnoId`, alias e instante de ingreso. Nunca nombre,
+  email, legajo ni datos de otra institución.
+- **Autorización:** además del rol, la sala se toma de `Context.Items["SalaId"]`, que solo
+  se completa después de `UnirseASalaDocente` u `ObtenerEstadoSala` con una sala válida.
+
 ## 6. Eventos del servidor
 
 Todos los eventos son mensajes servidor → cliente. El cliente los registra con
@@ -474,6 +497,8 @@ distinción: el cliente debe usar exactamente el nombre documentado.
 | Evento | Destinatarios | Cuándo | Tarea |
 | --- | --- | --- | --- |
 | `alumnoIngreso` | `{salaId}:docentes` | Un alumno se une o se reconecta | SA-06 |
+| `alumnosConectados` | `{salaId}:docentes` | Cambia la presencia o el docente pide el listado | SA-07 |
+| `alumnoSalio` | `{salaId}:docentes` | Se cierra la conexión activa de un alumno | SA-07 |
 | `salaIniciada` | `{salaId}` | El docente inicia la sala | SA-06 |
 | `preguntaActual` | `{salaId}` | Al iniciar, avanzar o recuperar estado | SA-06 / S2-SA-02 |
 | `respuestaRegistrada` | `{salaId}:docentes` | Se acepta una respuesta nueva | S2-SA-01 |
@@ -683,6 +708,70 @@ Para errores de una invocación, usar el resultado o el `HubException` según la
   "detalles": {
     "salaId": "11111111-1111-4111-8111-111111111111"
   }
+}
+```
+
+### 6.8 `alumnosConectados`
+
+Snapshot completo de la presencia efímera de la sala. Se envía a `{salaId}:docentes`
+cuando un alumno ingresa, se reconecta o sale, y también al llamador en
+`UnirseASalaDocente` y `ObtenerEstadoSala` (docente). `ObtenerAlumnosConectados` devuelve
+este mismo objeto como valor de retorno.
+
+| Campo | Tipo | Descripción |
+| --- | --- | --- |
+| `salaId` | UUID | Sala |
+| `totalConectados` | integer | Cantidad de alumnos con conexión activa |
+| `alumnos` | array | Alumnos conectados, ordenados por `ingresoUtc` |
+| `alumnos[].alumnoId` | UUID | Identificador interno del alumno |
+| `alumnos[].alias` | string | Alias visible, ej. `Alumno 1`; estable mientras viva la sala |
+| `alumnos[].ingresoUtc` | date-time | Primera conexión registrada en la sala |
+| `actualizadoUtc` | date-time | Hora del servidor al componer el snapshot |
+
+```json
+{
+  "salaId": "11111111-1111-4111-8111-111111111111",
+  "totalConectados": 2,
+  "alumnos": [
+    {
+      "alumnoId": "22222222-2222-4222-8222-222222222222",
+      "alias": "Alumno 1",
+      "ingresoUtc": "2026-10-26T13:59:58.120Z"
+    },
+    {
+      "alumnoId": "33333333-3333-4333-8333-333333333333",
+      "alias": "Alumno 2",
+      "ingresoUtc": "2026-10-26T14:00:05.001Z"
+    }
+  ],
+  "actualizadoUtc": "2026-10-26T14:00:05.050Z"
+}
+```
+
+El listado es efímero: vive en Redis con TTL renovable y se elimina cuando el alumno
+cierra la conexión. No reemplaza a `ParticipanteSala` (inscripción persistente) ni al
+historial de respuestas.
+
+### 6.9 `alumnoSalio`
+
+Se emite cuando la conexión activa de un alumno se cierra. No se emite si la conexión
+que se cae ya había sido reemplazada por otra más reciente del mismo alumno.
+
+| Campo | Tipo | Descripción |
+| --- | --- | --- |
+| `salaId` | UUID | Sala |
+| `alumnoId` | UUID | Alumno que se desconectó |
+| `alias` | string | Alias que tenía asignado |
+| `totalConectados` | integer | Conectados después de la salida |
+| `salidaUtc` | date-time | Hora del servidor |
+
+```json
+{
+  "salaId": "11111111-1111-4111-8111-111111111111",
+  "alumnoId": "22222222-2222-4222-8222-222222222222",
+  "alias": "Alumno 1",
+  "totalConectados": 1,
+  "salidaUtc": "2026-10-26T14:12:40.300Z"
 }
 ```
 
@@ -1038,7 +1127,7 @@ calcula `MAX(Secuencia)` al vuelo, el índice único sigue siendo la defensa fin
   `frontend/src/shared/realtime/useConexionSala.ts`
 - Esquema de preguntas: `contracts/schemas/preguntas-v1.schema.json`
 - OpenAPI de evaluaciones: `contracts/openapi/evaluaciones-v1.json`
-- Backlog: SA-05, SA-06, S2-SA-01, S2-SA-02, FE2-02, S2-FE-02, S2-QA-01.
+- Backlog: SA-05, SA-06, SA-07, S2-SA-01, S2-SA-02, FE2-02, S2-FE-02, S2-QA-01.
 
 ---
 

@@ -28,24 +28,23 @@ var redisConn = builder.Configuration.GetConnectionString("Redis")
                 ?? builder.Configuration["Redis:ConnectionString"];
 if (!string.IsNullOrWhiteSpace(redisConn))
 {
-    builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+    try
     {
-        try
-        {
-            var config = ConfigurationOptions.Parse(redisConn);
-            config.AbortOnConnectFail = false;
-            return ConnectionMultiplexer.Connect(config);
-        }
-        catch (Exception ex)
-        {
-            var logger = sp.GetRequiredService<ILogger<Program>>();
-            logger.LogWarning(ex, "No se pudo conectar a Redis al inicio ({RedisConn}). Se continuará con fallback a base de datos.", redisConn);
-            return null!;
-        }
-    });
+        var config = ConfigurationOptions.Parse(redisConn);
+        config.AbortOnConnectFail = false;
+        var multiplexer = ConnectionMultiplexer.Connect(config);
+
+        builder.Services.AddSingleton<IConnectionMultiplexer>(_ => multiplexer);
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine(
+            $"No se pudo conectar a Redis ({redisConn}). Se continuará sin presencia en Redis. {ex.Message}");
+    }
 }
 
 builder.Services.AddScoped<ISalaCronometroService, SalaCronometroService>();
+builder.Services.AddSingleton<IPresenciaSalaService, PresenciaSalaRedisService>();
 
 var evaluacionesBaseUrl = builder.Configuration["Evaluaciones:BaseUrl"]
                           ?? "http://localhost:5103";

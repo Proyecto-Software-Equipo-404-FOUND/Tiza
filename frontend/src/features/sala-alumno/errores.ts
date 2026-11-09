@@ -7,11 +7,13 @@ const CODIGOS: CodigoSala[] = [
   'SALA_OTRA_INSTITUCION',
   'SALA_LLENA',
   'ALUMNO_YA_EN_SALA',
+  'ALUMNO_NO_EN_SALA',
   'SALA_FINALIZADA',
 ];
 
-// Mensajes que el hub devuelve hoy sin código (sección 8.4 del contrato). Es un puente
-// temporal: cuando el servidor emita «CODIGO: mensaje» se puede borrar.
+// Mensajes que el hub devuelve hoy sin código (sección 8.4 del contrato). Es un puente temporal.
+// TODO(FE2-08a, brecha SA-04 del contrato, sección 5.5): cuando UnirseASala emita «CODIGO: mensaje»,
+// borrar MENSAJES_ACTUALES, el bloque `legado` de codigoDeError y sus casos en errores.test.ts.
 const MENSAJES_ACTUALES: Array<[string, CodigoSala]> = [
   ['Alumno no identificado', 'NO_AUTENTICADO'],
   ['Institución no válida', 'NO_AUTORIZADO'],
@@ -41,6 +43,7 @@ const MENSAJES: Record<CodigoSala, string> = {
   SALA_OTRA_INSTITUCION: 'No podés entrar a esta sala.',
   SALA_LLENA: 'La sala está llena. Avisale a tu docente.',
   ALUMNO_YA_EN_SALA: 'Ya estás en esta sala.',
+  ALUMNO_NO_EN_SALA: 'No encontramos tu sala. Ingresá el PIN de nuevo.',
   SALA_FINALIZADA: 'Esta sala ya finalizó.',
   ERROR_INTERNO: 'Algo salió mal. Probá de nuevo.',
 };

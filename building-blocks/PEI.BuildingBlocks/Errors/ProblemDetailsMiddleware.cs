@@ -40,6 +40,8 @@ public class ProblemDetailsMiddleware
         {
             KeyNotFoundException => (int)HttpStatusCode.NotFound,
             UnauthorizedAccessException => (int)HttpStatusCode.Unauthorized,
+            ForbiddenException => (int)HttpStatusCode.Forbidden,
+            UnsupportedMediaTypeException => (int)HttpStatusCode.UnsupportedMediaType,
             InvalidOperationException => (int)HttpStatusCode.Conflict,
             ArgumentException => (int)HttpStatusCode.BadRequest,
             _ => (int)HttpStatusCode.InternalServerError
@@ -52,6 +54,8 @@ public class ProblemDetailsMiddleware
             {
                 KeyNotFoundException => "Recurso no encontrado",
                 UnauthorizedAccessException => "Acceso no autorizado",
+                ForbiddenException => "Acceso prohibido",
+                UnsupportedMediaTypeException => "Tipo de medio no soportado",
                 InvalidOperationException => "Conflicto en la operación",
                 ArgumentException => "Petición inválida",
                 _ => "Ocurrió un error inesperado"
