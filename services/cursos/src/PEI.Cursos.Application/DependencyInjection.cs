@@ -4,12 +4,16 @@ using PEI.Cursos.Application.Common;
 using PEI.Cursos.Application.Common.DTOs;
 using PEI.Cursos.Application.DTOs.Cohortes;
 using PEI.Cursos.Application.DTOs.Cursos;
+using PEI.Cursos.Application.DTOs.Materiales;
 using PEI.Cursos.Application.DTOs.Matriculaciones;
 using PEI.Cursos.Application.Interfaces;
+using PEI.Cursos.Application.Services;
 using PEI.Cursos.Application.UseCases.Cohortes.Commands;
 using PEI.Cursos.Application.UseCases.Cohortes.Queries;
 using PEI.Cursos.Application.UseCases.Cursos.Commands;
 using PEI.Cursos.Application.UseCases.Cursos.Queries;
+using PEI.Cursos.Application.UseCases.Materiales.Commands;
+using PEI.Cursos.Application.UseCases.Materiales.Queries;
 using PEI.Cursos.Application.UseCases.Matriculaciones.Commands;
 using PEI.Cursos.Application.UseCases.Matriculaciones.Queries;
 
@@ -42,6 +46,13 @@ public static class DependencyInjection
         services.AddScoped<IRequestHandler<MatricularAlumnoCommand, MatriculacionDto>, MatricularAlumnoCommandHandler>();
         services.AddScoped<IRequestHandler<GetMatriculacionByIdQuery, MatriculacionDto?>, GetMatriculacionByIdQueryHandler>();
         services.AddScoped<IRequestHandler<GetMatriculacionesByCohorteQuery, IReadOnlyList<MatriculacionDto>?>, GetMatriculacionesByCohorteQueryHandler>();
+
+        // Registrar Servicios y Handlers de Materiales (Caso de Uso S2-CU-01)
+        services.AddScoped<IAutorizacionMaterialService, AutorizacionMaterialService>();
+        services.AddScoped<IRequestHandler<SubirMaterialCommand, MaterialCursoDto>, SubirMaterialCommandHandler>();
+        services.AddScoped<IRequestHandler<EliminarMaterialCommand, bool>, EliminarMaterialCommandHandler>();
+        services.AddScoped<IRequestHandler<ListarMaterialesPorCursoQuery, IReadOnlyList<MaterialCursoDto>>, ListarMaterialesPorCursoQueryHandler>();
+        services.AddScoped<IRequestHandler<ObtenerTextoMaterialQuery, TextoMaterialDto>, ObtenerTextoMaterialQueryHandler>();
 
         return services;
     }
