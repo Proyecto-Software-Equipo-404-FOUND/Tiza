@@ -9,6 +9,7 @@ Contrato congelado del hub SignalR `/hubs/sala` (tarea **SA-05**).
 | `sala-hub-v1.md` | Contrato completo: conexión, métodos, eventos, payload de respuestas, idempotencia y errores |
 | `../schemas/enviar-respuesta-sala-v1.schema.json` | JSON Schema del payload `EnviarRespuesta` |
 | `../schemas/resultado-envio-respuesta-sala-v1.schema.json` | JSON Schema del resultado (`Aceptada`, `Duplicada`, `Rechazada`) |
+| `../schemas/presencia-sala-v1.schema.json` | JSON Schema del snapshot de presencia (`alumnosConectados`) |
 | `ejemplos/` | Ejemplos listos para usar en Postman, tests o frontend |
 
 ## Resumen del payload de envío
@@ -76,6 +77,8 @@ validan solo como JSON.
 - **SA-04:** `UnirseASala` (implementado; ver brecha de reconexión en el contrato).
 - **SA-06:** eventos `alumnoIngreso`, `salaIniciada`, `preguntaActual`,
   `respuestaRegistrada`, `salaFinalizada`.
+- **SA-07:** presencia efímera en Redis, evento `alumnosConectados`, evento `alumnoSalio` y
+  método `ObtenerAlumnosConectados`.
 - **S2-SA-01:** tabla `RespuestaSala`, índices únicos e implementación de
   `EnviarRespuesta`.
 - **S2-SA-02:** `ObtenerEstadoSala` y recuperación al reconectar.

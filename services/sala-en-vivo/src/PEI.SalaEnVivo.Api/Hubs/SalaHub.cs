@@ -1,12 +1,13 @@
-using System.Collections.Concurrent;
 using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using PEI.SalaEnVivo.Application.DTOs.Foco;
+using PEI.SalaEnVivo.Application.DTOs.Presencia;
 using PEI.SalaEnVivo.Application.DTOs.Respuestas;
 using PEI.SalaEnVivo.Application.DTOs.Salas;
+using PEI.SalaEnVivo.Application.Interfaces;
 using PEI.SalaEnVivo.Application.Interfaces.Repositories;
 using PEI.SalaEnVivo.Application.UseCases.Salas.Commands;
 using PEI.SalaEnVivo.Application.UseCases.Salas.Queries;
@@ -17,12 +18,18 @@ namespace PEI.SalaEnVivo.Api.Hubs
     public sealed class SalaHub : Hub
     {
         private const string RolDocente = "Docente";
-        private static readonly ConcurrentDictionary<(Guid SalaId, Guid AlumnoId), string> _conexionesActivasPorAlumno = new();
         private readonly ISender _sender;
+        private readonly IPresenciaSalaService _presencia;
+        private readonly ILogger<SalaHub> _logger;
 
-        public SalaHub(ISender sender)
+        public SalaHub(
+            ISender sender,
+            IPresenciaSalaService presencia,
+            ILogger<SalaHub> logger)
         {
             _sender = sender;
+            _presencia = presencia;
+            _logger = logger;
         }
 
         public async Task UnirseASala(int pin)
@@ -55,7 +62,7 @@ namespace PEI.SalaEnVivo.Api.Hubs
 
                 Context.Items["SalaId"] = salaId;
 
-                await VincularSesionUnicaAlumnoAsync(salaId, alumnoId);
+                var registroPresencia = await RegistrarPresenciaAlumnoAsync(salaId, alumnoId);
 
                 var estado = await _sender.Send(
                     new ObtenerEstadoSalaQuery(
@@ -70,7 +77,7 @@ namespace PEI.SalaEnVivo.Api.Hubs
                     estado,
                     Context.ConnectionAborted);
 
-                await NotificarIngresoAlumnoAsync(salaId, alumnoId);
+                await NotificarIngresoAlumnoAsync(salaId, alumnoId, registroPresencia);
             }
             catch (UnauthorizedAccessException)
             {
@@ -112,6 +119,8 @@ namespace PEI.SalaEnVivo.Api.Hubs
                 salaIdContexto = id;
             }
 
+            var salaIdEnContexto = salaIdContexto.HasValue;
+
             try
             {
                 var estado = await _sender.Send(
@@ -127,6 +136,8 @@ namespace PEI.SalaEnVivo.Api.Hubs
                 var esDocente = string.Equals(rol, RolDocente, StringComparison.OrdinalIgnoreCase);
                 if (esDocente)
                 {
+                    Context.Items["Rol"] = RolDocente;
+
                     await Groups.AddToGroupAsync(
                         Context.ConnectionId,
                         estado.SalaId.ToString(),
@@ -135,10 +146,24 @@ namespace PEI.SalaEnVivo.Api.Hubs
                         Context.ConnectionId,
                         $"{estado.SalaId}:docentes",
                         Context.ConnectionAborted);
+
+                    await Clients.Caller.SendAsync(
+                        "alumnosConectados",
+                        await _presencia.ObtenerPresenciaAsync(
+                            estado.SalaId,
+                            Context.ConnectionAborted),
+                        Context.ConnectionAborted);
                 }
-                else
+                else if (!salaIdEnContexto)
                 {
-                    await VincularSesionUnicaAlumnoAsync(estado.SalaId, usuarioId);
+                    var registroPresencia = await RegistrarPresenciaAlumnoAsync(
+                        estado.SalaId,
+                        usuarioId);
+
+                    await NotificarIngresoAlumnoAsync(
+                        estado.SalaId,
+                        usuarioId,
+                        registroPresencia);
                 }
 
                 await Clients.Caller.SendAsync(
@@ -160,6 +185,21 @@ namespace PEI.SalaEnVivo.Api.Hubs
             {
                 throw new HubException(ex.Message);
             }
+        }
+
+        public async Task<PresenciaSalaDto> ObtenerAlumnosConectados()
+        {
+            if (!EsDocente())
+            {
+                throw new HubException(
+                    "NO_AUTORIZADO: Solo un docente puede consultar los alumnos conectados.");
+            }
+
+            var (salaId, _) = ObtenerContextoDocente();
+
+            return await _presencia.ObtenerPresenciaAsync(
+                salaId,
+                Context.ConnectionAborted);
         }
 
         public async Task UnirseASalaDocente(Guid salaId)
@@ -194,6 +234,13 @@ namespace PEI.SalaEnVivo.Api.Hubs
             await Groups.AddToGroupAsync(
                 Context.ConnectionId,
                 $"{salaIdValidada}:docentes",
+                Context.ConnectionAborted);
+
+            await Clients.Caller.SendAsync(
+                "alumnosConectados",
+                await _presencia.ObtenerPresenciaAsync(
+                    salaIdValidada,
+                    Context.ConnectionAborted),
                 Context.ConnectionAborted);
         }
 
@@ -260,10 +307,7 @@ namespace PEI.SalaEnVivo.Api.Hubs
                 throw new HubException("Alumno no identificado.");
             }
 
-            var institucionClaim = user?.FindFirst("institucion_id")?.Value
-                                   ?? user?.FindFirst("InstitucionId")?.Value;
-
-            _ = Guid.TryParse(institucionClaim, out var institucionId);
+            var institucionId = ObtenerInstitucionId();
 
             // Obtener SalaId del contexto de la conexión o resolver desde base de datos
             if (!Context.Items.TryGetValue("SalaId", out var salaIdObj) || !(salaIdObj is Guid salaId))
@@ -286,8 +330,13 @@ namespace PEI.SalaEnVivo.Api.Hubs
             }
 
             // Verificar que esta sesión no haya sido desplazada por una reconexión en otro dispositivo/pestaña
-            if (_conexionesActivasPorAlumno.TryGetValue((salaId, alumnoId), out var conexionActiva)
-                && !string.Equals(conexionActiva, Context.ConnectionId, StringComparison.Ordinal))
+            var esConexionActiva = await _presencia.EsConexionActivaAsync(
+                salaId,
+                alumnoId,
+                Context.ConnectionId,
+                Context.ConnectionAborted);
+
+            if (!esConexionActiva)
             {
                 return ResultadoEnvioRespuestaDto.Rechazada(
                     request.PreguntaId, request.IdempotencyKey, request.Secuencia,
@@ -319,7 +368,7 @@ namespace PEI.SalaEnVivo.Api.Hubs
                         preguntaId = request.PreguntaId,
                         recibidaUtc = resultado.RecibidaUtc
                     },
-                    Context.ConnectionAborted);
+                    CancellationToken.None);
             }
 
             return resultado;
@@ -397,41 +446,46 @@ namespace PEI.SalaEnVivo.Api.Hubs
             }
         }
 
-        private async Task VincularSesionUnicaAlumnoAsync(Guid salaId, Guid alumnoId)
+        private async Task<RegistroPresenciaDto> RegistrarPresenciaAlumnoAsync(
+            Guid salaId,
+            Guid alumnoId)
         {
-            var clave = (salaId, alumnoId);
-            var nuevaConexionId = Context.ConnectionId;
+            var registro = await _presencia.RegistrarConexionAsync(
+                salaId,
+                alumnoId,
+                Context.ConnectionId,
+                Context.ConnectionAborted);
 
-            if (_conexionesActivasPorAlumno.TryGetValue(clave, out var conexionPrevia)
-                && !string.Equals(conexionPrevia, nuevaConexionId, StringComparison.Ordinal))
+            Context.Items["SalaId"] = salaId;
+            Context.Items["AlumnoId"] = alumnoId;
+
+            if (!string.IsNullOrWhiteSpace(registro.ConexionAnterior)
+                && !string.Equals(registro.ConexionAnterior, Context.ConnectionId, StringComparison.Ordinal))
             {
                 await Groups.RemoveFromGroupAsync(
-                    conexionPrevia,
+                    registro.ConexionAnterior,
                     salaId.ToString(),
                     Context.ConnectionAborted);
             }
 
-            _conexionesActivasPorAlumno[clave] = nuevaConexionId;
-
             await Groups.AddToGroupAsync(
-                nuevaConexionId,
+                Context.ConnectionId,
                 salaId.ToString(),
                 Context.ConnectionAborted);
+
+            return registro;
         }
 
-        private async Task NotificarIngresoAlumnoAsync(Guid salaId, Guid alumnoId)
+        private async Task NotificarIngresoAlumnoAsync(
+            Guid salaId,
+            Guid alumnoId,
+            RegistroPresenciaDto registro)
         {
-            var participanteRepo = Context.GetHttpContext()?
-                .RequestServices.GetService<IParticipanteSalaRepository>();
-
-            var totalConectados = participanteRepo != null
-                ? await participanteRepo.ContarAlumnosAsync(salaId, Context.ConnectionAborted)
-                : 0;
-
-            if (totalConectados < 1)
-            {
-                totalConectados = 1;
-            }
+            // El conteo sale del registro atómico del script Lua. La lectura completa
+            // del hash queda solo para componer el snapshot de alumnosConectados.
+            var presencia = await _presencia.ObtenerPresenciaAsync(
+                salaId,
+                CancellationToken.None);
 
             await Clients.Group($"{salaId}:docentes").SendAsync(
                 "alumnoIngreso",
@@ -439,11 +493,16 @@ namespace PEI.SalaEnVivo.Api.Hubs
                 {
                     salaId,
                     alumnoId,
-                    alias = $"Alumno {totalConectados}",
-                    totalConectados,
-                    ingresoUtc = DateTime.UtcNow
+                    alias = registro.Alumno.Alias,
+                    totalConectados = registro.TotalConectados,
+                    ingresoUtc = registro.Alumno.IngresoUtc
                 },
-                Context.ConnectionAborted);
+                CancellationToken.None);
+
+            await Clients.Group($"{salaId}:docentes").SendAsync(
+                "alumnosConectados",
+                presencia,
+                CancellationToken.None);
         }
 
         private (Guid SalaId, Guid InstitucionId) ObtenerContextoDocente()
@@ -487,6 +546,65 @@ namespace PEI.SalaEnVivo.Api.Hubs
             return user?.IsInRole(RolDocente) == true
                    || user?.FindFirst("role")?.Value == RolDocente
                    || user?.FindFirst(ClaimTypes.Role)?.Value == RolDocente;
+        }
+
+        public override async Task OnDisconnectedAsync(Exception? exception)
+        {
+            try
+            {
+                var esDocente = Context.Items.TryGetValue("Rol", out var rol)
+                                && string.Equals(
+                                    rol?.ToString(),
+                                    RolDocente,
+                                    StringComparison.OrdinalIgnoreCase);
+
+                if (!esDocente
+                    && Context.Items.TryGetValue("SalaId", out var salaIdObj)
+                    && salaIdObj is Guid salaId
+                    && salaId != Guid.Empty
+                    && Context.Items.TryGetValue("AlumnoId", out var alumnoIdObj)
+                    && alumnoIdObj is Guid alumnoId)
+                {
+                    var resultado = await _presencia.EliminarConexionAsync(
+                        salaId,
+                        alumnoId,
+                        Context.ConnectionId,
+                        CancellationToken.None);
+
+                    if (resultado.AlumnoEliminado && resultado.Alumno is not null)
+                    {
+                        var presencia = await _presencia.ObtenerPresenciaAsync(
+                            salaId,
+                            CancellationToken.None);
+
+                        await Clients.Group($"{salaId}:docentes").SendAsync(
+                            "alumnoSalio",
+                            new
+                            {
+                                salaId,
+                                alumnoId = resultado.Alumno.AlumnoId,
+                                alias = resultado.Alumno.Alias,
+                                totalConectados = presencia.TotalConectados,
+                                salidaUtc = DateTime.UtcNow
+                            },
+                            CancellationToken.None);
+
+                        await Clients.Group($"{salaId}:docentes").SendAsync(
+                            "alumnosConectados",
+                            presencia,
+                            CancellationToken.None);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "No se pudo actualizar la presencia al desconectar la conexión {ConnectionId}.",
+                    Context.ConnectionId);
+            }
+
+            await base.OnDisconnectedAsync(exception);
         }
 
         private static object MapearPreguntaActual(PreguntaActualDto pregunta)
