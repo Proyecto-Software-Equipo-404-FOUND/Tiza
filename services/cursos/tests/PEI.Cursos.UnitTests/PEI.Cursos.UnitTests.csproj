@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.32" />
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
     <PackageReference Include="xunit" Version="2.5.3" />
@@ -21,6 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\PEI.Cursos.Api\PEI.Cursos.Api.csproj" />
     <ProjectReference Include="..\..\src\PEI.Cursos.Infrastructure\PEI.Cursos.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\PEI.Cursos.Application\PEI.Cursos.Application.csproj" />
     <ProjectReference Include="..\..\src\PEI.Cursos.Domain\PEI.Cursos.Domain.csproj" />
