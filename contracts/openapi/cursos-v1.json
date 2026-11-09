@@ -1004,9 +1004,7 @@
               }
             }
           }
-        },
-        "x-estado": "planificado",
-        "x-issue": "S2-CU-01 (#137)"
+        }
       },
       "get": {
         "tags": [
@@ -1083,9 +1081,7 @@
               }
             }
           }
-        },
-        "x-estado": "planificado",
-        "x-issue": "S2-CU-01 (#137)"
+        }
       }
     },
     "/api/v1/cursos/{cursoId}/materiales/{id}": {
@@ -1164,9 +1160,7 @@
               }
             }
           }
-        },
-        "x-estado": "planificado",
-        "x-issue": "S2-CU-01 (#137)"
+        }
       }
     },
     "/api/v1/materiales/{id}/texto": {
@@ -1228,9 +1222,7 @@
               }
             }
           }
-        },
-        "x-estado": "planificado",
-        "x-issue": "S2-CU-01 (#137)"
+        }
       }
     }
   },
