@@ -55,6 +55,20 @@ async function renovar(): Promise<boolean> {
   }
 }
 
+// Segundos de margen: un accessToken que vence en menos que esto se renueva antes de usarlo
+const MARGEN_VENCIMIENTO_S = 60;
+
+// Segundos que le quedan al token según su claim `exp`, o null si no se puede leer
+function segundosRestantes(jwt: string): number | null {
+  try {
+    const carga = jwt.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const { exp } = JSON.parse(atob(carga)) as { exp?: number };
+    return typeof exp === 'number' ? exp - Date.now() / 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
 // Si varios pedidos fallan con 401 a la vez, comparten una sola renovación
 let renovacionEnCurso: Promise<boolean> | null = null;
 function renovarUnaVez(): Promise<boolean> {
@@ -94,4 +108,18 @@ export async function pedir<T>(
 
   if (respuesta.status === 204) return undefined as T;
   return respuesta.json() as Promise<T>;
+}
+
+/**
+ * accessToken para abrir (o reabrir) la conexión de la sala. SignalR lo pide en cada reconexión, y el
+ * accessToken dura 15 minutos: si ya venció o está por vencer se renueva antes, porque con uno vencido el
+ * servidor rechazaría cada intento (los pedidos HTTP se renuevan solos recién ante un 401; el hub no).
+ * Si no se puede renovar (por ejemplo, sin red) se devuelve el que hay, y el corte lo maneja la reconexión.
+ */
+export async function obtenerTokenVigente(): Promise<string> {
+  if (token && tokenRenovacion) {
+    const resto = segundosRestantes(token);
+    if (resto !== null && resto < MARGEN_VENCIMIENTO_S) await renovarUnaVez();
+  }
+  return token ?? '';
 }

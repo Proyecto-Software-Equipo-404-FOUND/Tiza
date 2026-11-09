@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using PEI.Cursos.Api.Security;
 using PEI.Cursos.Application.DTOs.Cohortes;
 using PEI.Cursos.Application.Interfaces;
 using PEI.Cursos.Application.UseCases.Cohortes.Commands;
@@ -28,6 +29,7 @@ public class CohortesController : ControllerBase
 
     /* Obtiene el listado de todas las cohortes asociadas al curso especificado.
     Retorna 404 Not Found si el curso padre no existe para la institucion autenticada. */
+    [Authorize(Policy = CursosAuthorization.AdministradorODocente)]
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<CohorteDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -49,6 +51,7 @@ public class CohortesController : ControllerBase
     }
 
     /* Registra una nueva cohorte para el curso especificado validando docente, periodo y unicidad. */
+    [Authorize(Policy = CursosAuthorization.SoloAdministrador)]
     [HttpPost]
     [ProducesResponseType(typeof(CohorteDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -71,6 +74,7 @@ public class CohortesController : ControllerBase
 
     /* Actualiza los datos de una cohorte existente (nombre, periodo, docente responsable).
     Valida pertenencia institucional, que el curso coincida y que la tupla (CursoId, Periodo, Nombre) no colisione (409 Conflict). */
+    [Authorize(Policy = CursosAuthorization.SoloAdministrador)]
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(CohorteDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -99,6 +103,7 @@ public class CohortesController : ControllerBase
 
     /* Ejecuta la baja logica de una cohorte especifica.
     Retorna 204 No Content si se desactivo con exito o 404 Not Found si no existe. */
+    [Authorize(Policy = CursosAuthorization.SoloAdministrador)]
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -126,6 +131,7 @@ public class CohortesController : ControllerBase
     /* Valida la existencia y pertenencia institucional de una cohorte (Caso de Uso CU-05).
     Endpoint inter-servicio consumido por Evaluaciones para vincular evaluaciones a comisiones.
     Retorna 200 OK con metadatos si pertenece a la institucion, o 404 Not Found si no existe. */
+    [Authorize(Policy = CursosAuthorization.AdministradorODocente)]
     [HttpGet("/api/v1/cohortes/{id:guid}/validacion")]
     [ProducesResponseType(typeof(CohorteValidacionDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

@@ -47,9 +47,42 @@ const pregunta2 = (): PreguntaActual => ({
 //   111111 sala llena · 222222 sala finalizada · 333333 sala inexistente
 // En la respuesta abierta: «rechazar» simula una respuesta inválida y «red» simula un
 // corte de red en el primer intento (se reintenta con la misma clave y se acepta).
+// «corte» simula que se cae la conexión durante 6 s: se ve «Reconectando…», el envío queda
+// pendiente y, al volver, se recupera la sala y se reenvía con la misma clave.
 export function crearConexionDemo(): ConexionSala {
-  const { conexion, simular } = crearConexionFalsa();
+  const { conexion, simular: emitir, simularEstado } = crearConexionFalsa();
   let ultimaSecuencia = 0;
+  let cortada = false;
+  // Lo que «sabe» el servidor de la sala, para poder devolverlo en ObtenerEstadoSala
+  let estadoSala: 'Activa' | 'EnCurso' | 'Finalizada' = 'Activa';
+  let vigente: PreguntaActual | null = null;
+  const simular = (evento: string, carga: unknown) => {
+    if (evento === 'salaIniciada') estadoSala = 'EnCurso';
+    if (evento === 'preguntaActual') {
+      estadoSala = 'EnCurso';
+      vigente = carga as PreguntaActual;
+    }
+    if (evento === 'salaFinalizada') estadoSala = 'Finalizada';
+    if (evento === 'estadoSala') {
+      const e = carga as { estado: typeof estadoSala; preguntaActual?: PreguntaActual | null };
+      estadoSala = e.estado;
+      vigente = e.preguntaActual ?? null;
+    }
+    emitir(evento, carga);
+  };
+  const reportarEstado = () => {
+    const carga = {
+      salaId: SALA_DEMO_ID,
+      estado: estadoSala,
+      fechaLimiteUtc: enSegundos(1800),
+      preguntaActual: estadoSala === 'EnCurso' ? vigente : null,
+      ultimaSecuencia,
+      preguntasRespondidas: [...respondidas],
+      servidorUtc: new Date().toISOString(),
+    };
+    emitir('estadoSala', carga);
+    return carga;
+  };
   const respondidas = new Set<string>();
   const porClave = new Map<string, { envio: EnvioPendiente; recibidaUtc: string }>();
   const intentosPorClave = new Map<string, number>();
@@ -66,6 +99,9 @@ export function crearConexionDemo(): ConexionSala {
   const enviarRespuesta = async (envio: EnvioPendiente): Promise<ResultadoEnvio> => {
     await esperar(300);
 
+    // Mientras la conexión está caída el envío no llega al servidor
+    if (cortada) throw new Error('Failed to fetch');
+
     // 1) idempotencia: un reintento de un envío ya aceptado devuelve Duplicada
     const previo = porClave.get(envio.idempotencyKey);
     if (previo) return resultado(envio, 'Duplicada', previo.recibidaUtc);
@@ -74,6 +110,17 @@ export function crearConexionDemo(): ConexionSala {
     const intentos = (intentosPorClave.get(envio.idempotencyKey) ?? 0) + 1;
     intentosPorClave.set(envio.idempotencyKey, intentos);
     if (envio.respuesta.toLowerCase() === 'red' && intentos === 1) throw new Error('Failed to fetch');
+
+    // Corte de conexión simulado: se cae, y vuelve a los 6 s
+    if (envio.respuesta.toLowerCase() === 'corte' && !porClave.has(envio.idempotencyKey) && !cortada && intentos === 1) {
+      cortada = true;
+      simularEstado('reconectando');
+      setTimeout(() => {
+        cortada = false;
+        simularEstado('conectado');
+      }, 6000);
+      throw new Error('Failed to fetch');
+    }
 
     const ahora = new Date().toISOString();
     const rechazo = (codigo: string, mensaje: string) =>
@@ -113,6 +160,11 @@ export function crearConexionDemo(): ConexionSala {
     ...conexion,
     invocar: async (metodo, ...argumentos) => {
       if (metodo === 'EnviarRespuesta') return enviarRespuesta(argumentos[0] as EnvioPendiente);
+      if (metodo === 'ObtenerEstadoSala') {
+        await esperar(200);
+        if (cortada) throw new Error('Failed to fetch');
+        return reportarEstado();
+      }
       if (metodo !== 'UnirseASala') return undefined;
 
       await esperar(400);
