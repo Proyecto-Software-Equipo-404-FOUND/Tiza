@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using PEI.Cursos.Api.Security;
 using PEI.Cursos.Application.Common.DTOs;
 using PEI.Cursos.Application.DTOs.Cursos;
 using PEI.Cursos.Application.Interfaces;
@@ -28,6 +29,7 @@ public class CursosController : ControllerBase
 
     /* Obtiene el detalle individual de un curso especifico.
     Respalda la resolucion de la cabecera Location en la creacion o emite 404 Not Found si no existe. */
+    [Authorize(Policy = CursosAuthorization.AdministradorODocente)]
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(CursoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -47,6 +49,7 @@ public class CursosController : ControllerBase
     }
 
     /* Consulta el catalogo de cursos de la institucion con paginacion y filtros opcionales de area y busqueda. */
+    [Authorize(Policy = CursosAuthorization.AdministradorODocente)]
     [HttpGet]
     [ProducesResponseType(typeof(ResultadoPaginadoDTO<CursoDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCursos(
@@ -67,6 +70,7 @@ public class CursosController : ControllerBase
     }
 
     /* Da de alta un nuevo curso dentro del tenant actual retornando 201 Created con cabecera Location. */
+    [Authorize(Policy = CursosAuthorization.SoloAdministrador)]
     [HttpPost]
     [ProducesResponseType(typeof(CursoDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -86,6 +90,7 @@ public class CursosController : ControllerBase
     }
 
     /* Modifica los datos descriptivos de un curso existente garantizando aislamiento tenant. */
+    [Authorize(Policy = CursosAuthorization.SoloAdministrador)]
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(CursoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -112,6 +117,7 @@ public class CursosController : ControllerBase
     }
 
     /* Ejecuta la baja logica de un curso impidiendo aperturas futuras. */
+    [Authorize(Policy = CursosAuthorization.SoloAdministrador)]
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

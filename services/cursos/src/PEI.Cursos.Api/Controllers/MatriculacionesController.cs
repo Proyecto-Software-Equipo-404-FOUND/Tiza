@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using PEI.Cursos.Api.Security;
 using PEI.Cursos.Application.DTOs.Matriculaciones;
 using PEI.Cursos.Application.Interfaces;
 using PEI.Cursos.Application.UseCases.Matriculaciones.Commands;
@@ -29,6 +30,7 @@ public class MatriculacionesController : ControllerBase
     /* Obtiene el listado de matriculaciones asociadas a la cohorte especificada.
     Soporta filtrado opcional por matriculaciones activas para consumo de Sala en Vivo (Caso de Uso S2-CU-01).
     Retorna 404 Not Found si la cohorte no existe, pertenece a otra institucion o esta inactiva. */
+    [Authorize(Policy = CursosAuthorization.AdministradorODocente)]
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<MatriculacionDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -55,6 +57,7 @@ public class MatriculacionesController : ControllerBase
 
     /* Obtiene el detalle individual de una inscripción en una cohorte.
     Respalda la resolución de la cabecera Location generada tras la matriculación. */
+    [Authorize(Policy = CursosAuthorization.AdministradorODocente)]
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(MatriculacionDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -78,6 +81,7 @@ public class MatriculacionesController : ControllerBase
 
     /* Registra la matriculación formal de un alumno en la cohorte especificada.
     Valida pertenencia institucional, estado activo de la comisión y unicidad preventiva. */
+    [Authorize(Policy = CursosAuthorization.AdministradorODocente)]
     [HttpPost]
     [ProducesResponseType(typeof(MatriculacionDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

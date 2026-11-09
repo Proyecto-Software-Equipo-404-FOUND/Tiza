@@ -84,14 +84,10 @@
             }
           },
           "401": {
-            "description": "No autenticado o token JWT inválido/expirado.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
+            "description": "JWT ausente o inválido."
+          },
+          "403": {
+            "description": "Rol no autorizado. Roles permitidos: Administrador o Docente."
           }
         }
       },
@@ -142,14 +138,10 @@
             }
           },
           "401": {
-            "description": "No autenticado.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
+            "description": "JWT ausente o inválido."
+          },
+          "403": {
+            "description": "Rol no autorizado. Roles permitidos: Administrador."
           },
           "409": {
             "description": "Conflicto: ya existe un curso con ese nombre en la institución.",
@@ -195,14 +187,10 @@
             }
           },
           "401": {
-            "description": "No autenticado.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
+            "description": "JWT ausente o inválido."
+          },
+          "403": {
+            "description": "Rol no autorizado. Roles permitidos: Administrador o Docente."
           },
           "404": {
             "description": "Curso no encontrado o perteneciente a otra institución.",
@@ -267,14 +255,10 @@
             }
           },
           "401": {
-            "description": "No autenticado.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
+            "description": "JWT ausente o inválido."
+          },
+          "403": {
+            "description": "Rol no autorizado. Roles permitidos: Administrador."
           },
           "404": {
             "description": "Curso no encontrado.",
@@ -321,14 +305,10 @@
             "description": "Curso desactivado correctamente (sin contenido)."
           },
           "401": {
-            "description": "No autenticado.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
+            "description": "JWT ausente o inválido."
+          },
+          "403": {
+            "description": "Rol no autorizado. Roles permitidos: Administrador."
           },
           "404": {
             "description": "Curso no encontrado.",
@@ -377,14 +357,10 @@
             }
           },
           "401": {
-            "description": "No autenticado.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
+            "description": "JWT ausente o inválido."
+          },
+          "403": {
+            "description": "Rol no autorizado. Roles permitidos: Administrador o Docente."
           },
           "404": {
             "description": "El curso especificado no existe para la institución.",
@@ -457,14 +433,10 @@
             }
           },
           "401": {
-            "description": "No autenticado.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
+            "description": "JWT ausente o inválido."
+          },
+          "403": {
+            "description": "Rol no autorizado. Roles permitidos: Administrador."
           },
           "404": {
             "description": "Curso contenedor inexistente en el inquilino.",
@@ -551,14 +523,10 @@
             }
           },
           "401": {
-            "description": "No autenticado.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
+            "description": "JWT ausente o inválido."
+          },
+          "403": {
+            "description": "Rol no autorizado. Roles permitidos: Administrador."
           },
           "404": {
             "description": "Cohorte no encontrada o no perteneciente al curso.",
@@ -625,14 +593,10 @@
             }
           },
           "401": {
-            "description": "No autenticado.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
+            "description": "JWT ausente o inválido."
+          },
+          "403": {
+            "description": "Rol no autorizado. Roles permitidos: Administrador."
           },
           "404": {
             "description": "Cohorte no encontrada o no perteneciente al curso.",
@@ -678,14 +642,10 @@
             }
           },
           "401": {
-            "description": "No autenticado.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
+            "description": "JWT ausente o inválido."
+          },
+          "403": {
+            "description": "Rol no autorizado. Roles permitidos: Administrador o Docente."
           },
           "404": {
             "description": "Cohorte inexistente o perteneciente a otra institución.",
@@ -755,14 +715,10 @@
             }
           },
           "401": {
-            "description": "No autenticado.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
+            "description": "JWT ausente o inválido."
+          },
+          "403": {
+            "description": "Rol no autorizado. Roles permitidos: Administrador o Docente."
           },
           "404": {
             "description": "Cohorte inexistente, inactiva o perteneciente a otra institución.",
@@ -835,14 +791,10 @@
             }
           },
           "401": {
-            "description": "No autenticado.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
+            "description": "JWT ausente o inválido."
+          },
+          "403": {
+            "description": "Rol no autorizado. Roles permitidos: Administrador o Docente."
           },
           "404": {
             "description": "Cohorte inexistente en el inquilino.",
@@ -908,14 +860,10 @@
             }
           },
           "401": {
-            "description": "No autenticado.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
+            "description": "JWT ausente o inválido."
+          },
+          "403": {
+            "description": "Rol no autorizado. Roles permitidos: Administrador o Docente."
           },
           "404": {
             "description": "Matrícula no encontrada.",
@@ -1056,9 +1004,7 @@
               }
             }
           }
-        },
-        "x-estado": "planificado",
-        "x-issue": "S2-CU-01 (#137)"
+        }
       },
       "get": {
         "tags": [
@@ -1135,9 +1081,7 @@
               }
             }
           }
-        },
-        "x-estado": "planificado",
-        "x-issue": "S2-CU-01 (#137)"
+        }
       }
     },
     "/api/v1/cursos/{cursoId}/materiales/{id}": {
@@ -1216,9 +1160,7 @@
               }
             }
           }
-        },
-        "x-estado": "planificado",
-        "x-issue": "S2-CU-01 (#137)"
+        }
       }
     },
     "/api/v1/materiales/{id}/texto": {
@@ -1280,9 +1222,7 @@
               }
             }
           }
-        },
-        "x-estado": "planificado",
-        "x-issue": "S2-CU-01 (#137)"
+        }
       }
     }
   },

@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using PEI.BuildingBlocks.MultiTenancy;
+using PEI.Cursos.Application.DTOs.Materiales;
 using PEI.Cursos.Application.Interfaces;
 using PEI.Cursos.Domain.Entities;
 using PEI.Cursos.Domain.Enums;
@@ -135,6 +137,12 @@ public class FakeCohorteRepository : ICohorteRepository
         var existe = Items.Any(c => c.CursoId == cursoId && c.Periodo.ToLower() == pNorm && c.Nombre.ToLower() == nNorm && c.Id != cohorteIdExcluir);
         return Task.FromResult(existe);
     }
+
+    public Task<bool> ExisteDocenteEnCursoActivoAsync(Guid cursoId, Guid docenteId, CancellationToken cancellationToken = default)
+    {
+        var existe = Items.Any(c => c.CursoId == cursoId && c.DocenteId == docenteId && c.Activo);
+        return Task.FromResult(existe);
+    }
 }
 
 public class FakeMatriculacionRepository : IMatriculacionRepository
@@ -170,5 +178,86 @@ public class FakeMatriculacionRepository : IMatriculacionRepository
             query = query.Where(m => m.Estado == EstadoMatriculacion.Activa);
         }
         return Task.FromResult((IReadOnlyList<Matriculacion>)query.ToList());
+    }
+}
+
+public class FakeMaterialCursoRepository : IMaterialCursoRepository
+{
+    public List<MaterialCurso> Items { get; } = new();
+
+    public Task<MaterialCurso?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var material = Items.FirstOrDefault(m => m.Id == id);
+        return Task.FromResult(material);
+    }
+
+    public Task<IReadOnlyList<MaterialCurso>> GetByCursoIdAsync(Guid cursoId, CancellationToken cancellationToken = default)
+    {
+        var list = Items
+            .Where(m => m.CursoId == cursoId && m.Activo)
+            .OrderByDescending(m => m.FechaSubidaUtc)
+            .ToList();
+
+        return Task.FromResult((IReadOnlyList<MaterialCurso>)list);
+    }
+
+    public Task AddAsync(MaterialCurso material, CancellationToken cancellationToken = default)
+    {
+        Items.Add(material);
+        return Task.CompletedTask;
+    }
+}
+
+public class FakeAlmacenamientoArchivos : IAlmacenamientoArchivos
+{
+    public Dictionary<string, byte[]> ArchivosGuardados { get; } = new();
+
+    public async Task<string> GuardarArchivoAsync(Stream contenido, string rutaRelativa, CancellationToken cancellationToken = default)
+    {
+        using var ms = new MemoryStream();
+        if (contenido.CanSeek)
+        {
+            contenido.Position = 0;
+        }
+        await contenido.CopyToAsync(ms, cancellationToken);
+        var bytes = ms.ToArray();
+        var key = rutaRelativa.Replace('\\', '/');
+        ArchivosGuardados[key] = bytes;
+        return key;
+    }
+
+    public Task<Stream?> ObtenerArchivoAsync(string rutaRelativa, CancellationToken cancellationToken = default)
+    {
+        var key = rutaRelativa.Replace('\\', '/');
+        if (ArchivosGuardados.TryGetValue(key, out var bytes))
+        {
+            Stream s = new MemoryStream(bytes);
+            return Task.FromResult<Stream?>(s);
+        }
+
+        return Task.FromResult<Stream?>(null);
+    }
+
+    public Task<bool> EliminarArchivoAsync(string rutaRelativa, CancellationToken cancellationToken = default)
+    {
+        var key = rutaRelativa.Replace('\\', '/');
+        return Task.FromResult(ArchivosGuardados.Remove(key));
+    }
+}
+
+public class FakeExtractorTextoPdf : IExtractorTextoPdf
+{
+    public int CantidadPaginas { get; set; } = 5;
+    public string TextoExtraido { get; set; } = "Texto de prueba extraido correctamente.";
+    public Exception? ExcepcionALanzar { get; set; }
+
+    public Task<ResultadoExtraccionPdf> ExtraerTextoAsync(Stream streamPdf, CancellationToken cancellationToken = default)
+    {
+        if (ExcepcionALanzar is not null)
+        {
+            throw ExcepcionALanzar;
+        }
+
+        return Task.FromResult(new ResultadoExtraccionPdf(CantidadPaginas, TextoExtraido));
     }
 }
