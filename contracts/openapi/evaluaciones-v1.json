@@ -276,7 +276,7 @@
           "Interno"
         ],
         "summary": "Registra la nota sugerida por la IA para una pregunta abierta de una entrega.",
-        "description": "Consumidor: IA (herramienta MCP RegistrarCalificacionSugerida, S2-IA-01). Proveedor: Evaluaciones (S2-EV-02). Es el camino oficial por el que la nota sugerida llega a Evaluaciones; la respuesta directa de POST /api/v1/correcciones solo se usa para detectar fallos. La nota se guarda siempre como SUGERIDA, nunca como nota final (RN-CMP-03). Idempotente por (entregaId, preguntaId): si ya hay nota para esa pregunta, responde 200 con yaExistia=true y no la modifica. Reglas en orden: datos inválidos o justificación vacía (400), entrega o pregunta inexistente (404), la pregunta no es Abierta (400), nota mayor al puntajeMaximo de la pregunta (400), nota final ya aprobada por el docente (409). Endpoint interno: no se publica en el gateway (S2-ID-01).",
+        "description": "Consumidor: IA (herramienta MCP RegistrarCalificacionSugerida, S2-IA-01). Proveedor: Evaluaciones (S2-EV-02). Es el camino oficial por el que la nota sugerida llega a Evaluaciones; la respuesta directa de POST /api/v1/correcciones solo se usa para detectar fallos. La nota se guarda siempre como SUGERIDA, nunca como nota final (RN-CMP-03). Idempotente por (entregaId, preguntaId): si ya hay nota para esa pregunta, responde 200 con yaExistia=true y no la modifica. Reglas en orden: datos inválidos o justificación vacía (400), entrega o pregunta inexistente (404), la pregunta no es Abierta (400), nota mayor al puntajeMaximo de la pregunta (400), nota final ya aprobada por el docente (409). Endpoint interno: no se publica en el gateway (S2-ID-01). Autenticación: header X-Api-Key-Interna (ApiKeyInterna). En estos endpoints internos se acepta el institucionId del cuerpo porque quien llama es un servicio de confianza; igual se verifica que la evaluación pertenezca a esa institución.",
         "operationId": "RegistrarCalificacionSugerida",
         "parameters": [
           {
@@ -348,8 +348,28 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Falta el header X-Api-Key-Interna o la clave es incorrecta.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Credencial interna inválida.",
+                  "status": 401,
+                  "errores": []
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "ApiKeyInterna": []
+          }
+        ]
       }
     },
     "/interno/salas/{salaId}/entregas": {
@@ -358,7 +378,7 @@
           "Interno"
         ],
         "summary": "Recibe el lote de entregas de una sala finalizada.",
-        "description": "Consumidor: Sala en vivo (S2-SA-03, #140). Proveedor: Evaluaciones (S2-EV-01, #143). Idempotente: como máximo una entrega por (salaId, alumnoId); un reintento devuelve 200 con lo ya guardado. Corrige automáticamente el multiple choice. Sala reintenta solo ante error de red o 5xx. Endpoint interno: no se publica en el gateway.",
+        "description": "Consumidor: Sala en vivo (S2-SA-03, #140). Proveedor: Evaluaciones (S2-EV-01, #143). Idempotente: como máximo una entrega por (salaId, alumnoId); un reintento devuelve 200 con lo ya guardado. Corrige automáticamente el multiple choice. Sala reintenta solo ante error de red o 5xx. Endpoint interno: no se publica en el gateway. Autenticación: header X-Api-Key-Interna (ApiKeyInterna). En estos endpoints internos se acepta el institucionId del cuerpo porque quien llama es un servicio de confianza; igual se verifica que la evaluación pertenezca a esa institución. Corrección del multiple choice (decisión del PO, 09/11/2026): cada pregunta OpcionMultiple suma su puntajeMaximo si la opción elegida tiene esCorrecta=true; incorrecta, sin respuesta u opción inexistente suman 0 (no resta); si hay varias respuestas a la misma pregunta vale la de mayor secuencia; notaMultipleChoice es la suma sin normalizar. Estado: PendienteCorreccion si la entrega tiene al menos una respuesta a una pregunta Abierta; si no, Corregida. El worker de S2-EV-02 toma las entregas en PendienteCorreccion consultando la base (sin colas).",
         "operationId": "RecibirLoteEntregas",
         "x-estado": "planificado",
         "parameters": [
@@ -416,8 +436,28 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Falta el header X-Api-Key-Interna o la clave es incorrecta.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Credencial interna inválida.",
+                  "status": 401,
+                  "errores": []
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "ApiKeyInterna": []
+          }
+        ]
       }
     },
     "/api/v1/evaluaciones/{id}/entregas": {
@@ -1497,6 +1537,12 @@
         "scheme": "bearer",
         "bearerFormat": "JWT",
         "description": "JWT institucional de Identidad (identidad-v1.json, JwtInstitucional). Los endpoints existentes todavía usan X-Institucion-Id y migran a Bearer en S2-ID-01 (#134)."
+      },
+      "ApiKeyInterna": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Api-Key-Interna",
+        "description": "Clave compartida entre servicios para los endpoints /interno/... (decisión del PO, 09/11/2026). Se configura en ServiciosInternos:ApiKey y nunca se sube al repo fuera de Development. Sin clave o con clave incorrecta → 401."
       }
     }
   }

@@ -5,6 +5,7 @@ using Microsoft.OpenApi.Models;
 using PEI.BuildingBlocks.Errors;
 using PEI.BuildingBlocks.Logging;
 using PEI.BuildingBlocks.MultiTenancy;
+using PEI.Cursos.Api.Security;
 using PEI.Cursos.Application;
 using PEI.Cursos.Infrastructure;
 
@@ -40,11 +41,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(CursosAuthorization.SoloAdministrador, policy =>
+        policy.RequireAuthenticatedUser().RequireRole(CursosAuthorization.Administrador));
+    options.AddPolicy(CursosAuthorization.AdministradorODocente, policy =>
+        policy.RequireAuthenticatedUser().RequireRole(CursosAuthorization.Administrador, CursosAuthorization.Docente));
+});
 
 // Configuracion de Swagger enriquecida con soporte para esquema Bearer (Pilar 2)
 builder.Services.AddSwaggerGen(options =>
 {
+    options.OperationFilter<CursosAuthorizationOperationFilter>();
     options.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "PEI - Microservicio Cursos",
@@ -125,3 +133,5 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program { }

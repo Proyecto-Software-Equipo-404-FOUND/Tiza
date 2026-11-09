@@ -80,12 +80,16 @@ sequenceDiagram
 
 - **Institución:** sale siempre del claim `institucion_id` del token, nunca del cuerpo ni de
   un header. Un recurso de otra institución responde **404**, no 403, para no revelar que existe.
+  **Excepción:** en los endpoints internos (`/interno/...`) llama otro servicio y no hay
+  usuario, así que el `institucionId` viaja en el cuerpo. Igual se verifica que el recurso
+  pertenezca a esa institución.
 - **Roles:** claim `role` con `Administrador`, `Docente` o `Alumno`. Los servicios configuran
   `MapInboundClaims=false`, `NameClaimType=sub` y `RoleClaimType=role`.
 - **Datos personales:** entre servicios viaja solo el `alumnoId` (claim `sub`). Nombre y email
   se piden a Identidad. **A la IA nunca le llegan datos del alumno.**
 - **Endpoints internos** (`/interno/...` y los marcados como internos): son entre servicios y
-  no se publican en el gateway.
+  no se publican en el gateway. Se autentican con el header `X-Api-Key-Interna` (clave
+  compartida en `ServiciosInternos:ApiKey`); sin clave o con una clave incorrecta → **401**.
 - **Errores:** `ProblemDetails` (`application/problem+json`) con un `title` legible en español.
 - **Reintentos:** quien reintenta reutiliza la misma clave (`idempotencyKey`, `loteId`) y el
   servidor no duplica.

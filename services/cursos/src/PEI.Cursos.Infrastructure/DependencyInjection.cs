@@ -24,6 +24,9 @@ public static class DependencyInjection
         services.AddScoped<ICursoRepository, Persistence.Repositories.CursoRepository>();
         services.AddScoped<ICohorteRepository, Persistence.Repositories.CohorteRepository>();
         services.AddScoped<IMatriculacionRepository, Persistence.Repositories.MatriculacionRepository>();
+        services.AddScoped<IMaterialCursoRepository, Persistence.Repositories.MaterialCursoRepository>();
+        services.AddScoped<IAlmacenamientoArchivos, Storage.AlmacenamientoLocalArchivos>();
+        services.AddScoped<IExtractorTextoPdf, Pdf.PdfPigExtractorTextoPdf>();
         services.AddScoped<Application.Interfaces.IUnitOfWork, Persistence.UnitOfWork>();
 
         return services;
