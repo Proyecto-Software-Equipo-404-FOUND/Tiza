@@ -54,11 +54,12 @@ public class EvaluacionRepositorio : IEvaluacionRepositorio
 
     public Task<List<EntregaExamen>> ListarEntregasPorSalaAsync(
         Guid salaId,
+        Guid institucionId,
         CancellationToken ct)
     {
         return _contexto.EntregasExamen
             .AsNoTracking()
-            .Where(e => e.SalaId == salaId)
+            .Where(e => e.SalaId == salaId && e.InstitucionId == institucionId)
             .ToListAsync(ct);
     }
 

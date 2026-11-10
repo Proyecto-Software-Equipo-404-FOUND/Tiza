@@ -226,10 +226,11 @@ public class RecibirLoteEntregasTests
 
         public Task<List<EntregaExamen>> ListarEntregasPorSalaAsync(
             Guid salaId,
+            Guid institucionId,
             CancellationToken ct)
         {
             return Task.FromResult(
-                Entregas.Where(e => e.SalaId == salaId).ToList());
+                Entregas.Where(e => e.SalaId == salaId && e.InstitucionId == institucionId).ToList());
         }
 
         public Task AgregarEntregaAsync(

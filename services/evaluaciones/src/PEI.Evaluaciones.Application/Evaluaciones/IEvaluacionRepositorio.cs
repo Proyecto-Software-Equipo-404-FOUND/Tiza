@@ -14,7 +14,7 @@ public interface IEvaluacionRepositorio
 
     Task GuardarCambiosAsync(CancellationToken ct);
 
-    Task<List<EntregaExamen>> ListarEntregasPorSalaAsync(Guid salaId, CancellationToken ct);
+    Task<List<EntregaExamen>> ListarEntregasPorSalaAsync(Guid salaId, Guid institucionId, CancellationToken ct);
 
     Task AgregarEntregaAsync(EntregaExamen entrega, CancellationToken ct);
 }

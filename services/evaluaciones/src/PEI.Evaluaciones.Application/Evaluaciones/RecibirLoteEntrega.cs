@@ -137,6 +137,7 @@ public sealed class RecibirLoteEntregasHandler
 
         var existentes = await _repositorio.ListarEntregasPorSalaAsync(
             lote.SalaId,
+            lote.InstitucionId,
             ct);
 
         var existentesPorAlumno = existentes.ToDictionary(e => e.AlumnoId);
