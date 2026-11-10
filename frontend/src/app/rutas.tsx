@@ -8,6 +8,7 @@ import { PaginaEvaluaciones } from '@/features/evaluaciones/pages/PaginaEvaluaci
 import { PaginaNuevaEvaluacion } from '@/features/evaluaciones/pages/PaginaNuevaEvaluacion';
 import { PaginaMatriculas } from '@/features/matriculas/PaginaMatriculas';
 import { PaginaSalaAlumno } from '@/features/sala-alumno/PaginaSalaAlumno';
+import { PaginaSalaDocente } from '@/features/sala-docente/PaginaSalaDocente';
 import { Layout } from './Layout';
 import { PaginaErrorRuta } from './PaginaErrorRuta';
 import { PaginaInicio } from './PaginaInicio';
@@ -49,6 +50,7 @@ export const rutas: RouteObject[] = [
                   { path: '/evaluaciones/nueva', element: <PaginaNuevaEvaluacion /> },
                   { path: '/evaluaciones/:evaluacionId', element: <PaginaEvaluacion /> },
                   { path: '/evaluaciones/:evaluacionId/editar', element: <PaginaEditarEvaluacion /> },
+                  { path: '/evaluaciones/:evaluacionId/sala', element: <PaginaSalaDocente /> },
                 ],
               },
               {
