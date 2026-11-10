@@ -168,4 +168,21 @@ describe('PaginaApuntes', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Sí, eliminar' }));
     expect(mostrar).toHaveBeenCalledWith('error', 'Material no encontrado.');
   });
+
+  it('en un 403 al borrar no repite el aviso, porque ya lo muestra el manejo global', async () => {
+      const { mutar, mostrar } = simular({ data: [material] });
+      mutar.mockImplementation((_id: string, opciones: { onError: (e: unknown) => void }) =>
+        opciones.onError(
+          new ApiError(403, {
+            title: 'No tenés permiso para gestionar el material de este curso.',
+            status: 403,
+          }),
+        ),
+      );
+      renderizar();
+
+      await userEvent.click(screen.getByRole('button', { name: 'Eliminar Unidad 1 - Introducción' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Sí, eliminar' }));
+      expect(mostrar).not.toHaveBeenCalled();
+    });
 });

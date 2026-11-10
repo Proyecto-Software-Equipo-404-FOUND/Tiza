@@ -67,7 +67,12 @@ export function PaginaApuntes() {
     if (!aEliminar) return;
     eliminar.mutate(aEliminar.id, {
       onSuccess: () => mostrar('exito', 'Apunte eliminado.'),
-      onError: (falla) => mostrar('error', mensajeApuntes(falla)),
+      // El 403 ya lo avisa el manejo global (Proveedores): acá no se repite
+      onError: (falla) => {
+        if (!(falla instanceof ApiError && falla.estado === 403)) {
+          mostrar('error', mensajeApuntes(falla));
+        }
+      },
     });
   };
 

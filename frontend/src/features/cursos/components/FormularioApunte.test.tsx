@@ -136,6 +136,24 @@ describe('FormularioApunte', () => {
     );
   });
 
+   it('en un 403 no repite el aviso, porque ya lo muestra el manejo global', async () => {
+    const { mutate, mostrar } = simular();
+    mutate.mockImplementation((_datos: unknown, opciones: { onError: (e: unknown) => void }) =>
+      opciones.onError(
+        new ApiError(403, {
+          title: 'No tenés permiso para gestionar el material de este curso.',
+          status: 403,
+        }),
+      ),
+    );
+    mostrarFormulario();
+
+    elegir(pdf());
+    await userEvent.click(screen.getByRole('button', { name: 'Subir apunte' }));
+
+    expect(mostrar).not.toHaveBeenCalled();
+  }); 
+
   it('deshabilita el botón mientras envía', () => {
     simular({ isPending: true });
     mostrarFormulario();

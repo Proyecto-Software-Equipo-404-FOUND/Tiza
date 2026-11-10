@@ -3,6 +3,7 @@ import { Upload } from 'lucide-react';
 import { Boton } from '@/shared/components/Boton';
 import { Campo } from '@/shared/components/Campo';
 import { useAviso } from '@/shared/components/Aviso';
+import { ApiError } from '@/shared/api/cliente';
 import { mensajeApuntes } from '../mensajesApuntes';
 import { TITULO_MAXIMO, validarArchivo } from '../apuntes';
 import { useSubirMaterial } from '../hooks/useSubirMaterial';
@@ -43,7 +44,12 @@ export function FormularioApunte({ cursoId }: Props) {
           setErrorArchivo(undefined);
           if (entradaArchivo.current) entradaArchivo.current.value = '';
         },
-        onError: (error) => mostrar('error', mensajeApuntes(error)),
+        // El 403 ya lo avisa el manejo global (Proveedores): acá no se repite
+        onError: (error) => {
+          if (!(error instanceof ApiError && error.estado === 403)) {
+            mostrar('error', mensajeApuntes(error));
+          }
+        },
       },
     );
   };
