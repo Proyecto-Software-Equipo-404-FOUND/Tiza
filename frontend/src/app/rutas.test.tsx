@@ -52,6 +52,15 @@ vi.mock('@/features/evaluaciones/api/evaluaciones', () => ({
   eliminarEvaluacion: vi.fn(),
 }));
 
+vi.mock('@/features/revision-notas/api/entregas', () => ({
+  listarEntregas: vi.fn().mockResolvedValue([]),
+  obtenerEntrega: vi.fn().mockRejectedValue(new Error('sin backend en este test')),
+}));
+
+vi.mock('@/features/revision-notas/api/usuarios', () => ({
+  listarAlumnos: vi.fn().mockResolvedValue([]),
+}));
+
 vi.mock('@/features/sala-alumno/crearConexionSala', async () => {
   const { crearConexionFalsa } = await import('@/shared/realtime/conexionFalsa');
   return { crearConexionSala: () => crearConexionFalsa().conexion };
@@ -78,7 +87,9 @@ function mostrar(ruta: string) {
   );
 }
 
-beforeEach(() => guardarToken(null));
+beforeEach(() => {
+  guardarToken(null);
+});
 
 describe('rutas de la aplicación', () => {
   it('sin sesión, una ruta protegida lleva al login', () => {
@@ -196,4 +207,27 @@ describe('rutas de la aplicación', () => {
     expect(screen.queryByRole('heading', { level: 1, name: 'Sala en vivo' })).not.toBeInTheDocument();
   });
 
+  it('un docente entra a los resultados de una evaluación', async () => {
+    iniciarComo('docente');
+    mostrar('/evaluaciones/ev-1/resultados');
+    expect(await screen.findByRole('navigation', { name: 'Secciones de la evaluación' })).toBeInTheDocument();
+  });
+
+  it('un alumno no entra a los resultados de una evaluación', () => {
+    iniciarComo('alumno');
+    mostrar('/evaluaciones/ev-1/resultados');
+    expect(screen.getByText('No tenés permiso para ver esta página.')).toBeInTheDocument();
+  });
+
+  it('un docente entra al detalle de una entrega', () => {
+    iniciarComo('docente');
+    mostrar('/evaluaciones/ev-1/resultados/en-1');
+    expect(screen.queryByText('No tenés permiso para ver esta página.')).not.toBeInTheDocument();
+  });
+
+  it('un alumno no entra al detalle de una entrega', () => {
+    iniciarComo('alumno');
+    mostrar('/evaluaciones/ev-1/resultados/en-1');
+    expect(screen.getByText('No tenés permiso para ver esta página.')).toBeInTheDocument();
+  });
 });

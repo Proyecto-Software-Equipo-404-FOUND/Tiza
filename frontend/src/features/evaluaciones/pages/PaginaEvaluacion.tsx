@@ -1,5 +1,6 @@
 import { Check, DoorOpen, Pencil } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
+import { PestanasEvaluacion } from '@/features/revision-notas/components/PestanasEvaluacion';
 import { mensajeDeError } from '@/shared/api/errores';
 import { BannerError } from '@/shared/components/BannerError';
 import { EnlaceBoton } from '@/shared/components/EnlaceBoton';
@@ -107,6 +108,9 @@ export function PaginaEvaluacion() {
                 Abrir sala
               </EnlaceBoton>
             )}
+            <div className='w-full'>
+              <PestanasEvaluacion evaluacionId={evaluacion.id} actual='detalle' />
+            </div>
           </header>
 
           <Tarjeta titulo='Resumen'>
