@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { ChevronRight, GraduationCap, Sparkles, Users } from 'lucide-react';
+import { ChevronRight, FileText, GraduationCap, Sparkles, Users } from 'lucide-react';
 import { useCursos } from '../hooks/useCursos';
 import { Spinner } from '@/shared/components/Spinner';
 import { BannerError } from '@/shared/components/BannerError';
@@ -38,6 +38,18 @@ const crearColumnas = (
       >
         Ver cohortes
         <ChevronRight className='h-4 w-4' aria-hidden='true' />
+      </EnlaceBoton>
+    ),
+  },
+  {
+    titulo: 'Apuntes',
+    celda: (curso) => (
+      <EnlaceBoton
+        to={`/cursos/${curso.id}/apuntes`}
+        icono={<FileText className='h-4 w-4' aria-hidden='true' />}
+        className='whitespace-nowrap bg-tiza-menta/60'
+      >
+        Ver apuntes
       </EnlaceBoton>
     ),
   },
