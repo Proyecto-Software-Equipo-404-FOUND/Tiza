@@ -44,3 +44,6 @@ Desktop.ini
 !.vscode/launch.json
 !.vscode/extensions.json
 /tmp
+
+/building-blocks/.tmp/
+services/identidad/.tmp/
