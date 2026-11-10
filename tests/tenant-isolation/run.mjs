@@ -62,7 +62,7 @@ function launch(service, name, port) {
 function jwt(claims, key = signingKey) {
   const encode = object => Buffer.from(JSON.stringify(object)).toString('base64url');
   const now = Math.floor(Date.now() / 1000);
-  const data = `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ iss: issuer, aud: 'qa04', sub: '11111111-0000-0000-0000-000000000002', role: 'Docente', nbf: now-5, exp: now+600, ...claims })}`;
+  const data = `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ iss: issuer, aud: 'qa04', sub: '11111111-0000-0000-0000-000000000002', role: 'Administrador', nbf: now-5, exp: now+600, ...claims })}`;
   const token = `${data}.${createHmac('sha256', key).update(data).digest('base64url')}`;
   secrets.push(token); return token;
 }

@@ -1,4 +1,4 @@
-import { Check, Pencil } from 'lucide-react';
+import { Check, DoorOpen, Pencil } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { mensajeDeError } from '@/shared/api/errores';
 import { BannerError } from '@/shared/components/BannerError';
@@ -96,6 +96,15 @@ export function PaginaEvaluacion() {
                 className='whitespace-nowrap'
               >
                 Editar borrador
+              </EnlaceBoton>
+            )}
+            {evaluacion.estado === 'Publicada' && (
+              <EnlaceBoton
+                to={`/evaluaciones/${evaluacion.id}/sala`}
+                icono={<DoorOpen className='h-4 w-4' aria-hidden='true' />}
+                className='whitespace-nowrap'
+              >
+                Abrir sala
               </EnlaceBoton>
             )}
           </header>

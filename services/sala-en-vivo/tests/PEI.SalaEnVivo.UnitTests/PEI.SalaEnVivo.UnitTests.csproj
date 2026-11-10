@@ -23,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\PEI.SalaEnVivo.Application\PEI.SalaEnVivo.Application.csproj" />
     <ProjectReference Include="..\..\src\PEI.SalaEnVivo.Domain\PEI.SalaEnVivo.Domain.csproj" />
+    <ProjectReference Include="..\..\src\PEI.SalaEnVivo.Infrastructure\PEI.SalaEnVivo.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

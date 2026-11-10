@@ -188,4 +188,12 @@ describe('rutas de la aplicación', () => {
     mostrar('/evaluaciones/nueva');
     expect(screen.getByText('No tenés permiso para ver esta página.')).toBeInTheDocument();
   });
+
+  it('un alumno no entra al panel de la sala de una evaluación', () => {
+    iniciarComo('alumno');
+    mostrar('/evaluaciones/ev-1/sala');
+    expect(screen.getByText('No tenés permiso para ver esta página.')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 1, name: 'Sala en vivo' })).not.toBeInTheDocument();
+  });
+
 });
