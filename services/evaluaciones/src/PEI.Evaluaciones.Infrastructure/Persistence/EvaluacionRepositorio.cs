@@ -51,4 +51,21 @@ public class EvaluacionRepositorio : IEvaluacionRepositorio
             throw new ConflictoConcurrenciaException(ex);
         }
     }
+
+    public Task<List<EntregaExamen>> ListarEntregasPorSalaAsync(
+        Guid salaId,
+        CancellationToken ct)
+    {
+        return _contexto.EntregasExamen
+            .AsNoTracking()
+            .Where(e => e.SalaId == salaId)
+            .ToListAsync(ct);
+    }
+
+    public async Task AgregarEntregaAsync(
+        EntregaExamen entrega,
+        CancellationToken ct)
+    {
+        await _contexto.EntregasExamen.AddAsync(entrega, ct);
+    }
 }
