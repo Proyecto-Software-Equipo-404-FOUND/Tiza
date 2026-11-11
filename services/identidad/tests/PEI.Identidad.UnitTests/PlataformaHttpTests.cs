@@ -5,7 +5,9 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,8 +20,20 @@ using PEI.Identidad.Application.Plataforma;
 using PEI.Identidad.Domain.Entities;
 using PEI.Identidad.Infrastructure.Plataforma;
 using PEI.Identidad.Infrastructure.Security;
+using IdentityTenantContext = PEI.Identidad.Application.Abstractions.ITenantContext;
 
 namespace PEI.Identidad.UnitTests;
+
+[ApiController, Authorize(Policy = PEI.Identidad.Api.Security.PlataformaSetup.Policy), Route("test/platform-tenant")]
+public sealed class PlatformTenantProbeController(IdentityTenantContext tenant) : ControllerBase
+{
+    [HttpGet]
+    public IActionResult Get() => Ok(new
+    {
+        institucion = tenant.InstitucionId,
+        identityType = User.FindFirst("identity_type")?.Value
+    });
+}
 
 public sealed class PlatformHttpFactory : WebApplicationFactory<Program>
 {
@@ -99,6 +113,20 @@ public sealed class PlataformaHttpTests
         var token = new JwtSecurityTokenHandler().ReadJwtToken(json.GetProperty("accessToken").GetString());
         Assert.DoesNotContain(token.Claims, c => c.Type == "institucion_id");
         Assert.Contains(token.Claims, c => c.Type == "identity_type" && c.Value == "platform");
+    }
+
+    [Fact]
+    public async Task TokenPlatformBearerAutorizadoNoGeneraContextoInstitucional()
+    {
+        using var factory = new PlatformHttpFactory();
+        using var client = factory.Client(factory.Token());
+
+        var response = await client.GetAsync("/test/platform-tenant");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        Assert.Equal("platform", body.GetProperty("identityType").GetString());
+        Assert.Equal(System.Text.Json.JsonValueKind.Null, body.GetProperty("institucion").ValueKind);
     }
 
     [Theory]

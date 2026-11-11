@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using PEI.Identidad.Application.Abstractions;
 using PEI.Identidad.Domain.Entities;
 using PEI.Identidad.Infrastructure.Persistence;
+using PEI.BuildingBlocks.MultiTenancy;
+using PEI.Identidad.Infrastructure.Tenancy;
 
 namespace PEI.Identidad.UnitTests;
 
@@ -59,8 +61,7 @@ public sealed class EmailNormalizationTests
         Assert.Contains("CREATE TRIGGER pei_token_invariants", sql);
     }
 
-    private sealed record Tenant(Guid? InstitucionId) : ITenantContext;
     private static IdentidadDbContext Context() => new(
         new DbContextOptionsBuilder<IdentidadDbContext>().UseNpgsql("Host=localhost;Database=sin_conexion").Options,
-        new Tenant(Guid.NewGuid()));
+        new TenantContextAdapter(new TenantContext { InstitucionId = Guid.NewGuid() }));
 }
