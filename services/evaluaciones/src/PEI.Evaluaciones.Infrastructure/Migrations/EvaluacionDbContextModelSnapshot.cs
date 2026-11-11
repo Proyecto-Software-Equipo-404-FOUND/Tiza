@@ -22,6 +22,53 @@ namespace PEI.Evaluaciones.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("PEI.Evaluaciones.Domain.Entities.EntregaExamen", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AlertasFocoJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("AlumnoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("EvaluacionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("FechaEntrega")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("InstitucionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal?>("NotaMultipleChoice")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("RespuestasJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("SalaId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EvaluacionId");
+
+                    b.HasIndex("SalaId", "AlumnoId")
+                        .IsUnique();
+
+                    b.ToTable("EntregaExamen", (string)null);
+                });
+
             modelBuilder.Entity("PEI.Evaluaciones.Domain.Entities.Evaluacion", b =>
                 {
                     b.Property<Guid>("Id")
@@ -65,6 +112,15 @@ namespace PEI.Evaluaciones.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Evaluacion", (string)null);
+                });
+
+            modelBuilder.Entity("PEI.Evaluaciones.Domain.Entities.EntregaExamen", b =>
+                {
+                    b.HasOne("PEI.Evaluaciones.Domain.Entities.Evaluacion", null)
+                        .WithMany()
+                        .HasForeignKey("EvaluacionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

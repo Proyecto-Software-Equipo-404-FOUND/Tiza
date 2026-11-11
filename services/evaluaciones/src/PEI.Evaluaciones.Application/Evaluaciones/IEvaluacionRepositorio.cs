@@ -13,4 +13,8 @@ public interface IEvaluacionRepositorio
     void Eliminar(Evaluacion evaluacion);
 
     Task GuardarCambiosAsync(CancellationToken ct);
+
+    Task<List<EntregaExamen>> ListarEntregasPorSalaAsync(Guid salaId, Guid institucionId, CancellationToken ct);
+
+    Task AgregarEntregaAsync(EntregaExamen entrega, CancellationToken ct);
 }
