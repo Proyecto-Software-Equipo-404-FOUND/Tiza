@@ -86,7 +86,8 @@ export async function pedir<T>(
   const respuesta = await fetch(`${URL_BASE}${ruta}`, {
     ...opciones,
     headers: {
-      'Content-Type': 'application/json',
+      // Con FormData el navegador pone el Content-Type con su boundary: no se fuerza JSON
+      ...(opciones.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...opciones.headers,
     },
