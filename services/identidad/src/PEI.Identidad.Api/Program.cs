@@ -1,20 +1,22 @@
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.DataProtection;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using PEI.BuildingBlocks.MultiTenancy;
 using PEI.Identidad.Api.Security;
-using PEI.Identidad.Application.Abstractions;
 using PEI.Identidad.Application.Interfaces.Security;
 using PEI.Identidad.Application.Interfaces.Service;
 using PEI.Identidad.Application.UseCases.Auth.Login;
 using PEI.Identidad.Application.UseCases.Auth.Refresh;
 using PEI.Identidad.Application.UseCases.Auth.Register;
 using PEI.Identidad.Infrastructure.Persistence;
-using PEI.Identidad.Infrastructure.Tenancy;
 using PEI.Identidad.Infrastructure.Authentication;
 using PEI.Identidad.Infrastructure.Repositories;
 using PEI.Identidad.Infrastructure.Security;
+using PEI.Identidad.Infrastructure.Tenancy;
 using PEI.Identidad.Application.UseCases.Usuarios;
+using PEI.Identidad.Application.Abstractions;
 
 var generateTestToken = args.Contains("--generate-test-token", StringComparer.Ordinal);
 var bootstrapPlatform = args.Contains("--bootstrap-platform", StringComparer.Ordinal);
@@ -30,7 +32,8 @@ var connectionString = builder.Configuration.GetConnectionString("IdentidadDb")
 builder.Services.AddDbContext<IdentidadDbContext>(o => o.UseNpgsql(connectionString));
 builder.Services.AddDbContext<PlataformaDbContext>(options => options.UseNpgsql(connectionString, npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistoryPlataforma")));
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<ITenantContext, TenantContext>();
+builder.Services.AddTenantContext();
+builder.Services.AddScoped<PEI.Identidad.Application.Abstractions.ITenantContext, TenantContextAdapter>();
 builder.Services.AddScoped<IAuthenticationDataAccess, AuthenticationDataAccess>();
 builder.Services.AddScoped<IAuthenticationTokenWriter, AuthenticationTokenWriter>();
 builder.Services.AddScoped<IRegistrationDataAccess, RegistrationDataAccess>();
@@ -49,6 +52,15 @@ builder.Services.AddScoped<IUsuariosConsultaDataAccess, UsuariosConsultaDataAcce
 builder.Services.AddScoped<ListarUsuariosHandler>();
 builder.Services.AddScoped<ObtenerUsuarioHandler>();
 builder.Services.AddIdentityAuthentication(builder.Configuration, builder.Environment);
+if (builder.Configuration.GetValue<bool>("DevelopmentTools:EnableTestTokens"))
+{
+    var localDevelopmentOptions = DevelopmentTokenCommand.ReadOptions(builder.Configuration);
+    builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = InstitutionalAuthenticationSelector.Scheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    }).AddInstitutionalAuthenticationSelector(localDevelopmentOptions.Issuer);
+}
 builder.Services.AddPlataforma(builder.Configuration, builder.Environment);
 builder.Services.AddExceptionHandler<PEI.Identidad.Api.Errors.TenantAccessDeniedHandler>();
 builder.Services.AddExceptionHandler<PEI.Identidad.Api.Errors.IdentityExceptionHandler>();
@@ -128,6 +140,7 @@ app.Use(async (context, next) =>
 app.UseExceptionHandler();
 app.UseHttpsRedirection();
 app.UseAuthentication();
+app.UseTenantContext();
 app.UseAuthorization();
 app.UseRateLimiter();
 app.MapControllers();

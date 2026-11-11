@@ -1,7 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Npgsql;
-using PEI.Identidad.Application.Abstractions;
+using PEI.BuildingBlocks.MultiTenancy;
+using PEI.Identidad.Infrastructure.Tenancy;
 using PEI.Identidad.Application.Interfaces.Security;
 using PEI.Identidad.Infrastructure.Persistence;
 
@@ -9,7 +10,6 @@ namespace PEI.Identidad.DevelopmentSeed;
 
 public sealed class IdentitySeedRunner(IPasswordHasher passwords)
 {
-    private sealed record NoTenant : ITenantContext { public Guid? InstitucionId => null; }
 
     public async Task<SeedReport> RunAsync(SeedOptions options, CancellationToken ct = default)
     {
@@ -140,7 +140,7 @@ public sealed class IdentitySeedRunner(IPasswordHasher passwords)
         {
             // Use the existing EF models as the column/index/FK manifest, avoiding a second schema model.
             await using var identity = new IdentidadDbContext(new DbContextOptionsBuilder<IdentidadDbContext>()
-                .UseNpgsql(connectionOptions.ConnectionString).Options, new NoTenant());
+                .UseNpgsql(connectionOptions.ConnectionString).Options, new TenantContextAdapter(new TenantContext()));
             await using var platform = new PlataformaDbContext(new DbContextOptionsBuilder<PlataformaDbContext>()
                 .UseNpgsql(connectionOptions.ConnectionString).Options);
             foreach (var context in new DbContext[] { identity, platform })

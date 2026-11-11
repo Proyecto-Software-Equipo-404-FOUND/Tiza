@@ -45,5 +45,7 @@ public class PublicarConcurrenciaTests
         public Task<List<Evaluacion>> ListarAsync(Guid institution, CancellationToken ct) => throw new NotSupportedException();
         public Task AgregarAsync(Evaluacion row, CancellationToken ct) => throw new NotSupportedException();
         public void Eliminar(Evaluacion row) => throw new NotSupportedException();
+        public Task<List<EntregaExamen>> ListarEntregasPorSalaAsync(Guid salaId, Guid institucionId, CancellationToken ct) => throw new NotSupportedException();
+        public Task AgregarEntregaAsync(EntregaExamen entrega, CancellationToken ct) => throw new NotSupportedException();
     }
 }

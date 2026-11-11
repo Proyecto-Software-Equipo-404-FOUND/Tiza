@@ -5,6 +5,8 @@ using PEI.Identidad.Application.Exceptions;
 using PEI.Identidad.Domain.Entities;
 using PEI.Identidad.Infrastructure.Authentication;
 using PEI.Identidad.Infrastructure.Persistence;
+using PEI.Identidad.Infrastructure.Tenancy;
+using PEI.BuildingBlocks.MultiTenancy;
 
 namespace PEI.Identidad.IntegrationTests;
 
@@ -26,9 +28,9 @@ public sealed partial class TenantIsolationTests : IAsyncLifetime
     private readonly Guid a = Guid.NewGuid(), b = Guid.NewGuid();
     private readonly Guid ua = Guid.NewGuid(), ub = Guid.NewGuid(), ua2 = Guid.NewGuid();
     private readonly string hash = Guid.NewGuid().ToString("N");
-    private sealed record Tenant(Guid? InstitucionId) : ITenantContext;
     private IdentidadDbContext Context(Guid? tenant) => new(
-        new DbContextOptionsBuilder<IdentidadDbContext>().UseNpgsql(connection, o => o.MigrationsHistoryTable("__EFMigrationsHistory", schema)).Options, new Tenant(tenant));
+        new DbContextOptionsBuilder<IdentidadDbContext>().UseNpgsql(connection, o => o.MigrationsHistoryTable("__EFMigrationsHistory", schema)).Options,
+        new TenantContextAdapter(new TenantContext { InstitucionId = tenant }));
 
     public async Task InitializeAsync()
     {

@@ -11,7 +11,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.FileProviders;
-using PEI.Identidad.Infrastructure.Tenancy;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -22,17 +21,20 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using PEI.Identidad.Api.Security;
-using PEI.Identidad.Application.Abstractions;
+using PEI.BuildingBlocks.MultiTenancy;
 using PEI.Identidad.Application.Exceptions;
 using PEI.Identidad.Domain.Entities;
 using PEI.Identidad.Domain.Security;
 using PEI.Identidad.Infrastructure.Security;
+using PEI.Identidad.Infrastructure.Tenancy;
+using IdentityTenantContextContract = PEI.Identidad.Application.Abstractions.ITenantContext;
+using PEI.Identidad.Application.Abstractions;
 
 namespace PEI.Identidad.UnitTests;
 
 // Solo el host de pruebas publica este controlador; no pertenece al ensamblado de la API.
 [ApiController, Authorize, Route("test/tenant")]
-public sealed class TenantProbeController(ITenantContext tenant) : ControllerBase
+public sealed class TenantProbeController(IdentityTenantContextContract tenant) : ControllerBase
 {
     [HttpGet] public IActionResult Get() => Ok(new { institucion = tenant.InstitucionId, usuario = User.FindFirst("sub")?.Value });
 }
@@ -378,7 +380,7 @@ public sealed class AuthenticationHttpTests
         public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
     }
     [Fact]
-    public async Task TokenLocalSoloSeAceptaConConfianzaExplicitaYAislada()
+    public async Task TokenLocalValidoSeleccionaSuEsquemaYCreaContextoInstitucional()
     {
         // Host manual sin proveedores de User Secrets: este caso nunca carga configuracion real del usuario.
         var store = new FakeIdentityStore();
@@ -399,30 +401,125 @@ public sealed class AuthenticationHttpTests
         TestServer Server() => new(new WebHostBuilder().ConfigureServices(services =>
         {
             services.AddRouting(); services.AddHttpContextAccessor();
-            services.AddScoped<ITenantContext, TenantContext>();
+            services.AddTenantContext();
+            services.AddScoped<IdentityTenantContextContract, TenantContextAdapter>();
             services.AddSingleton<IAuthenticatedUserValidator>(store);
             services.AddIdentityAuthentication(config, new LocalEnvironment());
+            if (config.GetValue<bool>("DevelopmentTools:EnableTestTokens"))
+            {
+                var localOptions = DevelopmentTokenCommand.ReadOptions(config);
+                services.AddAuthentication(options =>
+                {
+                    options.DefaultAuthenticateScheme = InstitutionalAuthenticationSelector.Scheme;
+                    options.DefaultChallengeScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+                }).AddInstitutionalAuthenticationSelector(localOptions.Issuer);
+            }
             services.AddControllers().AddApplicationPart(typeof(TenantProbeController).Assembly);
         }).Configure(app =>
         {
-            app.UseRouting(); app.UseAuthentication(); app.UseAuthorization();
+            app.UseRouting(); app.UseAuthentication(); app.UseTenantContext(); app.UseAuthorization();
             app.UseEndpoints(endpoints => endpoints.MapControllers());
         }));
         using (var server = Server())
         using (var client = server.CreateClient())
         {
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/test/tenant")).StatusCode);
+            var accepted = await client.GetAsync("/test/tenant");
+            Assert.Equal(HttpStatusCode.OK, accepted.StatusCode);
+            var tenant = await accepted.Content.ReadFromJsonAsync<JsonElement>();
+            Assert.Equal(store.Admin.InstitucionId, tenant.GetProperty("institucion").GetGuid());
+            Assert.Equal(store.Admin.Id.ToString(), tenant.GetProperty("usuario").GetString());
+
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "invalid");
             var response = await client.GetAsync("/test/tenant");
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
             Assert.Equal(401, (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("status").GetInt32());
         }
+
+        using (var invalidSignatureServer = Server())
+        using (var invalidSignatureClient = invalidSignatureServer.CreateClient())
+        {
+            invalidSignatureClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+                "Bearer", LocalToken(config, store, "firma"));
+            Assert.Equal(HttpStatusCode.Unauthorized, (await invalidSignatureClient.GetAsync("/test/tenant")).StatusCode);
+        }
+
         config["DevelopmentTools:EnableTestTokens"] = "false";
         using var disabledServer = Server(); using var disabledClient = disabledServer.CreateClient();
         disabledClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         Assert.Equal(HttpStatusCode.Unauthorized, (await disabledClient.GetAsync("/test/tenant")).StatusCode);
     }
+
+    [Theory]
+    [InlineData("expirado")]
+    [InlineData("claims")]
+    public async Task TokenLocalConVigenciaOCambiosContractualesInvalidosSeRechaza(string caso)
+    {
+        var store = new FakeIdentityStore();
+        var config = LocalDevelopmentConfiguration(store);
+        var token = LocalToken(config, store, caso);
+        using var server = LocalDevelopmentServer(config, store);
+        using var client = server.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/test/tenant")).StatusCode);
+    }
+
+    private static IConfigurationRoot LocalDevelopmentConfiguration(FakeIdentityStore store) =>
+        new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Jwt:SecretKey"] = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+            ["Jwt:Issuer"] = "ordinary", ["Jwt:Audience"] = "ordinary-api",
+            ["DevelopmentTools:EnableTestTokens"] = "true", ["urls"] = "http://127.0.0.1:5101",
+            ["DevelopmentTools:Jwt:SecretKey"] = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+            ["DevelopmentTools:Jwt:Issuer"] = "local", ["DevelopmentTools:Jwt:Audience"] = "local-api",
+            ["DevelopmentTools:UsuarioId"] = store.Admin.Id.ToString(),
+            ["DevelopmentTools:InstitucionId"] = store.Admin.InstitucionId.ToString(),
+            ["DevelopmentTools:Rol"] = "Administrador"
+        }).Build();
+
+    private static string LocalToken(IConfiguration configuration, FakeIdentityStore store, string caso)
+    {
+        var options = DevelopmentTokenCommand.ReadOptions(configuration);
+        var role = caso == "claims" ? "Usuario" : store.Admin.Rol;
+        var now = DateTime.UtcNow;
+        var signingKey = caso == "firma"
+            ? new SymmetricSecurityKey(RandomNumberGenerator.GetBytes(64))
+            : new SymmetricSecurityKey(Encoding.UTF8.GetBytes(options.SecretKey));
+        var expires = caso == "expirado" ? now.AddMinutes(-5) : now.AddMinutes(5);
+        var claims = new[]
+        {
+            new Claim("sub", store.Admin.Id.ToString()),
+            new Claim("institucion_id", store.Admin.InstitucionId.ToString()),
+            new Claim("role", role)
+        };
+        var jwt = new JwtSecurityToken(options.Issuer, options.Audience, claims,
+            now.AddMinutes(-10), expires,
+            new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256));
+
+        return new JwtSecurityTokenHandler().WriteToken(jwt);
+    }
+
+    private static TestServer LocalDevelopmentServer(IConfiguration configuration, FakeIdentityStore store) =>
+        new(new WebHostBuilder().ConfigureServices(services =>
+        {
+            services.AddRouting(); services.AddHttpContextAccessor();
+            services.AddTenantContext();
+            services.AddScoped<IdentityTenantContextContract, TenantContextAdapter>();
+            services.AddSingleton<IAuthenticatedUserValidator>(store);
+            services.AddIdentityAuthentication(configuration, new LocalEnvironment());
+            var localOptions = DevelopmentTokenCommand.ReadOptions(configuration);
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = InstitutionalAuthenticationSelector.Scheme;
+                options.DefaultChallengeScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+            }).AddInstitutionalAuthenticationSelector(localOptions.Issuer);
+            services.AddControllers().AddApplicationPart(typeof(TenantProbeController).Assembly);
+        }).Configure(app =>
+        {
+            app.UseRouting(); app.UseAuthentication(); app.UseTenantContext(); app.UseAuthorization();
+            app.UseEndpoints(endpoints => endpoints.MapControllers());
+        }));
 
     [Fact]
     public async Task PropiedadesJsonDuplicadasEnJwtSeRechazanAunqueElParserLasColapse()

@@ -263,6 +263,12 @@ namespace PEI.SalaEnVivo.UnitTests
         public Task<bool> ExisteAlumnoEnSalaAsync(Guid salaId, Guid alumnoId, CancellationToken cancellationToken) =>
             Task.FromResult(Participantes.Any(p => p.SalaId == salaId && p.AlumnoId == alumnoId));
 
+        public Task<IReadOnlyList<ParticipanteSala>> ObtenerPorSalaAsync(Guid salaId, CancellationToken cancellationToken = default)
+        {
+            var resultado = (IReadOnlyList<ParticipanteSala>)Participantes.Where(p => p.SalaId == salaId).ToList();
+            return Task.FromResult(resultado);
+        }
+
         public Task<Guid?> ObtenerUltimaSalaIdDeAlumnoAsync(Guid alumnoId, CancellationToken cancellationToken = default)
         {
             var ultima = Participantes

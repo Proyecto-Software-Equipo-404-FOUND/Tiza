@@ -1,3 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using PEI.SalaEnVivo.Application.DTOs.Entregas;
 using PEI.SalaEnVivo.Application.DTOs.Evaluaciones;
 using PEI.SalaEnVivo.Application.Interfaces;
 using PEI.SalaEnVivo.Application.UseCases.Salas.Commands;
@@ -149,6 +154,20 @@ namespace PEI.SalaEnVivo.UnitTests
                 Evaluaciones.TryGetValue(evaluacionId, out var evaluacion)
                     ? evaluacion
                     : null);
+        }
+
+        public Task<ResultadoLoteEntregasDto?> EnviarLoteEntregasAsync(
+            Guid salaId,
+            LoteEntregasRequestDto lote,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<ResultadoLoteEntregasDto?>(new ResultadoLoteEntregasDto(
+                lote.LoteId,
+                salaId,
+                lote.Entregas?.Count ?? 0,
+                lote.Entregas?.Count ?? 0,
+                0,
+                new List<EntregaResultadoDto>()));
         }
     }
 }

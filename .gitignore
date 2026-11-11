@@ -45,6 +45,8 @@ Desktop.ini
 !.vscode/extensions.json
 /tmp
 
-## Almacenamiento local (archivos y materiales PDF subidos en desarrollo)
-storage/
+/building-blocks/.tmp/
+   services/identidad/.tmp/
 
+   ## Almacenamiento local (archivos y materiales PDF subidos en desarrollo)
+   storage/
