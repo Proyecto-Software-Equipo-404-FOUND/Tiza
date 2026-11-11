@@ -15,9 +15,44 @@ namespace PEI.SalaEnVivo.Domain.Entities
         public Guid? PreguntaActualId { get; set; }
         public int IndicePreguntaActual { get; set; }
 
+        /// <summary>
+        /// Momento exacto en que la sala pasó a estado Finalizada (en UTC).
+        /// Requerido por el contrato de lote de entregas hacia Evaluaciones (lote-entregas-v1)
+        /// y por el evento SignalR salaFinalizada.
+        /// </summary>
+        public DateTime? FinalizadaUtc { get; set; }
+
+        /// <summary>
+        /// Motivo del cierre autoritativo de la sala ("Docente" o "TiempoAgotado").
+        /// Alineado con contracts/signalr/sala-hub-v1.md (sección 6.6).
+        /// </summary>
+        public string? MotivoCierre { get; set; }
+
         public void Iniciar()
         {
             Estado = "EnCurso";
+        }
+
+        /// <summary>
+        /// Finaliza la sala de forma autoritativa e idempotente.
+        /// Si la sala ya se encontraba en estado 'Finalizada', no modifica la fecha original
+        /// ni el motivo de cierre previo y retorna false.
+        /// </summary>
+        /// <param name="motivo">Causa del cierre: "Docente" o "TiempoAgotado" (por defecto "Docente").</param>
+        /// <returns>True si la sala realizó la transición a Finalizada; False si ya estaba finalizada.</returns>
+        public bool Finalizar(string motivo = "Docente")
+        {
+            if (string.Equals(Estado, "Finalizada", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            Estado = "Finalizada";
+            FinalizadaUtc = DateTime.UtcNow;
+            MotivoCierre = string.Equals(motivo, "TiempoAgotado", StringComparison.OrdinalIgnoreCase)
+                ? "TiempoAgotado"
+                : "Docente";
+            return true;
         }
 
         public void EstablecerPreguntaActual(Guid preguntaId, int indice)

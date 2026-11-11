@@ -59,6 +59,57 @@ namespace PEI.SalaEnVivo.Domain.Tests.Entities
             Assert.Equal(string.Empty, sala.Estado);
             Assert.Equal(0, sala.CapacidadMaxima);
             Assert.Equal(0, sala.CantidadParticipantes);
+            Assert.Null(sala.FinalizadaUtc);
+            Assert.Null(sala.MotivoCierre);
+        }
+
+        // Test 5: Finalizar en curso debe pasar a Finalizada con timestamp UTC y motivo Docente.
+        [Fact]
+        public void Finalizar_SalaEnCurso_CambiaEstadoAFinalizadaYAsignaFechaYMotivoDocente()
+        {
+            var sala = new Sala();
+            sala.Iniciar();
+
+            var resultado = sala.Finalizar("Docente");
+
+            Assert.True(resultado);
+            Assert.Equal("Finalizada", sala.Estado);
+            Assert.NotNull(sala.FinalizadaUtc);
+            Assert.Equal("Docente", sala.MotivoCierre);
+        }
+
+        // Test 6: Finalizar con TiempoAgotado debe registrar ese motivo de cierre.
+        [Fact]
+        public void Finalizar_ConMotivoTiempoAgotado_AsignaMotivoTiempoAgotado()
+        {
+            var sala = new Sala();
+            sala.Iniciar();
+
+            var resultado = sala.Finalizar("TiempoAgotado");
+
+            Assert.True(resultado);
+            Assert.Equal("Finalizada", sala.Estado);
+            Assert.NotNull(sala.FinalizadaUtc);
+            Assert.Equal("TiempoAgotado", sala.MotivoCierre);
+        }
+
+        // Test 7: Finalizar sobre una sala ya finalizada debe ser idempotente y retornar false sin mutar fecha.
+        [Fact]
+        public void Finalizar_SalaYaFinalizada_EsIdempotenteYRetornaFalse()
+        {
+            var sala = new Sala();
+            sala.Iniciar();
+            sala.Finalizar("Docente");
+
+            var fechaOriginal = sala.FinalizadaUtc;
+
+            // Segunda llamada idempotente
+            var resultadoSegundaVez = sala.Finalizar("TiempoAgotado");
+
+            Assert.False(resultadoSegundaVez);
+            Assert.Equal("Finalizada", sala.Estado);
+            Assert.Equal(fechaOriginal, sala.FinalizadaUtc);
+            Assert.Equal("Docente", sala.MotivoCierre);
         }
     }
 }

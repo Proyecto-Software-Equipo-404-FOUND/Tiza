@@ -1,3 +1,5 @@
+using Microsoft.OpenApi.Models;
+using PEI.Evaluaciones.Api;
 using Microsoft.EntityFrameworkCore;
 using PEI.Evaluaciones.Infrastructure.Persistence;
 
@@ -21,7 +23,18 @@ builder.Services.AddScoped<PEI.Evaluaciones.Application.Evaluaciones.ICursosClie
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("ApiKeyInterna", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.ApiKey,
+        In = ParameterLocation.Header,
+        Name = "X-Api-Key-Interna",
+        Description = "Clave interna entre servicios."
+    });
+
+    options.OperationFilter<ApiKeyInternaOperationFilter>();
+});
 
 var app = builder.Build();
 
