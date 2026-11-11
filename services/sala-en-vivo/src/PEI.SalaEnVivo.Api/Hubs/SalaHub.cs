@@ -296,6 +296,37 @@ namespace PEI.SalaEnVivo.Api.Hubs
                 Context.ConnectionAborted);
         }
 
+        public async Task FinalizarSala(string? motivo = null)
+        {
+            var (salaId, institucionId) = ObtenerContextoDocente();
+
+            var resultado = await _sender.Send(
+                new FinalizarSalaCommand(salaId, institucionId, motivo),
+                Context.ConnectionAborted);
+
+            if (!resultado.Exito || resultado.Valor == null)
+            {
+                throw new HubException($"{resultado.Codigo}: {resultado.Mensaje}");
+            }
+
+            var finalizacion = resultado.Valor;
+
+            if (finalizacion.YaEstabaFinalizada)
+            {
+                return;
+            }
+
+            await Clients.Group(finalizacion.SalaId.ToString()).SendAsync(
+                "salaFinalizada",
+                new
+                {
+                    salaId = finalizacion.SalaId,
+                    finalizadaUtc = finalizacion.FinalizadaUtc,
+                    motivo = finalizacion.Motivo
+                },
+                Context.ConnectionAborted);
+        }
+
         public async Task<ResultadoEnvioRespuestaDto> EnviarRespuesta(EnviarRespuestaRequest request)
         {
             var user = Context.User;
