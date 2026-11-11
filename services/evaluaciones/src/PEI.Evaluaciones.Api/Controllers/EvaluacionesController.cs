@@ -2,6 +2,8 @@ using System.Text.Json;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using PEI.Evaluaciones.Application.Evaluaciones;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace PEI.Evaluaciones.Api.Controllers;
 
@@ -138,6 +140,56 @@ public class EvaluacionesController : ControllerBase
         var resultado = await _mediador.Send(
             new PublicarEvaluacionCommand(id, institucionId, peticion.VersionEsperada, peticion.CohorteId), ct);
 
+        if (resultado.Tipo != TipoResultado.Ok)
+        {
+            return RespuestaError(resultado);
+        }
+
+        return Ok(resultado.Valor);
+    }
+
+        [HttpGet("{id:guid}/entregas")]
+    [Authorize]
+    public async Task<IActionResult> ListarEntregas(Guid id, CancellationToken ct)
+    {
+        var rol = User.FindFirst("role")?.Value ?? User.FindFirst(ClaimTypes.Role)?.Value;
+        if (rol != "Docente" && rol != "Administrador")
+        {
+            return Problema(403, "Solo docentes y administradores pueden ver los resultados.", Array.Empty<string>());
+        }
+
+        var institucionClaim = User.FindFirst("institucion_id")?.Value;
+        if (!Guid.TryParse(institucionClaim, out var institucionId))
+        {
+            return Problema(401, "No autenticado.", Array.Empty<string>());
+        }
+
+        var resultado = await _mediador.Send(new ListarEntregasEvaluacionQuery(id, institucionId), ct);
+        if (resultado.Tipo != TipoResultado.Ok)
+        {
+            return RespuestaError(resultado);
+        }
+
+        return Ok(resultado.Valor);
+    }
+
+    [HttpGet("{id:guid}/entregas/{entregaId:guid}")]
+    [Authorize]
+    public async Task<IActionResult> ObtenerEntrega(Guid id, Guid entregaId, CancellationToken ct)
+    {
+        var rol = User.FindFirst("role")?.Value ?? User.FindFirst(ClaimTypes.Role)?.Value;
+        if (rol != "Docente" && rol != "Administrador")
+        {
+            return Problema(403, "Solo docentes y administradores pueden ver los resultados.", Array.Empty<string>());
+        }
+
+        var institucionClaim = User.FindFirst("institucion_id")?.Value;
+        if (!Guid.TryParse(institucionClaim, out var institucionId))
+        {
+            return Problema(401, "No autenticado.", Array.Empty<string>());
+        }
+
+        var resultado = await _mediador.Send(new ObtenerEntregaDetalleQuery(id, entregaId, institucionId), ct);
         if (resultado.Tipo != TipoResultado.Ok)
         {
             return RespuestaError(resultado);
