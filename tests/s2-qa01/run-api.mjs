@@ -40,12 +40,12 @@ try {
     server.listen(port, '127.0.0.1', () => server.close(resolve));
   });
   console.log('Comprobar Docker y compilar Evaluaciones');
-  await command('docker', ['info', '--format', '{{.ServerVersion}}'], 30000);
+  await command('docker', ['version', '--format', '{{.Server.Version}}'], 30000);
   await command('dotnet', ['build', 'services/evaluaciones/PEI.Evaluaciones.sln', '-v', 'quiet']);
   await command('docker', ['run', '-d', '--name', container, '--label', `tiza.s2qa01=${runId}`,
     '-p', '127.0.0.1:5543:5432', '-e', 'POSTGRES_PASSWORD', '-e', 'POSTGRES_DB=tiza_s2qa01', 'postgres:16-alpine']);
   created = true;
-  await ready(async () => { await command('docker', ['exec', container, 'pg_isready', '-h', '127.0.0.1', '-U', 'postgres']); return true; }, 'PostgreSQL');
+  await ready(async () => { await command('docker', ['exec', container, 'pg_isready', '-h', '127.0.0.1', '-U', 'postgres'], 10000); return true; }, 'PostgreSQL');
   console.log('Migrar base exclusiva de esta ejecución');
   await command('dotnet', ['ef', 'database', 'update', '--project', 'services/evaluaciones/src/PEI.Evaluaciones.Infrastructure',
     '--startup-project', 'services/evaluaciones/src/PEI.Evaluaciones.Api', '--no-build']);
