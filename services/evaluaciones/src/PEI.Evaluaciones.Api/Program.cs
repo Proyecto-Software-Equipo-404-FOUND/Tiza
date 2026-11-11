@@ -18,6 +18,10 @@ builder.Services.AddMediatR(cfg =>
 builder.Services.AddSingleton<PEI.Evaluaciones.Application.Validacion.ValidadorPreguntas>();
 
 builder.Services.AddScoped<
+    PEI.Evaluaciones.Application.Evaluaciones.IEvaluacionRepositorio,
+    PEI.Evaluaciones.Infrastructure.Persistence.EvaluacionRepositorio>();
+
+builder.Services.AddScoped<
     PEI.Evaluaciones.Application.Evaluaciones.IResultadosRepositorio,
     PEI.Evaluaciones.Infrastructure.Persistence.ResultadosRepositorio>();
 
