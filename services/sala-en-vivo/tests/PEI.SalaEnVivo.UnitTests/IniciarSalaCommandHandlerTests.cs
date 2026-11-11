@@ -1,10 +1,7 @@
-<<<<<<< HEAD
-=======
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
->>>>>>> 84393073276f55232b8d2d5f40690b381ba76eed
 using PEI.SalaEnVivo.Application.DTOs.Entregas;
 using PEI.SalaEnVivo.Application.DTOs.Evaluaciones;
 using PEI.SalaEnVivo.Application.Interfaces;
@@ -166,7 +163,6 @@ namespace PEI.SalaEnVivo.UnitTests
             LoteEntregasRequestDto lote,
             CancellationToken cancellationToken = default)
         {
-<<<<<<< HEAD
             LotesEnviados.Add((salaId, lote));
 
             if (FallarEnvio)
@@ -182,15 +178,6 @@ namespace PEI.SalaEnVivo.UnitTests
                     lote.Entregas.Count,
                     0,
                     null));
-=======
-            return Task.FromResult<ResultadoLoteEntregasDto?>(new ResultadoLoteEntregasDto(
-                lote.LoteId,
-                salaId,
-                lote.Entregas?.Count ?? 0,
-                lote.Entregas?.Count ?? 0,
-                0,
-                new List<EntregaResultadoDto>()));
->>>>>>> 84393073276f55232b8d2d5f40690b381ba76eed
         }
     }
 }
