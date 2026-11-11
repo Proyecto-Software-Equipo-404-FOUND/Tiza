@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using PEI.SalaEnVivo.Domain.Entities;
 
 namespace PEI.SalaEnVivo.Application.Interfaces.Repositories
@@ -6,6 +7,7 @@ namespace PEI.SalaEnVivo.Application.Interfaces.Repositories
     {
         Task AddAsync(ParticipanteSala participante, CancellationToken cancellationToken);
         Task<bool> ExisteAlumnoEnSalaAsync(Guid salaId, Guid alumnoId, CancellationToken cancellationToken);
+        Task<IReadOnlyList<ParticipanteSala>> ObtenerPorSalaAsync(Guid salaId, CancellationToken cancellationToken = default);
         Task<Guid?> ObtenerUltimaSalaIdDeAlumnoAsync(Guid alumnoId, CancellationToken cancellationToken = default);
         Task<int> ContarAlumnosAsync(Guid salaId, CancellationToken cancellationToken = default);
     }
