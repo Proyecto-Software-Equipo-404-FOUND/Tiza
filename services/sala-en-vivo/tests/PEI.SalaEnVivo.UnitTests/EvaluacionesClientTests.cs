@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using PEI.SalaEnVivo.Application.DTOs.Entregas;
 using PEI.SalaEnVivo.Infrastructure.Clientes;
 using Xunit;
@@ -13,6 +15,20 @@ namespace PEI.SalaEnVivo.UnitTests
 {
     public class EvaluacionesClientTests
     {
+        private const string TestApiKey = "clave-interna-test-2026";
+
+        private static IConfiguration CrearConfiguracion(string apiKey = TestApiKey)
+        {
+            var configData = new Dictionary<string, string?>
+            {
+                ["ServiciosInternos:ApiKey"] = apiKey
+            };
+
+            return new ConfigurationBuilder()
+                .AddInMemoryCollection(configData)
+                .Build();
+        }
+
         private sealed class TestHttpMessageHandler : HttpMessageHandler
         {
             private readonly Func<HttpRequestMessage, HttpResponseMessage> _responder;
@@ -42,8 +58,10 @@ namespace PEI.SalaEnVivo.UnitTests
             var handler = new TestHttpMessageHandler(req =>
             {
                 Assert.Equal(HttpMethod.Post, req.Method);
-                Assert.Equal($"interno/salas/{salaId}/entregas", req.RequestUri?.ToString());
-                Assert.True(req.Headers.Contains("X-Institucion-Id"));
+                Assert.Equal($"/interno/salas/{salaId}/entregas", req.RequestUri?.AbsolutePath);
+                Assert.True(req.Headers.Contains("X-Api-Key-Interna"));
+                Assert.Equal(TestApiKey, req.Headers.GetValues("X-Api-Key-Interna").First());
+                Assert.False(req.Headers.Contains("X-Institucion-Id"));
 
                 return new HttpResponseMessage(HttpStatusCode.OK)
                 {
@@ -61,7 +79,7 @@ namespace PEI.SalaEnVivo.UnitTests
             });
 
             var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost/") };
-            var client = new EvaluacionesClient(httpClient);
+            var client = new EvaluacionesClient(httpClient, CrearConfiguracion());
 
             var lote = new LoteEntregasRequestDto(
                 Version: 1,
@@ -93,7 +111,7 @@ namespace PEI.SalaEnVivo.UnitTests
             });
 
             var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost/") };
-            var client = new EvaluacionesClient(httpClient);
+            var client = new EvaluacionesClient(httpClient, CrearConfiguracion());
 
             var lote = new LoteEntregasRequestDto(
                 Version: 1,
@@ -121,7 +139,7 @@ namespace PEI.SalaEnVivo.UnitTests
             var handler = new TestHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.InternalServerError));
 
             var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost/") };
-            var client = new EvaluacionesClient(httpClient);
+            var client = new EvaluacionesClient(httpClient, CrearConfiguracion());
 
             var lote = new LoteEntregasRequestDto(
                 Version: 1,
