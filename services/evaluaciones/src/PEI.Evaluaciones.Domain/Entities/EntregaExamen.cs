@@ -1,0 +1,17 @@
+using System;
+
+namespace PEI.Evaluaciones.Domain.Entities;
+
+public class EntregaExamen
+{
+    public Guid Id { get; set; }
+    public Guid InstitucionId { get; set; }
+    public Guid EvaluacionId { get; set; }
+    public Guid SalaId { get; set; }
+    public Guid AlumnoId { get; set; }
+    public string RespuestasJson { get; set; } = string.Empty;
+    public string AlertasFocoJson { get; set; } = string.Empty;
+    public decimal? NotaMultipleChoice { get; set; }
+    public EstadoEntregaExamen Estado { get; set; }
+    public DateTimeOffset FechaEntrega { get; set; }
+}

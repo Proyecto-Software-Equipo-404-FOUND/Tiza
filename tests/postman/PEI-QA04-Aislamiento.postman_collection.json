@@ -2,7 +2,7 @@
   "info": {
     "name": "PEI - QA04 aislamiento multi-tenant",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Sólo entorno descartable del runner QA04. Reutiliza los UUID de CU06/ID08. No exportar variables de ejecución: contienen credenciales efímeras. QA04-09 exige vacío en lista,404 en detalle y400 al crear, según filtros y DomainException existentes; no admite respuestas alternativas."
+    "description": "Sólo entorno descartable del runner QA04. Reutiliza los UUID de CU06/ID08. No exportar variables de ejecución: contienen credenciales efímeras. QA04 separa 403 por rol de 404 por tenant. QA04-09 exige vacío en lista, 404 en detalle y 400 al crear con rol autorizado pero sin tenant válido."
   },
   "variable": [],
   "item": [
@@ -34,7 +34,7 @@
             "type": "text/javascript",
             "exec": [
               "pm.test('HTTP esperado 200', () => pm.response.to.have.status(200));",
-              "pm.test('Sesión institucional A', () => { const b=pm.response.json(); pm.expect(b.tokenType).to.eql('Bearer'); pm.expect(b.accessToken).to.be.a('string').and.not.empty; pm.collectionVariables.set('tokenA',b.accessToken); const c=JSON.parse(atob(b.accessToken.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); pm.expect(c.institucion_id).to.eql(pm.variables.get('tenantA')); pm.expect(c.role).to.eql('Docente'); });"
+              "pm.test('Sesión institucional Docente A', () => { const b=pm.response.json(); pm.expect(b.tokenType).to.eql('Bearer'); pm.expect(b.accessToken).to.be.a('string').and.not.empty; pm.collectionVariables.set('tokenA',b.accessToken); const c=JSON.parse(atob(b.accessToken.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); pm.expect(c.institucion_id).to.eql(pm.variables.get('tenantA')); pm.expect(c.role).to.eql('Docente'); });"
             ]
           }
         }
@@ -68,7 +68,109 @@
             "type": "text/javascript",
             "exec": [
               "pm.test('HTTP esperado 200', () => pm.response.to.have.status(200));",
-              "pm.test('Sesión institucional B', () => { const b=pm.response.json(); pm.expect(b.tokenType).to.eql('Bearer'); pm.expect(b.accessToken).to.be.a('string').and.not.empty; pm.collectionVariables.set('tokenB',b.accessToken); const c=JSON.parse(atob(b.accessToken.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); pm.expect(c.institucion_id).to.eql(pm.variables.get('tenantB')); pm.expect(c.role).to.eql('Docente'); });"
+              "pm.test('Sesión institucional Docente B', () => { const b=pm.response.json(); pm.expect(b.tokenType).to.eql('Bearer'); pm.expect(b.accessToken).to.be.a('string').and.not.empty; pm.collectionVariables.set('tokenB',b.accessToken); const c=JSON.parse(atob(b.accessToken.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); pm.expect(c.institucion_id).to.eql(pm.variables.get('tenantB')); pm.expect(c.role).to.eql('Docente'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "SETUP Login Administrador A",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{identidadUrl}}/api/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":\"admin@a.test\",\"password\":\"{{password}}\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP esperado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Sesión institucional Administrador A', () => { const b=pm.response.json(); pm.expect(b.tokenType).to.eql('Bearer'); pm.expect(b.accessToken).to.be.a('string').and.not.empty; pm.collectionVariables.set('adminA',b.accessToken); const c=JSON.parse(atob(b.accessToken.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); pm.expect(c.institucion_id).to.eql(pm.variables.get('tenantA')); pm.expect(c.role).to.eql('Administrador'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "SETUP Login Administrador B",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{identidadUrl}}/api/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":\"admin@b.test\",\"password\":\"{{password}}\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP esperado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Sesión institucional Administrador B', () => { const b=pm.response.json(); pm.expect(b.tokenType).to.eql('Bearer'); pm.expect(b.accessToken).to.be.a('string').and.not.empty; pm.collectionVariables.set('adminB',b.accessToken); const c=JSON.parse(atob(b.accessToken.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); pm.expect(c.institucion_id).to.eql(pm.variables.get('tenantB')); pm.expect(c.role).to.eql('Administrador'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "SETUP Login Alumno A",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{identidadUrl}}/api/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":\"alumno1@a.test\",\"password\":\"{{password}}\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP esperado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Sesión institucional Alumno A', () => { const b=pm.response.json(); pm.expect(b.tokenType).to.eql('Bearer'); pm.expect(b.accessToken).to.be.a('string').and.not.empty; pm.collectionVariables.set('alumnoA',b.accessToken); const c=JSON.parse(atob(b.accessToken.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); pm.expect(c.institucion_id).to.eql(pm.variables.get('tenantA')); pm.expect(c.role).to.eql('Alumno'); });"
             ]
           }
         }
@@ -171,7 +273,7 @@
           },
           {
             "key": "Authorization",
-            "value": "Bearer {{tokenA}}"
+            "value": "Bearer {{adminA}}"
           }
         ],
         "url": "{{cursosUrl}}/api/v1/cursos/{{cursoB}}",
@@ -208,7 +310,7 @@
           },
           {
             "key": "Authorization",
-            "value": "Bearer {{tokenA}}"
+            "value": "Bearer {{adminA}}"
           }
         ],
         "url": "{{cursosUrl}}/api/v1/cursos/{{cursoB}}/cohortes/{{cohorteB}}",
@@ -229,6 +331,193 @@
             "type": "text/javascript",
             "exec": [
               "pm.test('HTTP esperado 404', () => pm.response.to.have.status(404));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "S2-CU-02 Docente A no modifica curso propio",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenA}}"
+          }
+        ],
+        "url": "{{cursosUrl}}/api/v1/cursos/{{cursoA}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"nombre\":\"Intrusión QA04\",\"area\":\"Intrusión\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP esperado 403', () => pm.response.to.have.status(403));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "S2-CU-02 Docente A no modifica cohorte propia",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenA}}"
+          }
+        ],
+        "url": "{{cursosUrl}}/api/v1/cursos/{{cursoA}}/cohortes/{{cohorteA}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"nombre\":\"Intrusión QA04\",\"periodo\":\"2026-2C\",\"docenteId\":\"{{docenteA}}\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP esperado 403', () => pm.response.to.have.status(403));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "S2-CU-02 Alumno A no lista cursos propios",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{alumnoA}}"
+          }
+        ],
+        "url": "{{cursosUrl}}/api/v1/cursos"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP esperado 403', () => pm.response.to.have.status(403));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "S2-CU-02 Alumno A no lista matrículas de su cohorte",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{alumnoA}}"
+          }
+        ],
+        "url": "{{cursosUrl}}/api/v1/cohortes/{{cohorteA}}/matriculas"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP esperado 403', () => pm.response.to.have.status(403));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "S2-CU-02 Alumno A no valida su cohorte",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{alumnoA}}"
+          }
+        ],
+        "url": "{{cursosUrl}}/api/v1/cohortes/{{cohorteA}}/validacion"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP esperado 403', () => pm.response.to.have.status(403));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "S2-CU-02 Docente A valida su cohorte",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenA}}"
+          }
+        ],
+        "url": "{{cursosUrl}}/api/v1/cohortes/{{cohorteA}}/validacion"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP esperado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Cohorte y tenant esperados',()=>{const b=pm.response.json();pm.expect(b.cohorteId).to.eql(pm.variables.get('cohorteA'));pm.expect(b.institucionId).to.eql(pm.variables.get('tenantA'));});"
             ]
           }
         }
@@ -864,7 +1153,7 @@
           },
           {
             "key": "Authorization",
-            "value": "Bearer {{tokenA}}"
+            "value": "Bearer {{adminA}}"
           }
         ],
         "url": "{{cursosUrl}}/api/v1/cursos/{{cursoB}}"
@@ -892,7 +1181,7 @@
           },
           {
             "key": "Authorization",
-            "value": "Bearer {{tokenA}}"
+            "value": "Bearer {{adminA}}"
           }
         ],
         "url": "{{cursosUrl}}/api/v1/cursos/{{cursoB}}/cohortes/{{cohorteB}}"
@@ -920,7 +1209,7 @@
           },
           {
             "key": "Authorization",
-            "value": "Bearer {{tokenA}}"
+            "value": "Bearer {{adminA}}"
           }
         ],
         "url": "{{cursosUrl}}/api/v1/cursos/{{cursoB}}/cohortes",
@@ -1013,7 +1302,7 @@
           },
           {
             "key": "Authorization",
-            "value": "Bearer {{tokenB}}"
+            "value": "Bearer {{adminB}}"
           }
         ],
         "url": "{{cursosUrl}}/api/v1/cursos/{{cursoA}}",

@@ -17,6 +17,7 @@ public class CursosDbContext : DbContext
     public DbSet<Curso> Cursos => Set<Curso>();
     public DbSet<Cohorte> Cohortes => Set<Cohorte>();
     public DbSet<Matriculacion> Matriculaciones => Set<Matriculacion>();
+    public DbSet<MaterialCurso> Materiales => Set<MaterialCurso>();
 
     /* Inyecta las opciones de configuración y el contexto multi-tenant.
     El parámetro opcional tenantContext permite que herramientas de diseño como
@@ -46,6 +47,9 @@ public class CursosDbContext : DbContext
             .HasQueryFilter(c => InstitucionActual.HasValue && c.InstitucionId == InstitucionActual);
 
         modelBuilder.Entity<Matriculacion>()
+            .HasQueryFilter(m => InstitucionActual.HasValue && m.InstitucionId == InstitucionActual);
+
+        modelBuilder.Entity<MaterialCurso>()
             .HasQueryFilter(m => InstitucionActual.HasValue && m.InstitucionId == InstitucionActual);
     }
 }
