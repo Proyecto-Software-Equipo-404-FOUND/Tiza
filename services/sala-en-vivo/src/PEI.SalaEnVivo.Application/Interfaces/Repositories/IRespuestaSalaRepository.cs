@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using PEI.SalaEnVivo.Domain.Entities;
 
 namespace PEI.SalaEnVivo.Application.Interfaces.Repositories
@@ -19,6 +20,10 @@ namespace PEI.SalaEnVivo.Application.Interfaces.Repositories
         Task<int> ObtenerUltimaSecuenciaAsync(
             Guid salaId,
             Guid alumnoId,
+            CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<RespuestaSala>> ObtenerPorSalaAsync(
+            Guid salaId,
             CancellationToken cancellationToken = default);
 
         Task<List<Guid>> ObtenerPreguntasRespondidasAsync(
