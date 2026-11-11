@@ -22,6 +22,44 @@ namespace PEI.Evaluaciones.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("PEI.Evaluaciones.Domain.Entities.CalificacionSugerida", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DesgloseJson")
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("EntregaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("FechaRegistro")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("InstitucionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Justificacion")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<decimal>("NotaSugerida")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)");
+
+                    b.Property<Guid>("PreguntaId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EntregaId", "PreguntaId")
+                        .IsUnique();
+
+                    b.ToTable("CalificacionSugerida", (string)null);
+                });
+
             modelBuilder.Entity("PEI.Evaluaciones.Domain.Entities.EntregaExamen", b =>
                 {
                     b.Property<Guid>("Id")
@@ -58,6 +96,10 @@ namespace PEI.Evaluaciones.Infrastructure.Migrations
 
                     b.Property<Guid>("SalaId")
                         .HasColumnType("uuid");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -112,6 +154,15 @@ namespace PEI.Evaluaciones.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Evaluacion", (string)null);
+                });
+
+            modelBuilder.Entity("PEI.Evaluaciones.Domain.Entities.CalificacionSugerida", b =>
+                {
+                    b.HasOne("PEI.Evaluaciones.Domain.Entities.EntregaExamen", null)
+                        .WithMany()
+                        .HasForeignKey("EntregaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("PEI.Evaluaciones.Domain.Entities.EntregaExamen", b =>
