@@ -147,6 +147,9 @@ namespace PEI.SalaEnVivo.Infrastructure.Persistence.Migrations
                     b.Property<int>("CodigoPIN")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("EntregaPendiente")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Estado")
                         .IsRequired()
                         .HasColumnType("text");

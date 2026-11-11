@@ -21,6 +21,10 @@ namespace PEI.SalaEnVivo.Application.Interfaces.Repositories
             Guid alumnoId,
             CancellationToken cancellationToken = default);
 
+        Task<IReadOnlyList<RespuestaSala>> ObtenerPorSalaAsync(
+            Guid salaId,
+            CancellationToken cancellationToken = default);
+
         Task<List<Guid>> ObtenerPreguntasRespondidasAsync(
             Guid salaId,
             Guid alumnoId,
