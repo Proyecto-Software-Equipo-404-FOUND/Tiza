@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.DataProtection;
+﻿using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -215,9 +215,35 @@ public sealed partial class TenantIsolationTests
             """).ToListAsync();
         Assert.Equal(new[] { "IX_EntregaInvitacion_InvitacionId", "IX_InvitacionUsuario_TokenHash", "IX_InvitacionUsuario_UsuarioId" }, invitationIndexes);
         var trigger = await db.Database.SqlQuery<int>($"""
-            SELECT count(*)::int AS "Value" FROM pg_trigger
-            WHERE tgname = 'pei_invitacion_usuario_inmutable' AND NOT tgisinternal
+            SELECT count(*)::int AS "Value"
+            FROM pg_trigger t
+            JOIN pg_class c ON c.oid = t.tgrelid
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = current_schema()
+              AND c.relname = 'InvitacionUsuario'
+              AND t.tgname = 'pei_invitacion_usuario_inmutable'
+              AND NOT t.tgisinternal
             """).SingleAsync();
+                    var triggersDetalle = await db.Database.SqlQuery<string>($"""
+            SELECT
+                n.nspname || '.' || c.relname || ' | ' ||
+                t.tgname || ' | ' || pg_get_triggerdef(t.oid) AS "Value"
+            FROM pg_trigger t
+            JOIN pg_class c ON c.oid = t.tgrelid
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = current_schema()
+              AND t.tgname LIKE '%invitacion%'
+              AND NOT t.tgisinternal
+            ORDER BY c.relname, t.tgname
+            """).ToListAsync();
+
+        foreach (var detalle in triggersDetalle)
+        {
+            Console.WriteLine($"TRIGGER_DIAGNOSTICO: {detalle}");
+        }
+
+
+
         Assert.Equal(1, trigger);
         var index = await db.Database.SqlQuery<string>($"""
             SELECT indexdef AS "Value" FROM pg_indexes
