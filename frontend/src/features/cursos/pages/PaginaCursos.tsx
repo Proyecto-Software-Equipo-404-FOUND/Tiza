@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { ChevronRight, GraduationCap, Sparkles, Users } from 'lucide-react';
+import { FileText, GraduationCap, Sparkles, Users } from 'lucide-react';
 import { useCursos } from '../hooks/useCursos';
 import { Spinner } from '@/shared/components/Spinner';
 import { BannerError } from '@/shared/components/BannerError';
@@ -37,7 +37,18 @@ const crearColumnas = (
         className='whitespace-nowrap bg-tiza-menta/60'
       >
         Ver cohortes
-        <ChevronRight className='h-4 w-4' aria-hidden='true' />
+      </EnlaceBoton>
+    ),
+  },
+  {
+    titulo: 'Apuntes',
+    celda: (curso) => (
+      <EnlaceBoton
+        to={`/cursos/${curso.id}/apuntes`}
+        icono={<FileText className='h-4 w-4' aria-hidden='true' />}
+        className='whitespace-nowrap bg-tiza-menta/60'
+      >
+        Ver apuntes
       </EnlaceBoton>
     ),
   },
@@ -70,7 +81,7 @@ export function PaginaCursos() {
   const columnas = crearColumnas(editar, alEliminar);
 
   return (
-    <main className='mx-auto flex max-w-6xl flex-col gap-6 p-6'>
+    <main className='mx-auto flex max-w-7xl flex-col gap-6 p-6'>
       <header>
         <h1 className='font-heading text-4xl font-extrabold text-tiza-bosque'>Cursos</h1>
         <p className='mt-1 text-tiza-bosque/70'>
@@ -78,7 +89,7 @@ export function PaginaCursos() {
         </p>
       </header>
 
-      <div className='grid grid-cols-1 items-start gap-6 lg:grid-cols-[2fr_3fr]'>
+      <div className='grid grid-cols-1 items-start gap-6 lg:grid-cols-[20rem_minmax(0,1fr)]'>
         <Tarjeta
           titulo='Crear nuevo curso'
           subtitulo='Completá la información para crear un nuevo curso.'
