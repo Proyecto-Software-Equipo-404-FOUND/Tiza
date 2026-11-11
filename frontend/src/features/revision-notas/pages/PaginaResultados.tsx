@@ -3,10 +3,10 @@ import { mensajeDeError } from '@/shared/api/errores';
 import { BannerError } from '@/shared/components/BannerError';
 import { Spinner } from '@/shared/components/Spinner';
 import { Tabla, type Columna } from '@/shared/components/Tabla';
+import { PestanasEvaluacion } from '@/shared/components/PestanasEvaluacion';
 import { Tarjeta } from '@/shared/components/Tarjeta';
 import { useEvaluacion } from '@/features/evaluaciones/hooks/useEvaluacion';
 import { AlertasFoco, EtiquetaSugerida, InsigniaEstadoEntrega } from '../components/InsigniasResultados';
-import { PestanasEvaluacion } from '../components/PestanasEvaluacion';
 import { formatearFechaHora, formatearNota } from '../formato';
 import { useEntregas } from '../hooks/useEntregas';
 import { useNombresAlumnos } from '../hooks/useNombresAlumnos';
@@ -51,6 +51,8 @@ export function PaginaResultados() {
       celda: (entrega) => {
         // Sin preguntas abiertas no hay nada que sugerir; con abiertas y sin nota, la IA todavía no terminó
         if (entrega.puntajeMaximoAbiertas == null) return <span className='text-tiza-bosque/70'>—</span>;
+        // Quien no respondió nada no tiene nada que sugerirle la IA: no se muestra un «0 / 8» engañoso
+        if (entrega.respondioAlgo === false) return <span className='text-tiza-bosque/70'>Sin respuestas</span>;
         const nota = formatearNota(entrega.notaSugeridaAbiertas, entrega.puntajeMaximoAbiertas);
         return nota ? (
           <span className='flex flex-wrap items-center gap-2'>

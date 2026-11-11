@@ -87,9 +87,7 @@ function mostrar(ruta: string) {
   );
 }
 
-beforeEach(() => {
-  guardarToken(null);
-});
+beforeEach(() => guardarToken(null));
 
 describe('rutas de la aplicación', () => {
   it('sin sesión, una ruta protegida lleva al login', () => {

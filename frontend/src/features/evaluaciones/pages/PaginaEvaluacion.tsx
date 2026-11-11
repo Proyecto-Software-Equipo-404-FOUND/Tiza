@@ -1,6 +1,6 @@
 import { Check, DoorOpen, Pencil } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
-import { PestanasEvaluacion } from '@/features/revision-notas/components/PestanasEvaluacion';
+import { PestanasEvaluacion } from '@/shared/components/PestanasEvaluacion';
 import { mensajeDeError } from '@/shared/api/errores';
 import { BannerError } from '@/shared/components/BannerError';
 import { EnlaceBoton } from '@/shared/components/EnlaceBoton';

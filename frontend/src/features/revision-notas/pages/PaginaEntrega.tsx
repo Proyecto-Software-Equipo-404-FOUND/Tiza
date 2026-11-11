@@ -5,15 +5,20 @@ import { BannerError } from '@/shared/components/BannerError';
 import { Spinner } from '@/shared/components/Spinner';
 import { Tabla, type Columna } from '@/shared/components/Tabla';
 import { Tarjeta } from '@/shared/components/Tarjeta';
-import { AlertasFoco, EtiquetaSugerida, InsigniaEstadoEntrega } from '../components/InsigniasResultados';
-import { esRoja, formatearDuracion, formatearFechaHora, formatearNota } from '../formato';
+import {
+  AlertasFoco,
+  EtiquetaSugerida,
+  InsigniaEstadoEntrega,
+  InsigniaGravedad,
+} from '../components/InsigniasResultados';
+import { esRoja, formatearDuracion, formatearFechaHora, formatearNota, formatearNumero } from '../formato';
 import { useEntrega } from '../hooks/useEntregas';
 import { useNombresAlumnos } from '../hooks/useNombresAlumnos';
 import type { AlertaFocoDetalle, DesgloseCriterio, RespuestaEntrega } from '../tipos';
 
 const columnasDesglose: Columna<DesgloseCriterio>[] = [
   { titulo: 'Criterio', celda: (fila) => fila.criterio ?? '—' },
-  { titulo: 'Puntaje', celda: (fila) => (fila.puntaje == null ? '—' : fila.puntaje) },
+  { titulo: 'Puntaje', celda: (fila) => (fila.puntaje == null ? '—' : formatearNumero(fila.puntaje)) },
   { titulo: 'Comentario', celda: (fila) => fila.comentario ?? '' },
 ];
 
@@ -48,11 +53,11 @@ function RespuestaAbierta({ respuesta }: { respuesta: RespuestaEntrega }) {
       )}
 
       {respuesta.estadoCorreccion === 'PendienteIA' && (
-        <p className='text-sm text-amber-700'>La IA todavía no corrigió esta respuesta.</p>
+        <p className='text-sm text-tiza-bosque/80'>La IA todavía no corrigió esta respuesta.</p>
       )}
 
       {respuesta.notaSugerida != null && (
-        <div className='flex flex-col gap-2 rounded-xl border border-violet-200 bg-violet-50 p-3'>
+        <div className='flex flex-col gap-2 rounded-xl border border-tiza-violeta/30 bg-tiza-violeta/5 p-3'>
           <p className='flex flex-wrap items-center gap-2 font-semibold text-tiza-bosque'>
             Nota de la IA: {formatearNota(respuesta.notaSugerida, respuesta.puntajeMaximo)}
             <EtiquetaSugerida />
@@ -92,9 +97,9 @@ const columnasAlertas: Columna<AlertaFocoDetalle>[] = [
     titulo: 'Gravedad',
     celda: (alerta) =>
       esRoja(alerta) ? (
-        <span className='rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700'>Roja</span>
+        <InsigniaGravedad roja>Roja</InsigniaGravedad>
       ) : (
-        <span className='rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-700'>Amarilla</span>
+        <InsigniaGravedad roja={false}>Amarilla</InsigniaGravedad>
       ),
   },
   { titulo: 'Estuvo fuera', celda: (alerta) => formatearDuracion(alerta.duracionMs) },
@@ -143,8 +148,10 @@ export function PaginaEntrega() {
                 <dd className='flex flex-wrap items-center gap-2'>
                   {entrega.puntajeMaximoAbiertas == null
                     ? '—'
-                    : (formatearNota(entrega.notaSugeridaAbiertas, entrega.puntajeMaximoAbiertas) ?? 'Pendiente')}
-                  {entrega.notaSugeridaAbiertas != null && <EtiquetaSugerida />}
+                    : entrega.respondioAlgo === false
+                      ? 'Sin respuestas'
+                      : (formatearNota(entrega.notaSugeridaAbiertas, entrega.puntajeMaximoAbiertas) ?? 'Pendiente')}
+                  {entrega.respondioAlgo !== false && entrega.notaSugeridaAbiertas != null && <EtiquetaSugerida />}
                 </dd>
               </div>
               <div>

@@ -128,6 +128,14 @@ describe('PaginaResultados', () => {
     expect(screen.getByText('No respondió')).toBeInTheDocument();
   });
 
+  it('a quien no respondió nada no le muestra «0 / 4» como nota de la IA', () => {
+    simular({ data: [{ ...base, respondioAlgo: false, notaSugeridaAbiertas: 0 }] });
+    renderizar();
+    expect(screen.getByText('Sin respuestas')).toBeInTheDocument();
+    expect(screen.queryByText(/^0 \/ 4/)).not.toBeInTheDocument();
+    expect(screen.queryByText('Sugerida')).not.toBeInTheDocument();
+  });
+
   it('avisa cuando todavía no hay entregas', () => {
     simular({ data: [] });
     renderizar();

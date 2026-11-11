@@ -1,10 +1,11 @@
+import type { ReactNode } from 'react';
 import type { AlertasFocoResumen, EstadoEntrega } from '../tipos';
 import { etiquetaEstadoEntrega } from '../formato';
 
 const estilosEstado: Record<EstadoEntrega, string> = {
   Corregida: 'bg-tiza-menta text-tiza-pasto',
-  PendienteCorreccion: 'bg-amber-100 text-amber-700',
-  CorreccionManual: 'bg-sky-100 text-sky-700',
+  PendienteCorreccion: 'bg-tiza-lima/40 text-tiza-bosque',
+  CorreccionManual: 'bg-tiza-pizarra/10 text-tiza-pizarra',
 };
 
 export function InsigniaEstadoEntrega({ estado }: { estado: EstadoEntrega }) {
@@ -18,10 +19,18 @@ export function InsigniaEstadoEntrega({ estado }: { estado: EstadoEntrega }) {
 /** Etiqueta que deja claro que la nota de la IA no es la nota final (RN-CMP-03). */
 export function EtiquetaSugerida() {
   return (
-    <span className='inline-block rounded-full bg-violet-100 px-2 py-0.5 text-xs font-bold text-violet-700'>
+    <span className='inline-block rounded-full bg-tiza-violeta/10 px-2 py-0.5 text-xs font-bold text-tiza-violeta'>
       Sugerida
     </span>
   );
+}
+
+const insigniaGravedad = 'rounded-full border px-2.5 py-0.5 text-xs font-bold text-tiza-bosque';
+
+/** Roja: coral. Amarilla: lima. El texto lleva siempre el nombre de la gravedad, el color solo acompaña. */
+export function InsigniaGravedad({ roja, children }: { roja: boolean; children: ReactNode }) {
+  const color = roja ? 'border-tiza-coral bg-tiza-coral/15' : 'border-tiza-lima bg-tiza-lima/40';
+  return <span className={`${insigniaGravedad} ${color}`}>{children}</span>;
 }
 
 const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
@@ -33,16 +42,8 @@ export function AlertasFoco({ alertas }: { alertas: AlertasFocoResumen }) {
   }
   return (
     <span className='flex flex-wrap gap-1.5'>
-      {alertas.rojas > 0 && (
-        <span className='rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700'>
-          {plural(alertas.rojas, 'roja', 'rojas')}
-        </span>
-      )}
-      {alertas.amarillas > 0 && (
-        <span className='rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-700'>
-          {plural(alertas.amarillas, 'amarilla', 'amarillas')}
-        </span>
-      )}
+      {alertas.rojas > 0 && <InsigniaGravedad roja>{plural(alertas.rojas, 'roja', 'rojas')}</InsigniaGravedad>}
+      {alertas.amarillas > 0 && <InsigniaGravedad roja={false}>{plural(alertas.amarillas, 'amarilla', 'amarillas')}</InsigniaGravedad>}
     </span>
   );
 }

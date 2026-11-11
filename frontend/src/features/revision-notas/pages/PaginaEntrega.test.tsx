@@ -110,6 +110,20 @@ describe('PaginaEntrega', () => {
     expect(within(tarjeta).getByText('Define variable')).toBeInTheDocument();
   });
 
+  it('en el desglose por criterio el puntaje usa coma decimal, como el resto de la pantalla', () => {
+    simular({ data: entrega });
+    renderizar();
+    const tarjeta = screen.getByText(/Explicá qué es una variable/).closest('li') as HTMLElement;
+    expect(within(tarjeta).getByText('3,5')).toBeInTheDocument();
+    expect(within(tarjeta).queryByText('3.5')).not.toBeInTheDocument();
+  });
+
+  it('sin respuestas, las abiertas dicen «Sin respuestas» y no una nota sugerida', () => {
+    simular({ data: { ...entrega, respondioAlgo: false, notaSugeridaAbiertas: 0 } });
+    renderizar();
+    expect(screen.getByText('Sin respuestas')).toBeInTheDocument();
+  });
+
   it('avisa si la IA todavía no corrigió una respuesta', () => {
     const pendiente: EntregaDetalle = {
       ...entrega,
