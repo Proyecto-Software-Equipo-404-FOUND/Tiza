@@ -87,7 +87,7 @@ public sealed class PlataformaDataAccess(PlataformaDbContext db, IDataProtection
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         // Bloqueo estable de institución, usuario e invitación; una sola activación gana.
         var ids = await db.Database.SqlQuery<Guid>($"""
-            SELECT v."UsuarioId" AS "Value" FROM "InvitacionAdministrador" v
+            SELECT v."UsuarioId" AS "Value" FROM "InvitacionUsuario" v
             JOIN "Usuario" u ON u."Id" = v."UsuarioId" JOIN "Institucion" i ON i."Id" = u."InstitucionId"
             WHERE v."TokenHash" = {hash} AND v."Utilizada" IS NULL AND v."Vencimiento" > clock_timestamp()
               AND NOT u."Activo" AND u."PasswordHash" = '!pendiente-activacion' AND u."Rol" = 'Administrador' AND i."Activo"
@@ -97,7 +97,7 @@ public sealed class PlataformaDataAccess(PlataformaDbContext db, IDataProtection
         var id = ids[0];
         // Revalidar el vencimiento después de cualquier espera por locks.
         var consumida = await db.Database.ExecuteSqlInterpolatedAsync($"""
-            UPDATE "InvitacionAdministrador" SET "Utilizada" = clock_timestamp()
+            UPDATE "InvitacionUsuario" SET "Utilizada" = clock_timestamp()
             WHERE "TokenHash" = {hash} AND "Utilizada" IS NULL AND "Vencimiento" > clock_timestamp()
             """, ct);
         if (consumida != 1) throw new UnauthorizedAccessException();
@@ -106,7 +106,7 @@ public sealed class PlataformaDataAccess(PlataformaDbContext db, IDataProtection
             """, ct);
         await db.Database.ExecuteSqlInterpolatedAsync($"""
             UPDATE "EntregaInvitacion" SET "ContenidoProtegido" = ''
-            WHERE "InvitacionId" IN (SELECT "Id" FROM "InvitacionAdministrador" WHERE "TokenHash" = {hash})
+            WHERE "InvitacionId" IN (SELECT "Id" FROM "InvitacionUsuario" WHERE "TokenHash" = {hash})
             """, ct);
         await tx.CommitAsync(ct);
     }

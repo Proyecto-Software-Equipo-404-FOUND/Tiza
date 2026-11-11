@@ -13,6 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using PEI.Identidad.Application.Abstractions;
@@ -61,6 +62,7 @@ public sealed class PlatformHttpFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
+        builder.ConfigureLogging(logging => logging.ClearProviders());
         builder.ConfigureServices(s =>
         {
             foreach (var descriptor in s.Where(x => x.ImplementationType == typeof(InvitacionesWorker)).ToList()) s.Remove(descriptor);
