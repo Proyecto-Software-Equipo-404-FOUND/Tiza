@@ -9,6 +9,8 @@ using PEI.Identidad.Application.Interfaces.Security;
 using PEI.Identidad.Infrastructure.Persistence;
 using PEI.Identidad.Infrastructure.Repositories;
 using PEI.Identidad.Infrastructure.Security;
+using PEI.Identidad.Infrastructure.Tenancy;
+using PEI.BuildingBlocks.MultiTenancy;
 
 namespace PEI.Identidad.IntegrationTests;
 
@@ -30,7 +32,7 @@ public sealed partial class TenantIsolationTests
         var options = new DbContextOptionsBuilder<IdentidadDbContext>().UseNpgsql(builder.ConnectionString,
             o => o.MigrationsHistoryTable("__EFMigrationsHistory", schema));
         if (interceptor is not null) options.AddInterceptors(interceptor);
-        return new(options.Options, new Tenant(a));
+        return new(options.Options, new TenantContextAdapter(new TenantContext { InstitucionId = a }));
     }
     private async Task H3PrepararAsync()
     {
@@ -71,7 +73,7 @@ public sealed partial class TenantIsolationTests
         await using (var db = H3Context(interceptor))
         {
             await using var data = new RegistrationDataAccess(db, H3Actor());
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => new RegisterHandler(data, new BCryptPasswordHasher(), new Tenant(a))
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => new RegisterHandler(data, new BCryptPasswordHasher(), new TenantContextAdapter(new TenantContext { InstitucionId = a }))
                 .HandleAsync(H3Command(email), cancellation.Token));
             Assert.True(interceptor.UsuarioInsertado); Assert.True(interceptor.ReservaInsertada);
             Assert.Equal(cancellation.Token, interceptor.Recibido);
@@ -99,7 +101,7 @@ public sealed partial class TenantIsolationTests
         await using (var db = H3Context())
         {
             await using var data = new RegistrationDataAccess(db, H3Actor());
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => new RegisterHandler(data, new HashCancelado(cancellation), new Tenant(a))
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => new RegisterHandler(data, new HashCancelado(cancellation), new TenantContextAdapter(new TenantContext { InstitucionId = a }))
                 .HandleAsync(H3Command(email), cancellation.Token));
             Assert.Empty(db.ChangeTracker.Entries<PEI.Identidad.Domain.Entities.Usuario>());
             Assert.NotNull(db.Database.CurrentTransaction); // El scope dispone el puerto aun sin llegar a SaveChanges.
@@ -141,7 +143,7 @@ public sealed partial class TenantIsolationTests
         await using (var db = H3Context(interceptor))
         {
             await using var data = new RegistrationDataAccess(db, H3Actor());
-            id = await new RegisterHandler(data, new BCryptPasswordHasher(), new Tenant(a)).HandleAsync(H3Command(email), cancellation.Token);
+            id = await new RegisterHandler(data, new BCryptPasswordHasher(), new TenantContextAdapter(new TenantContext { InstitucionId = a })).HandleAsync(H3Command(email), cancellation.Token);
             Assert.True(interceptor.Invocado); Assert.True(cancellation.IsCancellationRequested);
             Assert.Equal(CancellationToken.None, interceptor.Recibido);
             Assert.Null(db.Database.CurrentTransaction);
@@ -166,7 +168,7 @@ public sealed partial class TenantIsolationTests
         using var cancellation = new CancellationTokenSource();
         await using var db = H3Context(application: nombre);
         await using var data = new RegistrationDataAccess(db, H3Actor());
-        var request = new RegisterHandler(data, new BCryptPasswordHasher(), new Tenant(a)).HandleAsync(H3Command("h3-lock@test.invalid"), cancellation.Token);
+        var request = new RegisterHandler(data, new BCryptPasswordHasher(), new TenantContextAdapter(new TenantContext { InstitucionId = a })).HandleAsync(H3Command("h3-lock@test.invalid"), cancellation.Token);
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(25));
         while (true)

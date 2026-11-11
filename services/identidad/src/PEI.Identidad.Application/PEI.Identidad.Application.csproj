@@ -2,7 +2,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PEI.Identidad.Domain\PEI.Identidad.Domain.csproj" />
-    <ProjectReference Include="..\..\..\..\building-blocks\PEI.BuildingBlocks\PEI.BuildingBlocks.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

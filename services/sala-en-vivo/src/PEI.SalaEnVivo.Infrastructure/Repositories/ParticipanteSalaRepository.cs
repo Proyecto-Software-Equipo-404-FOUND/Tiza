@@ -27,6 +27,17 @@ namespace PEI.SalaEnVivo.Infrastructure.Repositories
                 cancellationToken);
         }
 
+        public async Task<IReadOnlyList<ParticipanteSala>> ObtenerPorSalaAsync(
+            Guid salaId,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.ParticipanteSala
+                .AsNoTracking()
+                .Where(p => p.SalaId == salaId)
+                .OrderBy(p => p.AlumnoId)
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<Guid?> ObtenerUltimaSalaIdDeAlumnoAsync(Guid alumnoId, CancellationToken cancellationToken = default)
         {
             return await _context.ParticipanteSala

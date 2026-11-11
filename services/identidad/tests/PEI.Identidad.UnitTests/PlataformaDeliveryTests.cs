@@ -4,8 +4,8 @@ using PEI.Identidad.Application.Plataforma;
 using PEI.Identidad.Domain.Entities;
 using PEI.Identidad.Infrastructure.Plataforma;
 using PEI.Identidad.Infrastructure.Security;
-using PEI.Identidad.Infrastructure.Tenancy;
 using System.Security.Claims;
+using PEI.BuildingBlocks.MultiTenancy;
 
 namespace PEI.Identidad.UnitTests;
 
@@ -36,13 +36,19 @@ public sealed class PlataformaDeliveryTests
     }
 
     [Fact]
-    public void IdentidadPlataformaNoTieneTenantNiRelacionInstitucional()
+    public async Task IdentidadPlataformaNoTieneTenantNiRelacionInstitucional()
     {
         var principal = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim("sub", Guid.NewGuid().ToString()),
             new Claim("role", "AdministradorGlobal"), new Claim("identity_type", "platform") }, "PlatformBearer", "sub", "role"));
         Assert.True(PlataformaJwtContract.TryRead(principal, out _));
-        var tenant = new TenantContext(new HttpContextAccessor { HttpContext = new DefaultHttpContext { User = principal } });
+        var tenant = new TenantContext();
+        var httpContext = new DefaultHttpContext { User = principal };
+        var middleware = new TenantContextMiddleware(_ => Task.CompletedTask);
+        await middleware.InvokeAsync(httpContext, tenant);
+
         Assert.Null(tenant.InstitucionId);
+        Assert.NotNull(tenant.UsuarioId);
+        Assert.True(tenant.EstaAutenticado);
         Assert.Null(typeof(CuentaPlataforma).GetProperty("InstitucionId"));
         Assert.False(JwtContract.TryRead(principal, out _, out _, out _));
     }
