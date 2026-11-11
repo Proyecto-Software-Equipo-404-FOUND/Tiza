@@ -400,6 +400,12 @@ namespace PEI.SalaEnVivo.UnitTests
 
             return Task.FromResult(secuencias.Count > 0 ? secuencias.Max() : 0);
         }
+
+        public Task<IReadOnlyList<RespuestaSala>> ObtenerPorSalaAsync(Guid salaId, CancellationToken cancellationToken = default)
+        {
+            var resultado = (IReadOnlyList<RespuestaSala>)Respuestas.Where(r => r.SalaId == salaId).ToList();
+            return Task.FromResult(resultado);
+        }
     }
 
     internal class FakeSalaCronometroService : ISalaCronometroService

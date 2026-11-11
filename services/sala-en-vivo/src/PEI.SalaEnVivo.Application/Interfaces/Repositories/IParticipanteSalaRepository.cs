@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using PEI.SalaEnVivo.Domain.Entities;
 
 namespace PEI.SalaEnVivo.Application.Interfaces.Repositories

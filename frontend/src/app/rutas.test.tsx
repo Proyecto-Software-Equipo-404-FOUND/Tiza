@@ -37,6 +37,12 @@ vi.mock('@/features/cursos/api/cohortes', () => ({
   eliminarCohorte: vi.fn(),
 }));
 
+vi.mock('@/features/cursos/api/materiales', () => ({
+  listarMateriales: vi.fn().mockResolvedValue([]),
+  subirMaterial: vi.fn(),
+  eliminarMaterial: vi.fn(),
+}));
+
 vi.mock('@/features/matriculas/api/matriculas', () => ({
   listarAlumnos: vi.fn().mockResolvedValue([]),
   listarMatriculas: vi.fn().mockResolvedValue([]),
@@ -109,6 +115,19 @@ describe('rutas de la aplicación', () => {
     iniciarComo('alumno');
     mostrar(`/cursos/${CURSO_1_ID}/cohortes`);
     expect(screen.getByText('No tenés permiso para ver esta página.')).toBeInTheDocument();
+  });
+
+  it('un docente entra a los apuntes de un curso', async () => {
+    iniciarComo('docente');
+    mostrar(`/cursos/${CURSO_1_ID}/apuntes`);
+    expect(await screen.findByRole('heading', { name: /^Apuntes/ })).toBeInTheDocument();
+  });
+
+  it('un alumno no entra a los apuntes de un curso', () => {
+    iniciarComo('alumno');
+    mostrar(`/cursos/${CURSO_1_ID}/apuntes`);
+    expect(screen.getByText('No tenés permiso para ver esta página.')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /^Apuntes/ })).not.toBeInTheDocument();
   });
 
   it('un alumno no entra a la matrícula de una cohorte', () => {
