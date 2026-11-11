@@ -468,7 +468,6 @@
         "summary": "Lista las entregas de una evaluación, una por alumno.",
         "description": "Consumidor: Frontend, pantalla de resultados (S2-FE-05, #148). Proveedor: S2-EV-03 (#147). Solo lectura: aprobar la nota es S3-EV-01. Solo Docente o Administrador de la institución del token; Alumno → 403 (RN-CMP-01). Otra institución → 404.",
         "operationId": "ListarEntregas",
-        "x-estado": "planificado",
         "security": [
           {
             "Bearer": []
@@ -549,7 +548,6 @@
         "summary": "Detalle de una entrega: cada respuesta, la justificación de la IA y las alertas de foco.",
         "description": "Consumidor: Frontend (S2-FE-05, #148). Proveedor: S2-EV-03 (#147). Solo Docente o Administrador de la institución del token; Alumno → 403 (RN-CMP-01). Otra institución → 404.",
         "operationId": "ObtenerEntrega",
-        "x-estado": "planificado",
         "security": [
           {
             "Bearer": []
