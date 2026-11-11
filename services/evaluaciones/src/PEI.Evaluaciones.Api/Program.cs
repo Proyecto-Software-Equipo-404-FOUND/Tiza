@@ -18,7 +18,20 @@ builder.Services.AddScoped<
     PEI.Evaluaciones.Application.Evaluaciones.IEvaluacionRepositorio,
     PEI.Evaluaciones.Infrastructure.Persistence.EvaluacionRepositorio>();
 
-builder.Services.AddScoped<PEI.Evaluaciones.Application.Evaluaciones.ICursosClient, PEI.Evaluaciones.Infrastructure.Clientes.CursosClientProvisorio>();    
+builder.Services.AddScoped<PEI.Evaluaciones.Application.Evaluaciones.ICursosClient, PEI.Evaluaciones.Infrastructure.Clientes.CursosClientProvisorio>();
+
+// S2-EV-02 (#144): corrección con IA
+builder.Services.AddScoped<
+    PEI.Evaluaciones.Application.Correccion.ICorreccionRepositorio,
+    PEI.Evaluaciones.Infrastructure.Persistence.CorreccionRepositorio>();
+builder.Services.AddHttpClient<
+    PEI.Evaluaciones.Application.Correccion.ICorreccionIaClient,
+    PEI.Evaluaciones.Infrastructure.Clientes.CorreccionIaHttpClient>(cliente =>
+{
+    cliente.BaseAddress = new Uri(builder.Configuration["CorreccionIa:UrlBaseIa"] ?? "http://localhost:5105/");
+    cliente.Timeout = TimeSpan.FromSeconds(60);
+});
+builder.Services.AddHostedService<PEI.Evaluaciones.Api.Workers.CorreccionIaWorker>();    
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
