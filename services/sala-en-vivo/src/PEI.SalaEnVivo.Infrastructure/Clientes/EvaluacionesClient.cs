@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using PEI.SalaEnVivo.Application.DTOs.Entregas;
 using PEI.SalaEnVivo.Application.DTOs.Evaluaciones;
@@ -11,18 +12,22 @@ namespace PEI.SalaEnVivo.Infrastructure.Clientes
     public sealed class EvaluacionesClient : IEvaluacionesClient
     {
         private const string EncabezadoInstitucion = "X-Institucion-Id";
+        private const string EncabezadoApiKeyInterna = "X-Api-Key-Interna";
 
         private static readonly JsonSerializerOptions OpcionesJson =
             new(JsonSerializerDefaults.Web);
 
         private readonly HttpClient _httpClient;
+        private readonly IConfiguration? _configuration;
         private readonly ILogger<EvaluacionesClient>? _logger;
 
         public EvaluacionesClient(
             HttpClient httpClient,
+            IConfiguration? configuration = null,
             ILogger<EvaluacionesClient>? logger = null)
         {
             _httpClient = httpClient;
+            _configuration = configuration;
             _logger = logger;
         }
 
@@ -83,6 +88,10 @@ namespace PEI.SalaEnVivo.Infrastructure.Clientes
             const int maxIntentos = 3;
             var ruta = $"interno/salas/{salaId}/entregas";
 
+            var apiKey = _configuration?["ServiciosInternos:ApiKey"]
+                ?? Environment.GetEnvironmentVariable("ServiciosInternos__ApiKey")
+                ?? string.Empty;
+
             for (int intento = 1; intento <= maxIntentos; intento++)
             {
                 try
@@ -91,7 +100,7 @@ namespace PEI.SalaEnVivo.Infrastructure.Clientes
                     {
                         Content = JsonContent.Create(lote, options: OpcionesJson)
                     };
-                    request.Headers.Add(EncabezadoInstitucion, lote.InstitucionId.ToString());
+                    request.Headers.Add(EncabezadoApiKeyInterna, apiKey);
 
                     using var response = await _httpClient.SendAsync(request, cancellationToken);
 
@@ -127,6 +136,7 @@ namespace PEI.SalaEnVivo.Infrastructure.Clientes
                         "Intento {Intento}/{MaxIntentos} falló al enviar lote {LoteId} (HTTP {StatusCode}).",
                         intento,
                         maxIntentos,
+                        lote.LoteId,
                         statusCode);
                 }
                 catch (HttpRequestException ex) when (intento < maxIntentos)
