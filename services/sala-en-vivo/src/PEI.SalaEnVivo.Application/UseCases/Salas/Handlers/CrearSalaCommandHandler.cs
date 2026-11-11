@@ -10,15 +10,41 @@ namespace PEI.SalaEnVivo.Application.UseCases.Salas.Handlers
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ISalaRepository _salaRepository;
+        private readonly IEvaluacionesClient? _evaluacionesClient;
 
-        public CrearSalaCommandHandler(IUnitOfWork unitOfWork, ISalaRepository salaRepository)
+        public CrearSalaCommandHandler(
+            IUnitOfWork unitOfWork,
+            ISalaRepository salaRepository,
+            IEvaluacionesClient? evaluacionesClient = null)
         {   
             _unitOfWork = unitOfWork;
             _salaRepository = salaRepository;
+            _evaluacionesClient = evaluacionesClient;
         }
 
         public async Task<Sala> HandleAsync(CrearSalaCommand command, CancellationToken cancellationToken)
         {
+            if (command.CapacidadMaxima < 1 || command.CapacidadMaxima > 100)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(command.CapacidadMaxima),
+                    "La capacidad máxima debe estar entre 1 y 100.");
+            }
+
+            if (_evaluacionesClient != null)
+            {
+                var evaluacion = await _evaluacionesClient.ObtenerPreguntasAsync(
+                    command.EvaluacionId,
+                    command.InstitucionId,
+                    cancellationToken);
+
+                if (evaluacion == null || !string.Equals(evaluacion.Estado, "Publicada", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new KeyNotFoundException(
+                        "La evaluación no existe, no está publicada o pertenece a otra institución.");
+                }
+            }
+
             var sala = new Sala
             {
                 InstitucionId = command.InstitucionId,

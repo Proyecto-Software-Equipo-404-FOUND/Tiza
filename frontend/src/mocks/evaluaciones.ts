@@ -3,7 +3,7 @@ import { COHORTE_1_ID, INSTITUCION_A } from './datos';
 import type { Evaluacion } from '@/features/evaluaciones/tipos';
 
 // Datos falsos con la forma de contracts/openapi/evaluaciones-v1.json
-const evaluaciones: Evaluacion[] = [
+export const evaluaciones: Evaluacion[] = [
   {
     id: 'e0000000-0000-4000-8000-000000000001',
     institucionId: INSTITUCION_A,

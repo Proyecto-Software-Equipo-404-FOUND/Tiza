@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tiza.pei.edu.ar/contracts/schemas/presencia-sala-v1.schema.json",
+  "title": "PresenciaSala",
+  "description": "Snapshot de presencia efímera de alumnos conectados a una sala del hub /hubs/sala (contrato sala-hub-v1, tarea SA-07). Se emite en el evento alumnosConectados y se devuelve desde ObtenerAlumnosConectados. Solo contiene alias, nunca datos personales.",
+  "type": "object",
+  "required": [
+    "salaId",
+    "totalConectados",
+    "alumnos",
+    "actualizadoUtc"
+  ],
+  "properties": {
+    "salaId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Sala cuya presencia se está informando."
+    },
+    "totalConectados": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Cantidad de alumnos con conexión activa en la sala."
+    },
+    "alumnos": {
+      "type": "array",
+      "description": "Alumnos conectados, ordenados por ingresoUtc ascendente.",
+      "items": {
+        "$ref": "#/$defs/alumnoConectado"
+      }
+    },
+    "actualizadoUtc": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Hora del servidor al componer el snapshot."
+    }
+  },
+  "$defs": {
+    "alumnoConectado": {
+      "type": "object",
+      "required": [
+        "alumnoId",
+        "alias",
+        "ingresoUtc"
+      ],
+      "properties": {
+        "alumnoId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Identificador interno del alumno. Solo se envía a docentes."
+        },
+        "alias": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Alias visible, por ejemplo Alumno 1. Nunca nombre, email ni legajo."
+        },
+        "ingresoUtc": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Primera conexión registrada del alumno en la sala."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "salaId": "11111111-1111-4111-8111-111111111111",
+      "totalConectados": 2,
+      "alumnos": [
+        {
+          "alumnoId": "22222222-2222-4222-8222-222222222222",
+          "alias": "Alumno 1",
+          "ingresoUtc": "2026-10-26T13:59:58.120Z"
+        },
+        {
+          "alumnoId": "33333333-3333-4333-8333-333333333333",
+          "alias": "Alumno 2",
+          "ingresoUtc": "2026-10-26T14:00:05.001Z"
+        }
+      ],
+      "actualizadoUtc": "2026-10-26T14:00:05.050Z"
+    }
+  ]
+}
