@@ -51,7 +51,7 @@ Desktop.ini
 /tmp
 
 /building-blocks/.tmp/
-   services/identidad/.tmp/
+services/identidad/.tmp/
 
-   ## Almacenamiento local (archivos y materiales PDF subidos en desarrollo)
-   storage/
+## Almacenamiento local (archivos y materiales PDF subidos en desarrollo)
+storage/
