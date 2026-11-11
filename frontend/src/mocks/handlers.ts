@@ -6,6 +6,7 @@ import { handlersCohortes } from './cohortes';
 import { handlersEvaluaciones } from './evaluaciones';
 import { handlersSalas } from './salas';
 import { handlersEntregas } from './entregas';
+import { handlersMateriales } from './materiales';
 
 export const handlers = [
   // Ruta real por el gateway: el transform la entrega a Identidad como /api/auth/login
@@ -112,4 +113,5 @@ export const handlers = [
   ...handlersEvaluaciones,
   ...handlersSalas,
   ...handlersEntregas,
+  ...handlersMateriales,
 ];
