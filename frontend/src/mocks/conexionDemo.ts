@@ -160,6 +160,11 @@ export function crearConexionDemo(): ConexionSala {
     ...conexion,
     invocar: async (metodo, ...argumentos) => {
       if (metodo === 'EnviarRespuesta') return enviarRespuesta(argumentos[0] as EnvioPendiente);
+      if (metodo === 'RegistrarEventoFoco') {
+        // El servidor real guarda el evento y avisa al docente; acá solo se deja a la vista para la demo
+        console.info('[demo] RegistrarEventoFoco', argumentos[0]);
+        return undefined;
+      }
       if (metodo === 'ObtenerEstadoSala') {
         await esperar(200);
         if (cortada) throw new Error('Failed to fetch');
