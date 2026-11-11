@@ -636,6 +636,668 @@
           }
         }
       ]
+    },
+    {
+      "name": "S2-QA-01 Evaluaciones y lotes",
+      "item": [
+        {
+          "name": "Crear evaluación A",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Institucion-Id",
+                "value": "{{tenantA}}"
+              }
+            ],
+            "url": "{{evaluacionesUrl}}/api/v1/evaluaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"S2-QA-01 A\",\n  \"tipo\": \"Examen\",\n  \"preguntasJson\": {\n    \"version\": 1,\n    \"preguntas\": [\n      {\n        \"id\": \"{{preguntaId}}\",\n        \"enunciado\": \"¿Cuánto es 1 + 1?\",\n        \"tipo\": \"OpcionMultiple\",\n        \"puntajeMaximo\": 1,\n        \"opciones\": [\n          {\n            \"id\": \"{{opcionId}}\",\n            \"texto\": \"2\",\n            \"esCorrecta\": true\n          },\n          {\n            \"id\": \"00000000-0000-4000-8000-000000000099\",\n            \"texto\": \"3\",\n            \"esCorrecta\": false\n          }\n        ]\n      }\n    ]\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.test('Borrador de la institución correcta', () => { pm.expect(j.estado).eq('Borrador'); pm.expect(j.institucionId).eq(pm.environment.get('tenantA')); });",
+                  "pm.environment.set('evaluacionA', j.id); pm.environment.set('versionA', j.version);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Publicar evaluación A",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Institucion-Id",
+                "value": "{{tenantA}}"
+              }
+            ],
+            "url": "{{evaluacionesUrl}}/api/v1/evaluaciones/{{evaluacionA}}/publicar",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"versionEsperada\":{{versionA}},\"cohorteId\":\"{{cohorteA}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Publicada', () => pm.expect(pm.response.json().estado).eq('Publicada'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Recibir lote A",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Key-Interna",
+                "value": "{{internalApiKey}}"
+              }
+            ],
+            "url": "{{evaluacionesUrl}}/interno/salas/{{salaA}}/entregas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": 1,\n  \"loteId\": \"{{loteA}}\",\n  \"salaId\": \"{{salaA}}\",\n  \"evaluacionId\": \"{{evaluacionA}}\",\n  \"institucionId\": \"{{tenantA}}\",\n  \"finalizadaUtc\": \"2026-11-11T12:00:00Z\",\n  \"motivoCierre\": \"Docente\",\n  \"entregas\": [\n    {\n      \"alumnoId\": \"{{alumnoA}}\",\n      \"respuestas\": [\n        {\n          \"preguntaId\": \"{{preguntaId}}\",\n          \"respuesta\": \"{{opcionId}}\",\n          \"secuencia\": 1,\n          \"recibidaUtc\": \"2026-11-11T11:59:00Z\"\n        }\n      ],\n      \"alertasFoco\": []\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('Una entrega nueva', () => { pm.expect(j.entregasRecibidas).eq(1); pm.expect(j.entregasNuevas).eq(1); pm.expect(j.entregasYaExistentes).eq(0); pm.expect(j.entregas).to.have.lengthOf(1); pm.expect(j.entregas[0].alumnoId).eq(pm.environment.get('alumnoA')); });",
+                  "pm.environment.set('entregasA', JSON.stringify(j.entregas)); pm.environment.set('entregaA', j.entregas[0].entregaId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reenviar lote A idéntico",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Key-Interna",
+                "value": "{{internalApiKey}}"
+              }
+            ],
+            "url": "{{evaluacionesUrl}}/interno/salas/{{salaA}}/entregas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": 1,\n  \"loteId\": \"{{loteA}}\",\n  \"salaId\": \"{{salaA}}\",\n  \"evaluacionId\": \"{{evaluacionA}}\",\n  \"institucionId\": \"{{tenantA}}\",\n  \"finalizadaUtc\": \"2026-11-11T12:00:00Z\",\n  \"motivoCierre\": \"Docente\",\n  \"entregas\": [\n    {\n      \"alumnoId\": \"{{alumnoA}}\",\n      \"respuestas\": [\n        {\n          \"preguntaId\": \"{{preguntaId}}\",\n          \"respuesta\": \"{{opcionId}}\",\n          \"secuencia\": 1,\n          \"recibidaUtc\": \"2026-11-11T11:59:00Z\"\n        }\n      ],\n      \"alertasFoco\": []\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('No duplica ni cambia entregas', () => { pm.expect(j.entregasRecibidas).eq(1); pm.expect(j.entregasNuevas).eq(0); pm.expect(j.entregasYaExistentes).eq(1); pm.expect(j.entregas).deep.eq(JSON.parse(pm.environment.get('entregasA'))); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rechazar lote A con institución ajena",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Key-Interna",
+                "value": "{{internalApiKey}}"
+              }
+            ],
+            "url": "{{evaluacionesUrl}}/interno/salas/{{salaA}}/entregas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": 1,\n  \"loteId\": \"{{loteA}}\",\n  \"salaId\": \"{{salaA}}\",\n  \"evaluacionId\": \"{{evaluacionA}}\",\n  \"institucionId\": \"{{tenantB}}\",\n  \"finalizadaUtc\": \"2026-11-11T12:00:00Z\",\n  \"motivoCierre\": \"Docente\",\n  \"entregas\": [\n    {\n      \"alumnoId\": \"{{alumnoA}}\",\n      \"respuestas\": [\n        {\n          \"preguntaId\": \"{{preguntaId}}\",\n          \"respuesta\": \"{{opcionId}}\",\n          \"secuencia\": 1,\n          \"recibidaUtc\": \"2026-11-11T11:59:00Z\"\n        }\n      ],\n      \"alertasFoco\": []\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rechazar lote A sin clave interna",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{evaluacionesUrl}}/interno/salas/{{salaA}}/entregas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": 1,\n  \"loteId\": \"{{loteA}}\",\n  \"salaId\": \"{{salaA}}\",\n  \"evaluacionId\": \"{{evaluacionA}}\",\n  \"institucionId\": \"{{tenantA}}\",\n  \"finalizadaUtc\": \"2026-11-11T12:00:00Z\",\n  \"motivoCierre\": \"Docente\",\n  \"entregas\": [\n    {\n      \"alumnoId\": \"{{alumnoA}}\",\n      \"respuestas\": [\n        {\n          \"preguntaId\": \"{{preguntaId}}\",\n          \"respuesta\": \"{{opcionId}}\",\n          \"secuencia\": 1,\n          \"recibidaUtc\": \"2026-11-11T11:59:00Z\"\n        }\n      ],\n      \"alertasFoco\": []\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear evaluación B",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Institucion-Id",
+                "value": "{{tenantB}}"
+              }
+            ],
+            "url": "{{evaluacionesUrl}}/api/v1/evaluaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"S2-QA-01 B\",\n  \"tipo\": \"Examen\",\n  \"preguntasJson\": {\n    \"version\": 1,\n    \"preguntas\": [\n      {\n        \"id\": \"{{preguntaId}}\",\n        \"enunciado\": \"¿Cuánto es 1 + 1?\",\n        \"tipo\": \"OpcionMultiple\",\n        \"puntajeMaximo\": 1,\n        \"opciones\": [\n          {\n            \"id\": \"{{opcionId}}\",\n            \"texto\": \"2\",\n            \"esCorrecta\": true\n          },\n          {\n            \"id\": \"00000000-0000-4000-8000-000000000099\",\n            \"texto\": \"3\",\n            \"esCorrecta\": false\n          }\n        ]\n      }\n    ]\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.test('Borrador de la institución correcta', () => { pm.expect(j.estado).eq('Borrador'); pm.expect(j.institucionId).eq(pm.environment.get('tenantB')); });",
+                  "pm.environment.set('evaluacionB', j.id); pm.environment.set('versionB', j.version);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Publicar evaluación B",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Institucion-Id",
+                "value": "{{tenantB}}"
+              }
+            ],
+            "url": "{{evaluacionesUrl}}/api/v1/evaluaciones/{{evaluacionB}}/publicar",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"versionEsperada\":{{versionB}},\"cohorteId\":\"{{cohorteB}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Publicada', () => pm.expect(pm.response.json().estado).eq('Publicada'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Recibir lote B",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Key-Interna",
+                "value": "{{internalApiKey}}"
+              }
+            ],
+            "url": "{{evaluacionesUrl}}/interno/salas/{{salaB}}/entregas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": 1,\n  \"loteId\": \"{{loteB}}\",\n  \"salaId\": \"{{salaB}}\",\n  \"evaluacionId\": \"{{evaluacionB}}\",\n  \"institucionId\": \"{{tenantB}}\",\n  \"finalizadaUtc\": \"2026-11-11T12:00:00Z\",\n  \"motivoCierre\": \"Docente\",\n  \"entregas\": [\n    {\n      \"alumnoId\": \"{{alumnoB}}\",\n      \"respuestas\": [\n        {\n          \"preguntaId\": \"{{preguntaId}}\",\n          \"respuesta\": \"{{opcionId}}\",\n          \"secuencia\": 1,\n          \"recibidaUtc\": \"2026-11-11T11:59:00Z\"\n        }\n      ],\n      \"alertasFoco\": []\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('Una entrega nueva', () => { pm.expect(j.entregasRecibidas).eq(1); pm.expect(j.entregasNuevas).eq(1); pm.expect(j.entregasYaExistentes).eq(0); pm.expect(j.entregas).to.have.lengthOf(1); pm.expect(j.entregas[0].alumnoId).eq(pm.environment.get('alumnoB')); });",
+                  "pm.environment.set('entregasB', JSON.stringify(j.entregas)); pm.environment.set('entregaB', j.entregas[0].entregaId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reenviar lote B idéntico",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Key-Interna",
+                "value": "{{internalApiKey}}"
+              }
+            ],
+            "url": "{{evaluacionesUrl}}/interno/salas/{{salaB}}/entregas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": 1,\n  \"loteId\": \"{{loteB}}\",\n  \"salaId\": \"{{salaB}}\",\n  \"evaluacionId\": \"{{evaluacionB}}\",\n  \"institucionId\": \"{{tenantB}}\",\n  \"finalizadaUtc\": \"2026-11-11T12:00:00Z\",\n  \"motivoCierre\": \"Docente\",\n  \"entregas\": [\n    {\n      \"alumnoId\": \"{{alumnoB}}\",\n      \"respuestas\": [\n        {\n          \"preguntaId\": \"{{preguntaId}}\",\n          \"respuesta\": \"{{opcionId}}\",\n          \"secuencia\": 1,\n          \"recibidaUtc\": \"2026-11-11T11:59:00Z\"\n        }\n      ],\n      \"alertasFoco\": []\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('No duplica ni cambia entregas', () => { pm.expect(j.entregasRecibidas).eq(1); pm.expect(j.entregasNuevas).eq(0); pm.expect(j.entregasYaExistentes).eq(1); pm.expect(j.entregas).deep.eq(JSON.parse(pm.environment.get('entregasB'))); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rechazar lote B con institución ajena",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Key-Interna",
+                "value": "{{internalApiKey}}"
+              }
+            ],
+            "url": "{{evaluacionesUrl}}/interno/salas/{{salaB}}/entregas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": 1,\n  \"loteId\": \"{{loteB}}\",\n  \"salaId\": \"{{salaB}}\",\n  \"evaluacionId\": \"{{evaluacionB}}\",\n  \"institucionId\": \"{{tenantA}}\",\n  \"finalizadaUtc\": \"2026-11-11T12:00:00Z\",\n  \"motivoCierre\": \"Docente\",\n  \"entregas\": [\n    {\n      \"alumnoId\": \"{{alumnoB}}\",\n      \"respuestas\": [\n        {\n          \"preguntaId\": \"{{preguntaId}}\",\n          \"respuesta\": \"{{opcionId}}\",\n          \"secuencia\": 1,\n          \"recibidaUtc\": \"2026-11-11T11:59:00Z\"\n        }\n      ],\n      \"alertasFoco\": []\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rechazar lote B sin clave interna",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{evaluacionesUrl}}/interno/salas/{{salaB}}/entregas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": 1,\n  \"loteId\": \"{{loteB}}\",\n  \"salaId\": \"{{salaB}}\",\n  \"evaluacionId\": \"{{evaluacionB}}\",\n  \"institucionId\": \"{{tenantB}}\",\n  \"finalizadaUtc\": \"2026-11-11T12:00:00Z\",\n  \"motivoCierre\": \"Docente\",\n  \"entregas\": [\n    {\n      \"alumnoId\": \"{{alumnoB}}\",\n      \"respuestas\": [\n        {\n          \"preguntaId\": \"{{preguntaId}}\",\n          \"respuesta\": \"{{opcionId}}\",\n          \"secuencia\": 1,\n          \"recibidaUtc\": \"2026-11-11T11:59:00Z\"\n        }\n      ],\n      \"alertasFoco\": []\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  ""
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "S2-QA-01 Visibilidad de entregas (requiere S2-EV-03)",
+      "item": [
+        {
+          "name": "A ve su entrega (control positivo obligatorio)",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenA}}"
+              },
+              {
+                "key": "X-Institucion-Id",
+                "value": "{{tenantA}}"
+              }
+            ],
+            "url": "{{evaluacionesUrl}}/api/v1/evaluaciones/{{evaluacionA}}/entregas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const rows = pm.response.json();",
+                  "pm.test('Sólo la entrega propia', () => { pm.expect(rows).to.be.an('array').with.lengthOf(1); pm.expect(rows[0].alumnoId).eq(pm.environment.get('alumnoA')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "A no lista entregas de B",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenA}}"
+              },
+              {
+                "key": "X-Institucion-Id",
+                "value": "{{tenantA}}"
+              }
+            ],
+            "url": "{{evaluacionesUrl}}/api/v1/evaluaciones/{{evaluacionB}}/entregas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "A no lee entrega de B por ID",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenA}}"
+              },
+              {
+                "key": "X-Institucion-Id",
+                "value": "{{tenantA}}"
+              }
+            ],
+            "url": "{{evaluacionesUrl}}/api/v1/evaluaciones/{{evaluacionB}}/entregas/{{entregaB}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "B ve su entrega (control positivo obligatorio)",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenB}}"
+              },
+              {
+                "key": "X-Institucion-Id",
+                "value": "{{tenantB}}"
+              }
+            ],
+            "url": "{{evaluacionesUrl}}/api/v1/evaluaciones/{{evaluacionB}}/entregas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const rows = pm.response.json();",
+                  "pm.test('Sólo la entrega propia', () => { pm.expect(rows).to.be.an('array').with.lengthOf(1); pm.expect(rows[0].alumnoId).eq(pm.environment.get('alumnoB')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "B no lista entregas de A",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenB}}"
+              },
+              {
+                "key": "X-Institucion-Id",
+                "value": "{{tenantB}}"
+              }
+            ],
+            "url": "{{evaluacionesUrl}}/api/v1/evaluaciones/{{evaluacionA}}/entregas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "B no lee entrega de A por ID",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenB}}"
+              },
+              {
+                "key": "X-Institucion-Id",
+                "value": "{{tenantB}}"
+              }
+            ],
+            "url": "{{evaluacionesUrl}}/api/v1/evaluaciones/{{evaluacionA}}/entregas/{{entregaA}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  ""
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }
