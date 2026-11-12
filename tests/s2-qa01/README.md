@@ -6,6 +6,10 @@ Responsable: Candela Luna (`candela1805`). Revisor: Ariel (`aacarriego`). PR #20
 
 En la revisión inicial de `8439307`, #202, #205 y #206 estaban abiertos. Al retomar se verificó que los tres están integrados y #140 cerrada. La rama incorpora `origin/main` en `c87ff8c`. No se implementó funcionalidad de otro integrante; se habilitaron los casos reales sobre sus integraciones.
 
+## Criterio pendiente de #150
+
+CursosController y CohortesController exigen SoloAdministrador en sus POST. El recorrido pedido, donde un Docente crea ambos, contradice esas políticas. El fixture registra blockedAcceptance y prueba 403 reales; no eleva privilegios ni cambia producción. El flujo permitido Administrador → Docente no cierra ese criterio. La variante estricta sigue disponible con QA_CYPRESS_FLOW=docente y falla si el docente no puede crear. Hace falta una decisión del equipo sobre el criterio o los permisos; el PR sigue en borrador con Refs #150.
+
 ## Reproducción desde la raíz
 
 Requisitos: Node 20, .NET 8, Docker Linux y dotnet-ef 8.0.11 (o revisión compatible).
@@ -31,7 +35,7 @@ El runner completo reutiliza la preparación de QA04: migraciones reales, semill
 
 - Contratos: ejemplos publicados de lote-entregas-v1 y resultado-lote-entregas-v1 contra draft 2020-12; negativos por campo obligatorio y UUID inválido.
 - Newman: 18 requests / 28 aserciones. Crear/publicar A/B, recibir/repetir lotes, comparar IDs, rechazar institución ajena y falta de clave interna, leer entregas propias y rechazar listados/detalles ajenos. Los controles positivos impiden aceptar un 404 de una ruta inexistente como aislamiento. El runner API exige dos entregas en PostgreSQL después del reenvío.
-- Cypress real: login docente, curso, cohorte con docente canónico, matrícula de Alumno uno Prueba A, una fila Activa, exclusión del selector y navegación de vuelta. El runner consulta después la matrícula por API para confirmar persistencia. No se interceptan APIs ni se usa MSW. Sólo se bloquean Google Fonts para utilizar fuentes locales.
+- Cypress real según permisos vigentes: login docente y POST curso rechazado con 403; administrador crea curso/cohorte; se vuelve a iniciar sesión como docente para matricular Alumno uno Prueba A. Exige una fila Activa, exclusión del selector y navegación de vuelta; el runner confirma persistencia por API. Sólo se observa el tráfico del POST (sin stub); no se simulan respuestas. Se bloquean Google Fonts para usar fuentes locales.
 - SignalR real: crear/publicar evaluación, crear sala, conectar docente/alumno matriculado, iniciar y reenviar el mismo payload/key. Exige Aceptada → Duplicada, timestamp original y una respuesta en PostgreSQL.
 - Cierre real: alumno no puede finalizar; docente finaliza y se recibe salaFinalizada; Evaluaciones devuelve la entrega; repetir cierre conserva IDs y una fila SQL; se rechazan respuestas nuevas después del cierre.
 - El test unitario del handler invoca dos veces el comando, separado de transporte/persistencia. Cypress UI con MSW es una regresión adicional y no acredita E2E real.

@@ -23,7 +23,9 @@ try {
   assert.equal(first.estado, 'Aceptada');
   assert.equal(second.estado, 'Duplicada');
   assert.equal(second.idempotencyKey, payload.idempotencyKey);
-  assert.equal(second.recibidaUtc, first.recibidaUtc);
+  // Comparar a la precisión de almacenamiento de PostgreSQL, no a ticks de .NET.
+  const persistedTime = value => value.replace(/(\.\d{6})\d+Z$/, '$1Z');
+  assert.equal(persistedTime(second.recibidaUtc), persistedTime(first.recibidaUtc));
   const after = await hub.invoke('ObtenerEstadoSala');
   assert.equal(after.ultimaSecuencia, payload.secuencia);
   assert.equal(after.preguntasRespondidas.filter(id => id === preguntaId).length, 1);
