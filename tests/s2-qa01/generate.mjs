@@ -54,5 +54,5 @@ pm.test('Sólo la entrega propia', () => { pm.expect(rows).to.be.an('array').wit
 }
 collection.item = collection.item.filter(x => !x.name.startsWith(prefix));
 collection.item.push({ name: `${prefix} Evaluaciones y lotes`, item: items },
-  { name: `${prefix} Visibilidad de entregas (requiere S2-EV-03)`, item: visibility });
+  { name: `${prefix} Visibilidad de entregas`, item: visibility });
 writeFileSync(file, JSON.stringify(collection, null, 2) + '\n');

@@ -1077,7 +1077,7 @@
       ]
     },
     {
-      "name": "S2-QA-01 Visibilidad de entregas (requiere S2-EV-03)",
+      "name": "S2-QA-01 Visibilidad de entregas",
       "item": [
         {
           "name": "A ve su entrega (control positivo obligatorio)",
