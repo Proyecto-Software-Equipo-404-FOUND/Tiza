@@ -10,6 +10,7 @@ await new Promise((resolve, reject) => {
 });
 const live = process.argv.includes('--live');
 process.env.QA_CYPRESS_MODE = live ? 'live' : 'ui';
+if (live) process.env.QA_CYPRESS_FLOW ??= 'permisos';
 if (!live) process.env.QA_DOCENTE_PASSWORD = randomBytes(24).toString('hex');
 const vite = spawn(process.execPath, ['node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--strictPort'], {
   cwd: root, windowsHide: true, env: { ...process.env, VITE_USE_MOCKS: live ? 'false' : 'true', VITE_API_URL: '' }, stdio: 'ignore',
