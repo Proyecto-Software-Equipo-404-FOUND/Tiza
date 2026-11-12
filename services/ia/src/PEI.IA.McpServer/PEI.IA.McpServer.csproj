@@ -12,6 +12,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PEI.IA.Domain\PEI.IA.Domain.csproj" />
+    <ProjectReference Include="..\PEI.IA.Application\PEI.IA.Application.csproj" />
+    <ProjectReference Include="..\PEI.IA.Infrastructure\PEI.IA.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

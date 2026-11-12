@@ -207,6 +207,10 @@ public class CorreccionService : ICorreccionService
         }
 
         // ── Integración S2-IA-01 / EV-06: Persistir calificación sugerida en Evaluaciones ──
+        // Cuando UsarPlanB=false, la tool MCP remota ya realizó el callback dentro de su ejecución.
+        // Este bloque actúa como fallback de seguridad (Plan B local) y como camino directo
+        // cuando el flujo usa respuesta JSON sin tool call.
+        // Evaluaciones maneja el reintento idempotentemente (yaExistia: true sin pisar la nota).
         if (request.EntregaId.HasValue && _evaluacionesClient != null)
         {
             try
@@ -217,6 +221,7 @@ public class CorreccionService : ICorreccionService
                     notaSugerida: respuesta.NotaSugerida,
                     justificacion: respuesta.Justificacion,
                     desgloseJson: desgloseJson,
+                    preguntaId: request.PreguntaId,
                     ct: cancellationToken);
 
                 if (!registrado)

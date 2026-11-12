@@ -401,6 +401,14 @@ namespace PEI.SalaEnVivo.UnitTests
         public Task<RespuestaSala?> ObtenerPorClaveIdempotenciaAsync(Guid salaId, Guid alumnoId, Guid idempotencyKey, CancellationToken cancellationToken = default) =>
             Task.FromResult(Respuestas.FirstOrDefault(r => r.SalaId == salaId && r.AlumnoId == alumnoId && r.IdempotencyKey == idempotencyKey));
 
+        public Task<IReadOnlyList<RespuestaSala>> ObtenerPorSalaAsync(Guid salaId, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<RespuestaSala>>(
+                Respuestas
+                    .Where(r => r.SalaId == salaId)
+                    .OrderBy(r => r.AlumnoId)
+                    .ThenBy(r => r.Secuencia)
+                    .ToList());
+
         public Task<List<Guid>> ObtenerPreguntasRespondidasAsync(Guid salaId, Guid alumnoId, CancellationToken cancellationToken = default) =>
             Task.FromResult(Respuestas.Where(r => r.SalaId == salaId && r.AlumnoId == alumnoId).Select(r => r.PreguntaId).ToList());
 
@@ -412,12 +420,6 @@ namespace PEI.SalaEnVivo.UnitTests
                 .ToList();
 
             return Task.FromResult(secuencias.Count > 0 ? secuencias.Max() : 0);
-        }
-
-        public Task<IReadOnlyList<RespuestaSala>> ObtenerPorSalaAsync(Guid salaId, CancellationToken cancellationToken = default)
-        {
-            var resultado = (IReadOnlyList<RespuestaSala>)Respuestas.Where(r => r.SalaId == salaId).ToList();
-            return Task.FromResult(resultado);
         }
     }
 

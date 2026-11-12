@@ -8,11 +8,13 @@ import { Spinner } from '@/shared/components/Spinner';
 import { Tabla, type Columna } from '@/shared/components/Tabla';
 import { Tarjeta } from '@/shared/components/Tarjeta';
 import { useAviso } from '@/shared/components/Aviso';
-import { listarAlumnos, listarMatriculas, matricularAlumno, type Matricula } from './api/matriculas';
+import { listarAlumnos, listarMatriculas, matricularAlumno, type Alumno, type Matricula } from './api/matriculas';
+import { fechaCorta, nombreDeAlumno } from './nombres';
 
-const columnas: Columna<Matricula>[] = [
-  { titulo: 'Alumno', celda: (m) => m.alumnoNombre },
+const crearColumnas = (alumnos: Alumno[]): Columna<Matricula>[] => [
+  { titulo: 'Alumno', celda: (m) => nombreDeAlumno(m, alumnos) },
   { titulo: 'Estado', celda: (m) => m.estado },
+  { titulo: 'Desde', celda: (m) => fechaCorta(m.fechaAlta) ?? '—' },
 ];
 
 // Marco común de la pantalla: así «cargando» y «error» también quedan dentro de <main>
@@ -63,6 +65,7 @@ export function PaginaMatriculas() {
     void alumnos.refetch();
   };
 
+  // Se espera a ambas listas la primera vez; si la de alumnos falla, no se bloquea la pantalla (ver más abajo)
   if (matriculas.isPending || alumnos.isPending) {
     return (
       <Marco>
@@ -71,13 +74,10 @@ export function PaginaMatriculas() {
     );
   }
 
-  if (matriculas.isError || alumnos.isError) {
+  if (matriculas.isError) {
     return (
       <Marco>
-        <BannerError
-          mensaje={mensajeDeError(matriculas.error ?? alumnos.error)}
-          onReintentar={recargar}
-        />
+        <BannerError mensaje={mensajeDeError(matriculas.error)} onReintentar={recargar} />
       </Marco>
     );
   }
@@ -85,7 +85,9 @@ export function PaginaMatriculas() {
   // No se ofrecen los alumnos que ya están matriculados en esta cohorte
   const listaMatriculas = matriculas.data ?? [];
   const yaMatriculados = new Set(listaMatriculas.map((m) => m.alumnoId));
-  const disponibles = (alumnos.data ?? []).filter((a) => !yaMatriculados.has(a.id));
+  const listaAlumnos = alumnos.data ?? [];
+  const disponibles = listaAlumnos.filter((a) => !yaMatriculados.has(a.id));
+  const columnas = crearColumnas(listaAlumnos);
 
   const enviar = (evento: FormEvent) => {
     evento.preventDefault();
@@ -107,7 +109,7 @@ export function PaginaMatriculas() {
               id='alumno'
               value={alumnoId}
               onChange={(e) => setAlumnoId(e.target.value)}
-              disabled={matricular.isPending}
+              disabled={matricular.isPending || alumnos.isError}
               className='rounded-xl border border-tiza-borde bg-white px-3 py-3 text-tiza-bosque disabled:opacity-50'
             >
               <option value=''>Elegí un alumno</option>
@@ -122,8 +124,17 @@ export function PaginaMatriculas() {
             Matricular
           </Boton>
         </form>
-        {disponibles.length === 0 && (
+        {alumnos.isSuccess && disponibles.length === 0 && (
           <p className='mt-2 text-sm text-tiza-bosque/70'>No quedan alumnos para matricular.</p>
+        )}
+        {/* Sin la lista no se puede elegir a quién matricular, pero los matriculados se siguen viendo */}
+        {alumnos.isError && (
+          <div className='mt-3'>
+            <BannerError
+              mensaje='No pudimos cargar la lista de alumnos para matricular. Los matriculados se muestran igual.'
+              onReintentar={() => void alumnos.refetch()}
+            />
+          </div>
         )}
       </Tarjeta>
 

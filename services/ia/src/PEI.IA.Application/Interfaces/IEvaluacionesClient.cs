@@ -23,5 +23,6 @@ public interface IEvaluacionesClient
         decimal notaSugerida,
         string justificacion,
         string desgloseJson,
+        Guid? preguntaId = null,
         CancellationToken ct = default);
 }
