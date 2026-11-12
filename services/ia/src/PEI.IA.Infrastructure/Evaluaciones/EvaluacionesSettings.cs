@@ -17,4 +17,11 @@ public class EvaluacionesSettings
     /// Útil para desarrollo local cuando S2-EV-02 aún no está disponible.
     /// </summary>
     public bool HabilitarIntegracion { get; set; } = true;
+
+    /// <summary>
+    /// Clave API interna para autenticar el callback hacia Evaluaciones
+    /// (header X-Api-Key-Interna). Nunca hardcodear: leer de variable de entorno
+    /// EVALUACIONES_API_KEY_INTERNA o de dotnet user-secrets.
+    /// </summary>
+    public string ApiKeyInterna { get; set; } = string.Empty;
 }
