@@ -1,22 +1,32 @@
 import { http, HttpResponse } from 'msw';
-import { usuarios } from './datos';
+import { INSTITUCION_A, usuarios } from './datos';
 
-// Datos falsos de matrícula. Provisorio hasta que exista CU-04.
+// Datos falsos de matrícula con la forma de los contratos de Cursos e Identidad.
 // Los alumnos salen de datos.ts, así los ids coinciden con las semillas de Identidad (ID-08).
 const alumnos = usuarios
   .filter((u) => u.rol === 'alumno')
-  .map(({ id, nombre }) => ({ id, nombre }));
+  .map(({ id, nombre, email }) => {
+    // «Alumno 1 A» → nombre «Alumno 1», apellido «A», como UsuarioResumen del contrato de Identidad
+    const corte = nombre.lastIndexOf(' ');
+    return { id, nombre: nombre.slice(0, corte), apellido: nombre.slice(corte + 1), email, rol: 'Alumno' };
+  });
 
+// Con la forma de MatriculacionDto del contrato de Cursos: trae el id del alumno pero no su nombre
 const matriculas: Array<{
   id: string;
+  institucionId: string;
   cohorteId: string;
   alumnoId: string;
-  alumnoNombre: string;
+  fechaAlta: string;
   estado: 'Activa';
 }> = [];
 
 export const handlersMatriculas = [
-  http.get('*/api/v1/identidad/alumnos', () => HttpResponse.json(alumnos)),
+  // GET /api/usuarios (S2-ID-10) por el gateway; acá solo se atiende el filtro rol=Alumno
+  http.get('*/api/v1/identidad/usuarios', ({ request }) => {
+    const rol = new URL(request.url).searchParams.get('rol');
+    return HttpResponse.json(rol && rol !== 'Alumno' ? [] : alumnos);
+  }),
 
   http.get('*/api/v1/cohortes/:cohorteId/matriculas', ({ params }) =>
     HttpResponse.json(matriculas.filter((m) => m.cohorteId === params.cohorteId)),
@@ -35,9 +45,10 @@ export const handlersMatriculas = [
     }
     const nueva = {
       id: crypto.randomUUID(),
+      institucionId: INSTITUCION_A,
       cohorteId,
       alumnoId,
-      alumnoNombre: alumno.nombre,
+      fechaAlta: new Date().toISOString(),
       estado: 'Activa' as const,
     };
     matriculas.push(nueva);
