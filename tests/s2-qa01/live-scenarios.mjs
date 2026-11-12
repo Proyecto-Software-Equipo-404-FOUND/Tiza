@@ -45,11 +45,15 @@ export async function runScenarios({ root, env, password, container, command, la
   const docenteA = await login('docente@a.test'); const docenteB = await login('docente@b.test');
   const alumno = await login('alumno1@a.test');
   const tenant = '11111111-1111-1111-1111-111111111111';
-  Object.assign(env, { QA_TOKEN_A: docenteA, QA_TOKEN_B: docenteB, QA_DOCENTE_PASSWORD: password, QA_DOCENTE_EMAIL: 'docente@a.test' });
+  Object.assign(env, { QA_TOKEN_A: docenteA, QA_TOKEN_B: docenteB, QA_DOCENTE_PASSWORD: password, QA_DOCENTE_EMAIL: 'docente@a.test', QA_CYPRESS_FLOW: 'permisos' });
   console.log(await command('node', ['tests/s2-qa01/run-newman.mjs'], 'Newman con JWT emitidos por Identidad'));
   evidence.newman = { requests: 18, visibility: 'A/B y acceso cruzado con JWT reales' };
   console.log(await command('node', ['frontend/cypress/run-ui.mjs', '--live'], 'Cypress contra gateway y servicios reales', {}, 300000));
-  evidence.cypress = { mode: 'live', passed: true };
+  evidence.cypress = { mode: 'live', flow: 'administrador crea; docente matricula', passed: true };
+  // Prueba explícita del segundo permiso que bloquea el recorrido pedido en #150.
+  await api('/api/v1/cursos/cccccccc-0000-0000-0000-000000000001/cohortes', { method: 'POST', token: docenteA,
+    expected: 403, body: { nombre: 'S2-QA-01 prohibida', periodo: '2026-2C', docenteId: '11111111-0000-0000-0000-000000000002' } });
+  evidence.blockedAcceptance = ['#150 pide que Docente cree curso/cohorte; las políticas actuales devuelven 403 (SoloAdministrador).'];
 
   const cursos = await api('/api/v1/cursos', { token: docenteA });
   const curso = cursos.items.find(x => x.nombre === 'S2-QA-01 Curso reproducible'); assert.ok(curso);

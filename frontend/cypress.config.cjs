@@ -14,6 +14,7 @@ module.exports = defineConfig({
       config.env.password = process.env.QA_DOCENTE_PASSWORD;
       config.env.email = process.env.QA_DOCENTE_EMAIL || 'docente@a.test';
       config.env.mode = process.env.QA_CYPRESS_MODE || 'live';
+      config.env.flow = process.env.QA_CYPRESS_FLOW || 'docente';
       return config;
     },
   },
