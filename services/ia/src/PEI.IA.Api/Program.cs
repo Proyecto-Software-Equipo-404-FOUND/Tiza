@@ -47,6 +47,12 @@ builder.Services.AddTransient<IToolExecutor>(sp =>
 var evaluacionesSettings = builder.Configuration
     .GetSection("EvaluacionesSettings")
     .Get<EvaluacionesSettings>() ?? new EvaluacionesSettings();
+
+// La clave interna viene de variable de entorno; nunca se hardcodea en el repo
+var apiKeyFromEnv = Environment.GetEnvironmentVariable("EVALUACIONES_API_KEY_INTERNA");
+if (!string.IsNullOrWhiteSpace(apiKeyFromEnv))
+    evaluacionesSettings.ApiKeyInterna = apiKeyFromEnv;
+
 builder.Services.AddSingleton(evaluacionesSettings);
 builder.Services.AddHttpClient<IEvaluacionesClient, EvaluacionesHttpClient>(client =>
 {
