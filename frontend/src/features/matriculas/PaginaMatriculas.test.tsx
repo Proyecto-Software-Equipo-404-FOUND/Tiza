@@ -13,12 +13,14 @@ const alumnos = [
   { id: 'a1', nombre: 'Alumno 1' },
   { id: 'a2', nombre: 'Alumno 2' },
 ];
+// Como responde el servidor: trae el id del alumno pero no su nombre
 const matricula = {
   id: 'm1',
+  institucionId: 'i1',
   cohorteId: 'c1',
   alumnoId: 'a1',
-  alumnoNombre: 'Alumno 1',
-  estado: 'Activa' as const,
+  fechaAlta: '2026-10-31T12:00:00Z',
+  estado: 'Activa',
 };
 
 function mostrarPagina() {
@@ -153,5 +155,35 @@ describe('PaginaMatriculas', () => {
 
     const mensajes = await screen.findAllByText('No se encontró lo que buscás.');
     expect(mensajes.length).toBeGreaterThan(0);
+  });
+
+  it('muestra el nombre del alumno aunque la matrícula solo traiga su id, y la fecha de alta', async () => {
+    vi.mocked(api.listarMatriculas).mockResolvedValue([matricula]);
+    mostrarPagina();
+
+    expect(await screen.findByRole('cell', { name: 'Alumno 1' })).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: '31/10/2026' })).toBeInTheDocument();
+  });
+
+  it('si el alumno no está en la lista muestra una referencia corta y no queda vacío', async () => {
+    vi.mocked(api.listarMatriculas).mockResolvedValue([{ ...matricula, alumnoId: 'xxxx-desconocido' }]);
+    mostrarPagina();
+
+    expect(await screen.findByRole('cell', { name: 'Alumno …nocido' })).toBeInTheDocument();
+  });
+
+  it('si falla la lista de alumnos igual muestra los matriculados y ofrece reintentar', async () => {
+    vi.mocked(api.listarMatriculas).mockResolvedValue([matricula]);
+    vi.mocked(api.listarAlumnos).mockRejectedValue(new ApiError(404, { status: 404 }));
+    mostrarPagina();
+
+    expect(await screen.findByText(/No pudimos cargar la lista de alumnos/)).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: 'Alumno …a1' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Alumno')).toBeDisabled();
+
+    vi.mocked(api.listarAlumnos).mockResolvedValue(alumnos);
+    await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+    expect(await screen.findByRole('cell', { name: 'Alumno 1' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Alumno')).toBeEnabled();
   });
 });

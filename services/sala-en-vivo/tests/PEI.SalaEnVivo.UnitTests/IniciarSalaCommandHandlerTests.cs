@@ -144,6 +144,8 @@ namespace PEI.SalaEnVivo.UnitTests
     internal class FakeEvaluacionesClient : IEvaluacionesClient
     {
         public Dictionary<Guid, EvaluacionPreguntasDto> Evaluaciones { get; } = new();
+        public List<(Guid SalaId, LoteEntregasRequestDto Lote)> LotesEnviados { get; } = new();
+        public bool FallarEnvio { get; set; }
 
         public Task<EvaluacionPreguntasDto?> ObtenerPreguntasAsync(
             Guid evaluacionId,
@@ -161,13 +163,21 @@ namespace PEI.SalaEnVivo.UnitTests
             LoteEntregasRequestDto lote,
             CancellationToken cancellationToken = default)
         {
-            return Task.FromResult<ResultadoLoteEntregasDto?>(new ResultadoLoteEntregasDto(
-                lote.LoteId,
-                salaId,
-                lote.Entregas?.Count ?? 0,
-                lote.Entregas?.Count ?? 0,
-                0,
-                new List<EntregaResultadoDto>()));
+            LotesEnviados.Add((salaId, lote));
+
+            if (FallarEnvio)
+            {
+                return Task.FromResult<ResultadoLoteEntregasDto?>(null);
+            }
+
+            return Task.FromResult<ResultadoLoteEntregasDto?>(
+                new ResultadoLoteEntregasDto(
+                    lote.LoteId,
+                    salaId,
+                    lote.Entregas.Count,
+                    lote.Entregas.Count,
+                    0,
+                    null));
         }
     }
 }
