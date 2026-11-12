@@ -1,15 +1,17 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { FormularioEditarCohorte } from './FormularioEditarCohorte';
 import { useActualizarCohorte } from '../hooks/useActualizarCohorte';
 import { DOCENTE_A_ID } from '../semillas';
+import { useDocentes } from '../hooks/useDocentes';
 import { ApiError } from '@/shared/api/cliente';
 import type { Cohorte } from '@/shared/api/tipos';
 import { COHORTE_1_ID, CURSO_1_ID } from '@/mocks/datos';
 
 vi.mock('../hooks/useActualizarCohorte', () => ({ useActualizarCohorte: vi.fn() }));
+vi.mock('../hooks/useDocentes', () => ({ useDocentes: vi.fn() }));
 vi.mock('@/shared/components/Aviso', () => ({
   useAviso: () => ({ mostrar: vi.fn() }),
 }));
@@ -46,7 +48,21 @@ function mostrarFormulario(datos: Cohorte = cohorte, onTerminar = vi.fn()) {
   return onTerminar;
 }
 
+function simularDocentes(estado: Record<string, unknown> = {}) {
+  vi.mocked(useDocentes).mockReturnValue({
+    data: [{ id: DOCENTE_A_ID, nombre: 'Docente A' }],
+    isPending: false,
+    isError: false,
+    refetch: vi.fn(),
+    ...estado,
+  } as unknown as ReturnType<typeof useDocentes>);
+}
+
 describe('FormularioEditarCohorte', () => {
+  beforeEach(() => {
+    simularDocentes();
+  });
+
   it('empieza con los datos actuales de la cohorte', () => {
     simular();
     mostrarFormulario();

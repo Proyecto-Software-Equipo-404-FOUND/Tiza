@@ -18,7 +18,7 @@ const matriculas: Array<{
   cohorteId: string;
   alumnoId: string;
   fechaAlta: string;
-  estado: 'Activa';
+  estado: 'Activa' | 'Baja';
 }> = [];
 
 export const handlersMatriculas = [
@@ -28,9 +28,13 @@ export const handlersMatriculas = [
     return HttpResponse.json(rol && rol !== 'Alumno' ? [] : alumnos);
   }),
 
-  http.get('*/api/v1/cohortes/:cohorteId/matriculas', ({ params }) =>
-    HttpResponse.json(matriculas.filter((m) => m.cohorteId === params.cohorteId)),
-  ),
+  // Como el servidor: por defecto solo las activas; con soloActivas=false también las dadas de baja
+  http.get('*/api/v1/cohortes/:cohorteId/matriculas', ({ params, request }) => {
+    const soloActivas = new URL(request.url).searchParams.get('soloActivas') !== 'false';
+    return HttpResponse.json(
+      matriculas.filter((m) => m.cohorteId === params.cohorteId && (!soloActivas || m.estado === 'Activa')),
+    );
+  }),
 
   http.post('*/api/v1/cohortes/:cohorteId/matriculas', async ({ params, request }) => {
     const { alumnoId } = (await request.json()) as { alumnoId: string };

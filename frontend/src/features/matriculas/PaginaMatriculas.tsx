@@ -9,7 +9,7 @@ import { Tabla, type Columna } from '@/shared/components/Tabla';
 import { Tarjeta } from '@/shared/components/Tarjeta';
 import { useAviso } from '@/shared/components/Aviso';
 import { listarAlumnos, listarMatriculas, matricularAlumno, type Alumno, type Matricula } from './api/matriculas';
-import { fechaCorta, nombreDeAlumno } from './nombres';
+import { estaDeBaja, fechaCorta, nombreDeAlumno } from './nombres';
 
 const crearColumnas = (alumnos: Alumno[]): Columna<Matricula>[] => [
   { titulo: 'Alumno', celda: (m) => nombreDeAlumno(m, alumnos) },
@@ -88,6 +88,8 @@ export function PaginaMatriculas() {
   const listaAlumnos = alumnos.data ?? [];
   const disponibles = listaAlumnos.filter((a) => !yaMatriculados.has(a.id));
   const columnas = crearColumnas(listaAlumnos);
+  const activas = listaMatriculas.filter((m) => !estaDeBaja(m));
+  const deBaja = listaMatriculas.filter(estaDeBaja);
 
   const enviar = (evento: FormEvent) => {
     evento.preventDefault();
@@ -143,9 +145,18 @@ export function PaginaMatriculas() {
       <Tarjeta titulo='Alumnos matriculados'>
         <Tabla
           columnas={columnas}
-          filas={listaMatriculas}
+          filas={activas}
           clave={(m) => m.id}
           textoVacio='Todavía no hay alumnos matriculados en esta cohorte.'
+        />
+      </Tarjeta>
+
+      <Tarjeta titulo='Matrículas inactivas' subtitulo='Alumnos dados de baja de esta cohorte.'>
+        <Tabla
+          columnas={columnas}
+          filas={deBaja}
+          clave={(m) => m.id}
+          textoVacio='No hay matrículas inactivas.'
         />
       </Tarjeta>
     </Marco>
