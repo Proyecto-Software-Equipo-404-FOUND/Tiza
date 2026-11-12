@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -75,6 +75,22 @@ describe('PaginaMatriculas', () => {
     expect(await screen.findByRole('cell', { name: 'Alumno 1' })).toBeInTheDocument();
     expect(screen.queryByRole('option', { name: 'Alumno 1' })).not.toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Alumno 2' })).toBeInTheDocument();
+  });
+
+  it('muestra aparte las matrículas dadas de baja', async () => {
+    vi.mocked(api.listarMatriculas).mockResolvedValue([
+      matricula,
+      { ...matricula, id: 'm2', alumnoId: 'a2', estado: 'Baja' },
+    ]);
+    mostrarPagina();
+
+    const activas = (await screen.findByRole('heading', { name: 'Alumnos matriculados' })).closest('section')!;
+    const inactivas = screen.getByRole('heading', { name: 'Matrículas inactivas' }).closest('section')!;
+    expect(within(activas).getByRole('cell', { name: 'Alumno 1' })).toBeInTheDocument();
+    expect(within(activas).queryByRole('cell', { name: 'Alumno 2' })).not.toBeInTheDocument();
+    expect(within(inactivas).getByRole('cell', { name: 'Alumno 2' })).toBeInTheDocument();
+    // Quien está de baja tampoco se ofrece para volver a matricular desde la lista
+    expect(screen.queryByRole('option', { name: 'Alumno 2' })).not.toBeInTheDocument();
   });
 
   it('muestra el estado vacío', async () => {

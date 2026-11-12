@@ -35,12 +35,14 @@ function simular(escritura: Record<string, unknown> = {}) {
   vi.mocked(useCursos).mockReturnValue({
     isPending: false,
     isError: false,
-    data: { items: [{ id: 'c1', nombre: 'Programación I' }] },
+    data: { items: [{ id: 'c1', nombre: 'Programación I', activo: true },
+        { id: 'c2', nombre: 'Curso eliminado', activo: false }] },
   } as unknown as ReturnType<typeof useCursos>);
   vi.mocked(useCohortes).mockReturnValue({
     isPending: false,
     isError: false,
-    data: [{ id: 'h1', nombre: 'Cohorte Noche', periodo: '2026-2C' }],
+    data: [{ id: 'h1', nombre: 'Cohorte Noche', periodo: '2026-2C', activo: true },
+      { id: 'h2', nombre: 'Cohorte cerrada', periodo: '2025-2C', activo: false }],
   } as unknown as ReturnType<typeof useCohortes>);
   const mutate = vi.fn();
   const reset = vi.fn();
@@ -98,6 +100,15 @@ describe('PublicarEvaluacion', () => {
     await elegirCohorte();
     expect(screen.getByText('Agregá al menos una pregunta para poder publicar.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Publicar' })).toBeDisabled();
+  });
+
+  it('no ofrece cursos ni cohortes dados de baja', async () => {
+    simular();
+    mostrar();
+    expect(screen.queryByRole('option', { name: 'Curso eliminado' })).not.toBeInTheDocument();
+    await userEvent.selectOptions(screen.getByLabelText('Curso'), 'c1');
+    expect(screen.getByRole('option', { name: /Cohorte Noche/ })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /Cohorte cerrada/ })).not.toBeInTheDocument();
   });
 
   it('avisa si el curso no tiene cohortes', async () => {

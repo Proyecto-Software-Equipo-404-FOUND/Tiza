@@ -12,6 +12,9 @@ export function nombreDeAlumno(matricula: Matricula, alumnos: Alumno[]): string 
   return `Alumno …${matricula.alumnoId.slice(-6)}`;
 }
 
+/** El contrato define `estado` como texto; hoy: Activa, Baja o Completada. Solo «Baja» va a inactivas. */
+export const estaDeBaja = (matricula: Matricula): boolean => matricula.estado === 'Baja';
+
 /** «31/10/2026», o null si la fecha falta o no es válida. */
 export function fechaCorta(fechaIso?: string): string | null {
   if (!fechaIso) return null;
