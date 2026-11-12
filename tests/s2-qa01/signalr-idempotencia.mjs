@@ -13,7 +13,7 @@ try {
   await hub.start();
   await hub.invoke('UnirseASala', Number(process.env.QA_SALA_PIN));
   const before = await hub.invoke('ObtenerEstadoSala');
-  assert.equal(before.estado, 'Activa');
+  assert.equal(before.estado, 'EnCurso');
   assert.ok(before.preguntaActual?.preguntaId, 'La sala debe tener una pregunta vigente');
   const preguntaId = before.preguntaActual.preguntaId;
   assert.ok(!before.preguntasRespondidas.includes(preguntaId), 'El alumno debe no haber respondido esta pregunta');

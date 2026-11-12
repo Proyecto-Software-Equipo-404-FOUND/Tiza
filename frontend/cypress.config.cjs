@@ -3,6 +3,9 @@ const { defineConfig } = require('cypress');
 module.exports = defineConfig({
   video: false,
   screenshotOnRunFailure: false,
+  defaultCommandTimeout: 10000,
+  // Tipografías externas no forman parte del flujo; usar las fuentes fallback locales.
+  blockHosts: ['fonts.googleapis.com', 'fonts.gstatic.com'],
   e2e: {
     baseUrl: 'http://127.0.0.1:3000',
     supportFile: false,

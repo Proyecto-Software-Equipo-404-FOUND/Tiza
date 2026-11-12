@@ -6,6 +6,7 @@ const campo = (label) => cy.contains('label', label).invoke('attr', 'for')
 describe('S2-QA-01: docente → curso → cohorte → matrícula', () => {
   it('muestra exactamente una matrícula activa del alumno seleccionado', () => {
     const mode = Cypress.env('mode');
+    const alumnoNombre = mode === 'live' ? 'Alumno uno Prueba A' : 'Alumno 1 A';
     expect(['ui', 'live']).to.include(mode);
     const password = Cypress.env('password');
     expect(password, 'QA_DOCENTE_PASSWORD debe venir del entorno').to.be.a('string').and.not.be.empty;
@@ -39,13 +40,13 @@ describe('S2-QA-01: docente → curso → cohorte → matrícula', () => {
     cy.location('pathname').should('match', /^\/cohortes\/[\da-f-]+\/matriculas$/);
     cy.get('#alumno').select('11111111-0000-0000-0000-000000000003');
     cy.contains('button', /^Matricular$/).click();
-    cy.contains('tr', 'Alumno 1 A').should('contain.text', 'Activa');
-    cy.get('tbody tr').filter(':contains("Alumno 1 A")').should('have.length', 1);
+    cy.contains('tr', alumnoNombre).should('contain.text', 'Activa');
+    cy.get('tbody tr').filter(`:contains("${alumnoNombre}")`).should('have.length', 1);
     cy.get('#alumno option[value="11111111-0000-0000-0000-000000000003"]').should('not.exist');
     // Volver por navegación conserva el servidor/MSW y fuerza otra consulta de matrícula.
     cy.contains('a', 'Volver a cursos').click();
     cy.contains('tr', 'S2-QA-01 Curso reproducible').contains('a', 'Ver cohortes').click();
     cy.contains('tr', 'S2-QA-01 Cohorte').contains('a', 'Ver matrícula').click();
-    cy.contains('tr', 'Alumno 1 A').should('contain.text', 'Activa');
+    cy.contains('tr', alumnoNombre).should('contain.text', 'Activa');
   });
 });

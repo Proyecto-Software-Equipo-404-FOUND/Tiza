@@ -8,10 +8,11 @@ await new Promise((resolve, reject) => {
   const server = createServer(); server.once('error', reject);
   server.listen(3000, '127.0.0.1', () => server.close(resolve));
 });
-process.env.QA_CYPRESS_MODE = 'ui';
-process.env.QA_DOCENTE_PASSWORD = randomBytes(24).toString('hex');
+const live = process.argv.includes('--live');
+process.env.QA_CYPRESS_MODE = live ? 'live' : 'ui';
+if (!live) process.env.QA_DOCENTE_PASSWORD = randomBytes(24).toString('hex');
 const vite = spawn(process.execPath, ['node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--strictPort'], {
-  cwd: root, windowsHide: true, env: { ...process.env, VITE_USE_MOCKS: 'true', VITE_API_URL: '' }, stdio: 'ignore',
+  cwd: root, windowsHide: true, env: { ...process.env, VITE_USE_MOCKS: live ? 'false' : 'true', VITE_API_URL: '' }, stdio: 'ignore',
 });
 try {
   let ready = false;

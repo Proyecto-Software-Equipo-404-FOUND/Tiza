@@ -1,6 +1,6 @@
 // Infraestructura descartable, siguiendo el runner QA04. Nunca usa bases de desarrollo.
 import { spawn } from 'node:child_process';
-import { randomBytes, randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID, createHmac } from 'node:crypto';
 import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -10,11 +10,22 @@ const runId = randomUUID();
 const container = `tiza-s2qa01-${runId}`;
 const password = randomBytes(24).toString('hex');
 const key = randomBytes(32).toString('hex');
+const signingKey = randomBytes(48).toString('hex');
+function token(tenant) {
+  const enc = value => Buffer.from(JSON.stringify(value)).toString('base64url');
+  const data = `${enc({ alg: 'HS256', typ: 'JWT' })}.${enc({ iss: 's2qa01', aud: 's2qa01',
+    sub: `${tenant}-0000-0000-0000-000000000002`, role: 'Docente',
+    institucion_id: tenant === '11111111' ? '11111111-1111-1111-1111-111111111111' : '22222222-2222-2222-2222-222222222222',
+    exp: Math.floor(Date.now() / 1000) + 3600 })}`;
+  return `${data}.${createHmac('sha256', signingKey).update(data).digest('base64url')}`;
+}
 const connection = `Host=127.0.0.1;Port=5543;Database=tiza_s2qa01;Username=postgres;Password=${password}`;
 const env = { ...process.env, POSTGRES_PASSWORD: password, ConnectionStrings__Default: connection,
   ASPNETCORE_ENVIRONMENT: 'Development', ASPNETCORE_URLS: 'http://127.0.0.1:18543',
-  ServiciosInternos__ApiKey: key, QA_INTERNAL_API_KEY: key, QA_EVALUACIONES_URL: 'http://127.0.0.1:18543' };
-const redact = text => [password, key, connection].reduce((s, secret) => s.replaceAll(secret, '[REDACTADO]'), text);
+  ServiciosInternos__ApiKey: key, QA_INTERNAL_API_KEY: key, QA_EVALUACIONES_URL: 'http://127.0.0.1:18543',
+  Jwt__SecretKey: signingKey, Jwt__Issuer: 's2qa01', Jwt__Audience: 's2qa01',
+  QA_TEST_VISIBILITY: 'true', QA_TOKEN_A: token('11111111'), QA_TOKEN_B: token('22222222') };
+const redact = text => [password, key, connection, signingKey, env.QA_TOKEN_A, env.QA_TOKEN_B].reduce((s, secret) => s.replaceAll(secret, '[REDACTADO]'), text);
 async function command(exe, args, timeout = 300000) {
   return new Promise((resolve, reject) => {
     const child = spawn(exe, args, { cwd: root, env, windowsHide: true });

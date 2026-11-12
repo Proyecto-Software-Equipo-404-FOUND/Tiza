@@ -15,16 +15,16 @@ const values = { evaluacionesUrl: url, internalApiKey: process.env.QA_INTERNAL_A
   preguntaId: randomUUID(), opcionId: randomUUID(), salaA: randomUUID(), salaB: randomUUID(), loteA: randomUUID(), loteB: randomUUID(),
   tokenA: process.env.QA_TOKEN_A || '', tokenB: process.env.QA_TOKEN_B || '' };
 environment.values.push(...Object.entries(values).map(([key, value]) => ({ key, value, enabled: true })));
-const visibility = process.env.QA_TEST_VISIBILITY === 'true';
+const visibility = process.env.QA_TEST_VISIBILITY !== 'false';
 if (visibility) assert.ok(values.tokenA && values.tokenB, 'Visibilidad requiere JWT reales A/B');
 const folders = ['S2-QA-01 Evaluaciones y lotes'];
-if (visibility) folders.push('S2-QA-01 Visibilidad de entregas (requiere S2-EV-03)');
+if (visibility) folders.push('S2-QA-01 Visibilidad de entregas');
 const summary = await new Promise((resolve, reject) => newman.run({
   collection: read('../postman/PEI-Cursos.postman_collection.json'), environment, folder: folders,
   reporters: [], timeoutRequest: 15000, timeout: 120000,
 }, (error, result) => error ? reject(error) : resolve(result)));
 // Nunca exportar environment ni los reports crudos: contienen la clave interna/JWT.
-const evidence = { timestamp: new Date().toISOString(), visibility: visibility ? 'ejecutada' : 'bloqueada: S2-EV-03 fuera de main',
+const evidence = { timestamp: new Date().toISOString(), visibility: visibility ? 'ejecutada' : 'omitida explícitamente (QA_TEST_VISIBILITY=false)',
   requests: summary.run.executions.map(x => ({ name: x.item.name, status: x.response?.code,
     assertions: (x.assertions || []).map(a => ({ name: a.assertion, passed: !a.error })) })),
   failures: summary.run.failures.length, assertions: summary.run.stats.assertions.total };
