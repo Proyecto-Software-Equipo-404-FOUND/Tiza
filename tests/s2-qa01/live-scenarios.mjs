@@ -9,8 +9,8 @@ const { HubConnectionBuilder, LogLevel } = require('@microsoft/signalr');
 export async function runScenarios({ root, env, password, container, command, launch, processes, secrets, evidence, waitFor }) {
   const key = randomBytes(32).toString('hex'); secrets.push(key);
   Object.assign(env, {
-    ConnectionStrings__Default: `Host=127.0.0.1;Port=5546;Database=pei_evaluaciones_s2live;Username=s2live;Password=${password}`,
-    ConnectionStrings__DefaultConnection: `Host=127.0.0.1;Port=5546;Database=pei_sala_s2live;Username=s2live;Password=${password}`,
+    ConnectionStrings__Default: `Host=127.0.0.1;Port=5541;Database=pei_evaluaciones_s2live;Username=s2live;Password=${password}`,
+    ConnectionStrings__DefaultConnection: `Host=127.0.0.1;Port=5541;Database=pei_sala_s2live;Username=s2live;Password=${password}`,
     ConnectionStrings__Redis: '', ServiciosInternos__ApiKey: key, Evaluaciones__BaseUrl: 'http://127.0.0.1:18643',
     CorreccionIa__Habilitada: 'false', QA_INTERNAL_API_KEY: key, QA_EVALUACIONES_URL: 'http://127.0.0.1:18643', QA_TEST_VISIBILITY: 'true',
   });

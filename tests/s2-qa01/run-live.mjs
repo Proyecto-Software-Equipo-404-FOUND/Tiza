@@ -18,8 +18,8 @@ const docker = process.env.DOCKER_EXE || 'docker';
 const password = `S2Qa01!${randomBytes(24).toString('hex')}`;
 const signingKey = randomBytes(48).toString('hex');
 const issuer = `s2live-${runId}`;
-const connection = `Host=127.0.0.1;Port=5546;Database=pei_identidad_tests;Username=s2live;Password=${password};SearchPath=s2live_seed;Pooling=false`;
-const coursesConnection = `Host=127.0.0.1;Port=5546;Database=pei_cursos_s2live;Username=s2live;Password=${password};Pooling=false`;
+const connection = `Host=127.0.0.1;Port=5541;Database=pei_identidad_tests;Username=s2live;Password=${password};SearchPath=s2live_seed;Pooling=false`;
+const coursesConnection = `Host=127.0.0.1;Port=5541;Database=pei_cursos_s2live;Username=s2live;Password=${password};Pooling=false`;
 const env = { ...process.env, ASPNETCORE_ENVIRONMENT: 'Development',
   Jwt__SecretKey: signingKey, Jwt__Issuer: issuer, Jwt__Audience: 's2live', Platform__Enabled: 'false',
   ConnectionStrings__IdentidadDb: connection, ConnectionStrings__CursosDb: coursesConnection,
@@ -78,10 +78,10 @@ let stopping = false;
 process.on('SIGINT', async () => { if (stopping) return; stopping = true; await cleanup(); process.exit(130); });
 try {
   evidence.baseCommit = await command('git', ['rev-parse', 'HEAD']);
-  for (const port of [5546, 18641, 18642, 18643, 18644, 8080, 3000]) await freePort(port);
+  for (const port of [5541, 18641, 18642, 18643, 18644, 8080, 3000]) await freePort(port);
   await command(docker, ['version', '--format', '{{.Server.Version}}'], 'Comprobar Docker');
   await command('dotnet', ['build', 'PEI.sln', '--nologo', '-v', 'quiet', '-m:1'], 'Compilar solución', {}, 600000);
-  await command(docker, ['run', '-d', '--name', container, '--label', `tiza.s2live.run=${runId}`, '-p', '127.0.0.1:5546:5432',
+  await command(docker, ['run', '-d', '--name', container, '--label', `tiza.s2live.run=${runId}`, '-p', '127.0.0.1:5541:5432',
     '-e', 'POSTGRES_PASSWORD', '-e', 'POSTGRES_USER=s2live', '-e', 'POSTGRES_DB=pei_identidad_tests', 'postgres:16-alpine'], 'Crear PostgreSQL descartable');
   created = true;
   // La imagen arranca un servidor temporal sólo por socket durante initdb.
@@ -93,7 +93,7 @@ try {
     await command('dotnet', ['ef', 'database', 'update', '--project', `services/${service}/src/PEI.${name}.Infrastructure`, '--startup-project', `services/${service}/src/PEI.${name}.Api`, '--context', context, '--no-build'], `Migrar ${context} en destino descartable`);
   }
   const seedEnv = { ID08_ENVIRONMENT: 'Testing', ID08_ENABLED: 'true', ID08_OPERATOR: 'Candela Luna S2QA01', ID08_SCHEMA: 's2live_seed',
-    ID08_ALLOWED_DESTINATIONS: JSON.stringify([{ Host: '127.0.0.1', Port: 5546, Database: 'pei_identidad_tests', Schema: 's2live_seed' }]) };
+    ID08_ALLOWED_DESTINATIONS: JSON.stringify([{ Host: '127.0.0.1', Port: 5541, Database: 'pei_identidad_tests', Schema: 's2live_seed' }]) };
   for (const id of ['08000001-0000-4000-8000-000000000001', '08000002-0000-4000-8000-000000000001', ...['11111111','22222222'].flatMap(prefix => [2,3,4].map(i=>`${prefix}-0000-0000-0000-00000000000${i}`))]) seedEnv[`ID08_PASSWORD_${id.replaceAll('-', '')}`] = password;
   await command('dotnet', ['services/identidad/tools/PEI.Identidad.DevelopmentSeed/bin/Debug/net8.0/PEI.Identidad.DevelopmentSeed.dll'], 'Sembrar ID08 en esquema autorizado', seedEnv);
   launch('identidad', 'Identidad', 18641); launch('cursos', 'Cursos', 18642);

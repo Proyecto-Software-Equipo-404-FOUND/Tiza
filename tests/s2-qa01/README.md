@@ -1,80 +1,70 @@
-# S2-QA-01 — pruebas y límites de aceptación
+# S2-QA-01 — pruebas reproducibles
 
-Responsable: Candela Luna (`candela1805`). Revisión: Ariel (`aacarriego`). Refs #150.
+Responsable: Candela Luna (`candela1805`). Revisor: Ariel (`aacarriego`). PR #207.
 
-Base revisada: `origin/main` en `8439307`, 11/11/2026. No hay AGENTS.md en el árbol ni en sus directorios padre. Se conservaron los archivos locales de la rama QA-07 usando un worktree separado. Se reutilizan la colección de Cursos, el entorno Postman de Identidad, el lockfile Newman de QA-05 y los workflows QA-05/QA-06.
+## Estado actual
 
-## Resultados locales del 11/11/2026
+En la revisión inicial de `8439307`, #202, #205 y #206 estaban abiertos. Al retomar se verificó que los tres están integrados y #140 cerrada. La rama incorpora `origin/main` en `c87ff8c`. No se implementó funcionalidad de otro integrante; se habilitaron los casos reales sobre sus integraciones.
 
-| Comando | Resultado |
-| --- | --- |
-| `npm test --prefix tests/contracts` | 33/33, sin omitidas |
-| `node tests/s2-qa01/run-api.mjs` | 12 requests y 20 aserciones Newman; 0 fallos; PostgreSQL confirma 2 entregas totales después de reenviar ambos lotes; contenedor eliminado |
-| `dotnet test services/sala-en-vivo/tests/PEI.SalaEnVivo.UnitTests --filter FullyQualifiedName~EnviarRespuestaCommandHandlerTests` | 11/11, sin omitidas |
-| `dotnet test services/evaluaciones/tests/PEI.Evaluaciones.UnitTests` | 32/32, sin omitidas |
-| `npm run build --prefix frontend` | TypeScript y Vite exitosos |
-| `node tests/s2-qa01/signalr-idempotencia.mjs` | Bloqueado: faltan token/PIN y sala activa sembrada; no se inició la prueba |
+## Reproducción desde la raíz
 
-Dos primeros intentos del runner API agotaron el timeout de `docker info` (30 s); se reemplazó ese diagnóstico por `docker version --format '{{.Server.Version}}'`. El tercer intento pasó completo con la API y base reales. Los warnings de xUnit por `.Result` en tests preexistentes y las anotaciones PURE de SignalR/Rollup no impidieron esas verificaciones.
-
-## Ejecutar lo independiente
-
-Requisitos: Node 20, .NET 8, Docker con contenedores Linux y `dotnet-ef` 8.0.11 (o una revisión compatible de .NET 8). Todos los comandos parten de la raíz del repositorio.
+Requisitos: Node 20, .NET 8, Docker Linux y dotnet-ef 8.0.11 (o revisión compatible).
 
 ```sh
 npm ci --prefix tests/contracts
 npm test --prefix tests/contracts
 npm ci --prefix tests/identity-negative
+npm ci --prefix frontend
+# Si todavía no está instalado:
 dotnet tool install --global dotnet-ef --version 8.0.11
 node tests/s2-qa01/run-api.mjs
-dotnet test services/sala-en-vivo/tests/PEI.SalaEnVivo.UnitTests --filter FullyQualifiedName~EnviarRespuestaCommandHandlerTests
-npm ci --prefix frontend
+node tests/s2-qa01/run-live.mjs
+# Regresión UI adicional y separada:
 node frontend/cypress/run-ui.mjs
 ```
 
-En esta máquina Windows, npm necesitó `$env:NODE_USE_SYSTEM_CA='1'` para confiar en los certificados del sistema. El primer `npm ci --prefix tests/contracts` falló con `UNABLE_TO_VERIFY_LEAF_SIGNATURE`; no se deshabilitó TLS. El primer `docker info --format '{{.ServerVersion}}'` falló porque no estaba iniciado Docker Desktop; se inició y se volvió a intentar.
+`run-api.mjs` usa 5543/18543. `run-live.mjs` usa 5541, 18641–18644, 8080 y 3000. Exigen puertos libres, crean contenedores/bases descartables y claves efímeras, y verifican la etiqueta del contenedor antes de limpiarlo. No usan bases ni claves de desarrollo. No ejecutar QA04 y el runner completo simultáneamente (5541), ni dos runners Cypress (3000).
 
-El runner API crea PostgreSQL 16 descartable en 5543, aplica migraciones reales, inicia Evaluaciones en 18543 y elimina exclusivamente su contenedor/volumen al terminar. Genera las claves en memoria, no acepta una base externa ni utiliza las credenciales del repositorio. Los puertos deben estar libres. Cada corrida genera salas/lotes nuevos y reutiliza los mismos identificadores al reenviar. Se conserva sólo evidencia sanitizada en `tests/s2-qa01/results/newman.json`.
+El runner completo reutiliza la preparación de QA04: migraciones reales, semillas ID-08/CU-06 y JWT emitidos por Identidad. Levanta Identidad, Cursos, Evaluaciones, Sala y el gateway real. Sala usa su fallback de presencia en memoria: no se certifica Redis ni su recuperación.
 
-Newman ejecuta 12 requests: crear/publicar evaluaciones A/B, recibir cada lote, reenviarlo y comparar los IDs/resultados, rechazar la institución incorrecta y rechazar la ausencia de clave interna. Después se consulta PostgreSQL para exigir exactamente dos entregas persistidas. Esto prueba el receptor de lotes, **no** el cierre de Sala. Evaluaciones aún usa `CursosClientProvisorio`; estas pruebas no prueban validación remota de cohortes.
+## Cobertura y límites
 
-Las carpetas nuevas están en `tests/postman/PEI-Cursos.postman_collection.json`. Para regenerarlas: `node tests/s2-qa01/generate.mjs`. El generador conserva las carpetas anteriores. `run-newman.mjs` carga el entorno existente `identidad.local.postman_environment.json` y agrega variables efímeras en memoria; nunca exporta claves ni JWT. Para correrlo manualmente contra una API local descartable ya preparada, configurar `QA_EVALUACIONES_URL` y `QA_INTERNAL_API_KEY` y ejecutar `node tests/s2-qa01/run-newman.mjs`.
+- Contratos: ejemplos publicados de lote-entregas-v1 y resultado-lote-entregas-v1 contra draft 2020-12; negativos por campo obligatorio y UUID inválido.
+- Newman: 18 requests / 28 aserciones. Crear/publicar A/B, recibir/repetir lotes, comparar IDs, rechazar institución ajena y falta de clave interna, leer entregas propias y rechazar listados/detalles ajenos. Los controles positivos impiden aceptar un 404 de una ruta inexistente como aislamiento. El runner API exige dos entregas en PostgreSQL después del reenvío.
+- Cypress real: login docente, curso, cohorte con docente canónico, matrícula de Alumno uno Prueba A, una fila Activa, exclusión del selector y navegación de vuelta. El runner consulta después la matrícula por API para confirmar persistencia. No se interceptan APIs ni se usa MSW. Sólo se bloquean Google Fonts para utilizar fuentes locales.
+- SignalR real: crear/publicar evaluación, crear sala, conectar docente/alumno matriculado, iniciar y reenviar el mismo payload/key. Exige Aceptada → Duplicada, timestamp original y una respuesta en PostgreSQL.
+- Cierre real: alumno no puede finalizar; docente finaliza y se recibe salaFinalizada; Evaluaciones devuelve la entrega; repetir cierre conserva IDs y una fila SQL; se rechazan respuestas nuevas después del cierre.
+- El test unitario del handler invoca dos veces el comando, separado de transporte/persistencia. Cypress UI con MSW es una regresión adicional y no acredita E2E real.
 
-## Cypress: UI y E2E real son resultados distintos
+La evaluación es multiple choice, sin dependencia de IA. Evaluaciones conserva CursosClientProvisorio: no se acredita su validación remota de cohortes. k6 fuera de alcance.
 
-`run-ui.mjs` inicia Vite en 3000 con el MSW **existente** de la aplicación y una contraseña aleatoria que sólo sirve para esa demo. Se prueba la navegación y el formulario real: login docente → crear curso → crear cohorte con el docente canónico → matricular Alumno 1 A → comprobar una fila Activa y que desaparece del selector → volver a entrar a la matrícula. Los datos fijos se restablecen al cargar una instancia nueva del frontend. El test no intercepta ni fabrica respuestas.
+## Postman y modos manuales
 
-Este modo prueba la UI; **no certifica login, permisos ni persistencia del backend**. CI lo nombra explícitamente. La prueba verifica si hay MSW activo para impedir confundir ambos modos.
+Se amplía `tests/postman/PEI-Cursos.postman_collection.json` conservando sus carpetas; se reutiliza `identidad.local.postman_environment.json` y el lockfile Newman de QA-05. Regenerar: `node tests/s2-qa01/generate.mjs`.
 
-Para el modo real, iniciar los servicios y el gateway con una instancia descartable de las semillas ID-08/CU-06, Vite con `VITE_USE_MOCKS=false`, y proporcionar `QA_DOCENTE_PASSWORD` desde el entorno (nunca en Git). Usar `QA_CYPRESS_MODE=live`, opcionalmente `QA_DOCENTE_EMAIL`, y:
+`node tests/s2-qa01/run-newman.mjs` requiere API local descartable (`QA_EVALUACIONES_URL`), `QA_INTERNAL_API_KEY` y JWT docentes `QA_TOKEN_A`/`QA_TOKEN_B`. La visibilidad corre por defecto. `QA_TEST_VISIBILITY=false` habilita una ejecución parcial, indicada en el reporte, que no satisface el criterio completo.
 
-```sh
-cd frontend
-npx cypress run --browser electron
-```
+Cypress manual: Vite con `VITE_USE_MOCKS=false`, gateway en 8080, `QA_DOCENTE_PASSWORD` y opcionalmente `QA_DOCENTE_EMAIL`; ejecutar `npm run test:e2e --prefix frontend`. Deben existir las semillas canónicas y no debe existir el curso/cohorte S2-QA-01. El runner completo garantiza una base nueva. El modo live exige ausencia de MSW.
 
-No se marca exitoso hasta que termine ese comando contra los servicios. En la base revisada está bloqueado: `listarAlumnos` pide `/api/v1/identidad/alumnos`, mientras Identidad publica `/api/usuarios?rol=Alumno`; la tabla espera `alumnoNombre`, ausente en `MatriculacionDto`. El PR #206 (`feature/FE2-11-matriculas-contrato-real`) trata esa compatibilidad. Integrarlo y verificar el nombre canónico del alumno antes de repetir. No se sustituyó la API con un servidor falso para presentar el caso como E2E real.
+SignalR aislado: `node tests/s2-qa01/signalr-idempotencia.mjs`; requiere `QA_ALUMNO_TOKEN`, `QA_SALA_PIN`, sala EnCurso con pregunta vigente aún no respondida y opcionalmente `QA_HUB_URL`/`QA_RESPUESTA`. No finaliza la sala: usar el runner completo para cierre.
 
-## Sala: idempotencia y cierre
+## Evidencia confirmada
 
-El handler real de `EnviarRespuesta` tiene un test nuevo que invoca dos veces el mismo comando y exige `Aceptada`, luego `Duplicada`, timestamp original y una sola entidad guardada. Usa los dobles de repositorio existentes: no acredita PostgreSQL ni transporte SignalR.
+Los reportes sanitizados `tests/s2-qa01/results/newman.json` y `live.json` están ignorados por Git y se publican como artifacts en Actions. No se exporta environment ni reportes crudos con claves/JWT. QA-05 incluye Newman, Cypress UI y el recorrido real; QA-06 ejecuta contratos.
 
-La prueba de transporte usa el cliente oficial SignalR y los nombres del contrato (`UnirseASala`, `ObtenerEstadoSala`, `EnviarRespuesta`), no un REST ficticio:
+- Contratos: 33/33; handler de respuestas: 11/11, sin omitidas.
+- Base inicial: Evaluaciones 32/32 y build TypeScript/Vite exitoso.
+- Tras integrar #205: Newman 18 requests / 28 aserciones, 0 fallos, 2 entregas SQL.
+- Cypress UI local: 1/1, sin omitidas, al excluir las tipografías externas.
+- Actions sobre `7cb23c1`: cinco workflows verdes, incluido Cypress UI.
+- El runner completo todavía requiere registrar su ejecución final: exige completed=true, todas las aserciones y limpieza exitosa. No se presenta la UI como E2E real.
 
-```sh
-node tests/s2-qa01/signalr-idempotencia.mjs
-```
+## Intentos y problemas locales
 
-Requiere `QA_ALUMNO_TOKEN`, `QA_SALA_PIN`, una sala activa local con una pregunta vigente que el alumno aún no respondió y matrícula válida; opcionalmente `QA_HUB_URL` y `QA_RESPUESTA` (texto/ID de opción válido). Comprueba Aceptada→Duplicada, misma clave/timestamp, una sola pregunta respondida y una única progresión de secuencia. No finaliza la sala. La ejecución local sin esos datos falla explícitamente: `Faltan QA_ALUMNO_TOKEN y QA_SALA_PIN de sala activa de prueba`. No hay éxito ni skip silencioso.
+`npm ci --prefix tests/contracts` falló primero con UNABLE_TO_VERIFY_LEAF_SIGNATURE; se resolvió con `$env:NODE_USE_SYSTEM_CA='1'`, sin deshabilitar TLS. Docker Desktop estaba detenido; tras iniciarlo, docker info agotó 30 s en dos intentos; se usa docker version y el runner API pasó después.
 
-La issue #140 y el PR #202 (`metodos-salahub`) estaban abiertos al revisar. `main` tiene dominio/DTOs/repositorios, pero no `FinalizarSala` en `SalaHub`. Falta integrar el cierre, su envío autenticado a Evaluaciones y sus pruebas. Después: crear/publicar evaluación, abrir sala y matricular al alumno, responder, finalizar como docente, observar `salaFinalizada`, verificar el lote persistido, repetir cierre/reenvío y comprobar que no duplica. No se implementó la funcionalidad de Tomás ni se simuló su resultado.
+Cypress tuvo una extracción incompleta; se completó y reparó con `npm ci --prefix frontend --ignore-scripts --offline --no-audit --no-fund`, y verificó su binario. `node frontend/cypress/run-ui.mjs` agotó 60 s esperando load con Google Fonts; al bloquear sólo las tipografías pasó.
 
-## Visibilidad de entregas pendiente de integración
+El primer `node tests/s2-qa01/run-live.mjs` fue rechazado por ID-08: Testing requiere pei_identidad_tests local:5541. Se ajustó el fixture al puerto autorizado, sin cambiar el seeder. El intento fallido se limpió. SignalR aislado sin token/PIN falla explícitamente; el runner completo prepara esos datos.
 
-El PR #205 (`feature/S2-EV-03-consultar-resultados`) agrega los GET `/api/v1/evaluaciones/{id}/entregas` y `.../{entregaId}`; aún no existen en la base revisada. La carpeta `S2-QA-01 Visibilidad de entregas (requiere S2-EV-03)` incluye controles positivos A/B y acceso cruzado por listado e ID. Un 404 aislado **no** prueba aislamiento: cada institución primero debe leer su propia entrega con 200 y un alumno esperado.
-
-Después de integrar #205, configurar dos JWT docentes reales (`QA_TOKEN_A`, `QA_TOKEN_B`) de las instituciones canónicas, `QA_TEST_VISIBILITY=true`, la API local y su clave interna. `run-newman.mjs` ejecutará las dos carpetas (18 requests) en la misma sesión. Hasta entonces reporta el caso como bloqueado y el PR permanece en borrador. No se confunde el rechazo de un lote ajeno con la visibilidad de entregas.
-
-## CI y cierre
-
-`qa05-newman.yml` conserva QA-05 y agrega Newman con API/PostgreSQL reales, idempotencia del handler y Cypress UI. `qa06-contratos.yml` ejecuta automáticamente los nuevos ejemplos. El PR usa `Refs #150`, no `Closes`, hasta completar Cypress real, SignalR con sala sembrada, visibilidad tras #205, cierre tras #202, CI y aprobación de Ariel. k6 queda fuera de alcance.
+No hay AGENTS.md en el árbol ni en sus padres. Se preservaron los archivos locales de QA-07 mediante un worktree separado. Sin merge del PR.
