@@ -3,6 +3,8 @@ import { Boton } from '@/shared/components/Boton';
 import {
   nuevaOpcion,
   nuevoCriterio,
+  puntosSinRepartir,
+  redondearPuntos,
   sumaCriterios,
   type ErroresBorrador,
   type PreguntaBorrador,
@@ -33,11 +35,23 @@ function MensajeError({ texto }: { texto?: string }) {
 
 const botonIcono = '!px-3 !py-3 shrink-0';
 
-export function EditorPregunta({ pregunta, numero, errores, deshabilitado, onCambiar, onQuitar }: Props) {
+export function EditorPregunta({
+  pregunta,
+  numero,
+  errores,
+  deshabilitado,
+  onCambiar,
+  onQuitar,
+}: Props) {
   const cambiar = (cambios: Partial<PreguntaBorrador>) => onCambiar({ ...pregunta, ...cambios });
   const esOpcionMultiple = pregunta.tipo === 'OpcionMultiple';
-  const suma = sumaCriterios(pregunta.criterios);
-  const maximo = Number(pregunta.puntajeMaximo);
+  const suma = redondearPuntos(sumaCriterios(pregunta.criterios));
+  const maximo = Number.isFinite(Number(pregunta.puntajeMaximo))
+    ? Number(pregunta.puntajeMaximo)
+    : 0;
+  const diferencia = Number.isFinite(Number(pregunta.puntajeMaximo))
+    ? puntosSinRepartir(pregunta)
+    : 0;
 
   return (
     <li className='flex flex-col gap-4 rounded-2xl border border-tiza-borde bg-tiza-fondo/60 p-4'>
@@ -56,7 +70,10 @@ export function EditorPregunta({ pregunta, numero, errores, deshabilitado, onCam
       </div>
 
       <div className='flex flex-col gap-1.5'>
-        <label htmlFor={`enunciado-${pregunta.id}`} className='text-sm font-semibold text-tiza-bosque'>
+        <label
+          htmlFor={`enunciado-${pregunta.id}`}
+          className='text-sm font-semibold text-tiza-bosque'
+        >
           Enunciado de la pregunta {numero}
         </label>
         <textarea
@@ -79,7 +96,9 @@ export function EditorPregunta({ pregunta, numero, errores, deshabilitado, onCam
           <select
             id={`tipo-${pregunta.id}`}
             value={pregunta.tipo}
-            onChange={(evento) => cambiar({ tipo: evento.target.value as PreguntaBorrador['tipo'] })}
+            onChange={(evento) =>
+              cambiar({ tipo: evento.target.value as PreguntaBorrador['tipo'] })
+            }
             disabled={deshabilitado}
             className={entrada(false)}
           >
@@ -89,7 +108,10 @@ export function EditorPregunta({ pregunta, numero, errores, deshabilitado, onCam
         </div>
 
         <div className='flex flex-col gap-1.5'>
-          <label htmlFor={`puntaje-${pregunta.id}`} className='text-sm font-semibold text-tiza-bosque'>
+          <label
+            htmlFor={`puntaje-${pregunta.id}`}
+            className='text-sm font-semibold text-tiza-bosque'
+          >
             Puntaje máximo de la pregunta {numero}
           </label>
           <input
@@ -109,7 +131,9 @@ export function EditorPregunta({ pregunta, numero, errores, deshabilitado, onCam
 
       {esOpcionMultiple ? (
         <fieldset className='flex flex-col gap-2'>
-          <legend className='mb-1 text-sm font-semibold text-tiza-bosque'>Opciones (marcá la correcta)</legend>
+          <legend className='mb-1 text-sm font-semibold text-tiza-bosque'>
+            Opciones (marcá la correcta)
+          </legend>
           {pregunta.opciones.map((opcion, indice) => (
             <div key={opcion.id} className='flex flex-col gap-1'>
               <div className='flex items-center gap-2'>
@@ -119,7 +143,10 @@ export function EditorPregunta({ pregunta, numero, errores, deshabilitado, onCam
                   checked={opcion.esCorrecta}
                   onChange={() =>
                     cambiar({
-                      opciones: pregunta.opciones.map((o) => ({ ...o, esCorrecta: o.id === opcion.id })),
+                      opciones: pregunta.opciones.map((o) => ({
+                        ...o,
+                        esCorrecta: o.id === opcion.id,
+                      })),
                     })
                   }
                   disabled={deshabilitado}
@@ -145,7 +172,9 @@ export function EditorPregunta({ pregunta, numero, errores, deshabilitado, onCam
                   type='button'
                   variante='secundario'
                   className={botonIcono}
-                  onClick={() => cambiar({ opciones: pregunta.opciones.filter((o) => o.id !== opcion.id) })}
+                  onClick={() =>
+                    cambiar({ opciones: pregunta.opciones.filter((o) => o.id !== opcion.id) })
+                  }
                   disabled={deshabilitado || pregunta.opciones.length <= 2}
                   aria-label={`Quitar la opción ${indice + 1} de la pregunta ${numero}`}
                 >
@@ -168,8 +197,15 @@ export function EditorPregunta({ pregunta, numero, errores, deshabilitado, onCam
           </Boton>
         </fieldset>
       ) : (
-        <fieldset className='flex flex-col gap-2'>
-          <legend className='mb-1 text-sm font-semibold text-tiza-bosque'>Rúbrica (opcional)</legend>
+        <fieldset className='flex flex-col gap-2 rounded-xl border border-dashed border-tiza-borde bg-white/60 p-3'>
+          <legend className='px-1 text-sm font-semibold text-tiza-bosque'>
+            Rúbrica de corrección (opcional)
+          </legend>
+          <p className='text-sm text-tiza-bosque/70'>
+            Anotá qué esperás encontrar en una buena respuesta y cuántos puntos vale cada cosa. La
+            IA la usa para sugerir una nota, pero la nota final siempre la decidís vos. Sin rúbrica
+            se corrige solo con el puntaje máximo.
+          </p>
           {pregunta.criterios.map((criterio, indice) => (
             <div key={criterio.clave} className='flex flex-col gap-1'>
               <div className='flex items-center gap-2'>
@@ -184,9 +220,10 @@ export function EditorPregunta({ pregunta, numero, errores, deshabilitado, onCam
                     })
                   }
                   disabled={deshabilitado}
+                  placeholder='Ej.: Explica el concepto con sus palabras'
                   aria-label={`Criterio ${indice + 1} de la pregunta ${numero}`}
                   aria-invalid={errores[`${criterio.clave}.descripcion`] ? true : undefined}
-                  className={entrada(Boolean(errores[`${criterio.clave}.descripcion`]))}
+                  className={`${entrada(Boolean(errores[`${criterio.clave}.descripcion`]))} min-w-0 !py-2 text-sm`}
                 />
                 <input
                   type='number'
@@ -201,28 +238,66 @@ export function EditorPregunta({ pregunta, numero, errores, deshabilitado, onCam
                     })
                   }
                   disabled={deshabilitado}
+                  placeholder='Puntos'
                   aria-label={`Puntaje del criterio ${indice + 1} de la pregunta ${numero}`}
                   aria-invalid={errores[`${criterio.clave}.puntaje`] ? true : undefined}
-                  className={`${entrada(Boolean(errores[`${criterio.clave}.puntaje`]))} !w-28 shrink-0`}
+                  className={`${entrada(Boolean(errores[`${criterio.clave}.puntaje`]))} !w-24 shrink-0 !py-2 text-sm`}
                 />
                 <Boton
                   type='button'
                   variante='secundario'
-                  className={botonIcono}
-                  onClick={() => cambiar({ criterios: pregunta.criterios.filter((c) => c.clave !== criterio.clave) })}
+                  className={`${botonIcono} !py-2`}
+                  onClick={() =>
+                    cambiar({
+                      criterios: pregunta.criterios.filter((c) => c.clave !== criterio.clave),
+                    })
+                  }
                   disabled={deshabilitado}
                   aria-label={`Quitar el criterio ${indice + 1} de la pregunta ${numero}`}
                 >
                   <Trash2 className='h-4 w-4' aria-hidden='true' />
                 </Boton>
               </div>
-              <MensajeError texto={errores[`${criterio.clave}.descripcion`] ?? errores[`${criterio.clave}.puntaje`]} />
+              <MensajeError
+                texto={
+                  errores[`${criterio.clave}.descripcion`] ?? errores[`${criterio.clave}.puntaje`]
+                }
+              />
             </div>
           ))}
           {pregunta.criterios.length > 0 && (
-            <p className='text-sm text-tiza-bosque/70'>
-              Los criterios suman {suma} de {etiquetaPuntos(Number.isFinite(maximo) ? maximo : 0)}.
+            <p
+              className={`text-sm font-semibold ${diferencia !== 0 ? 'text-tiza-coral' : 'text-tiza-pasto'}`}
+            >
+              Repartiste {suma} de {etiquetaPuntos(maximo)}.{' '}
+              {diferencia > 0 &&
+                `Te ${diferencia === 1 ? 'falta' : 'faltan'} ${diferencia}: repartilos para poder guardar.`}
+              {diferencia < 0 &&
+                `Te pasaste por ${-diferencia}: bajá algún puntaje para poder guardar.`}
+              {diferencia === 0 && 'Quedó bien repartido.'}
             </p>
+          )}
+          {diferencia > 0 && pregunta.criterios.length > 0 && (
+            <Boton
+              type='button'
+              variante='secundario'
+              className='self-start !px-3 !py-1.5 text-sm'
+              onClick={() =>
+                cambiar({
+                  criterios: pregunta.criterios.map((c, i, todos) =>
+                    i === todos.length - 1
+                      ? {
+                          ...c,
+                          puntaje: String(redondearPuntos((Number(c.puntaje) || 0) + diferencia)),
+                        }
+                      : c,
+                  ),
+                })
+              }
+              disabled={deshabilitado}
+            >
+              Asignar los {diferencia} que faltan al último criterio de la pregunta {numero}
+            </Boton>
           )}
           <Boton
             type='button'

@@ -50,6 +50,27 @@ describe('validar', () => {
     expect(errores['c1.descripcion']).toBe('Describí el criterio');
     expect(errores['c1.puntaje']).toBe('Ingresá un puntaje de 0 o más');
   });
+
+  it('con rúbrica, los criterios tienen que sumar exactamente el puntaje máximo', () => {
+    const criterios = [
+      { clave: 'c1', descripcion: 'A', puntaje: '3' },
+      { clave: 'c2', descripcion: 'B', puntaje: '2' },
+    ];
+    const pregunta = (puntajeMaximo: string) => conPregunta({ tipo: 'Abierta', puntajeMaximo, criterios });
+    const id = pregunta('4').preguntas[0].id;
+
+    expect(validar(pregunta('4'))[`${id}.criterios`]).toBe('Los criterios suman más que el puntaje máximo de la pregunta');
+    expect(validar(pregunta('10'))[`${id}.criterios`]).toBe('Los criterios tienen que sumar el puntaje máximo de la pregunta');
+    expect(validar(pregunta('5'))).toEqual({});
+  });
+
+  it('no se queja por decimales que suman justo el máximo', () => {
+    const criterios = [
+      { clave: 'c1', descripcion: 'A', puntaje: '0.1' },
+      { clave: 'c2', descripcion: 'B', puntaje: '0.2' },
+    ];
+    expect(validar(conPregunta({ tipo: 'Abierta', puntajeMaximo: '0.3', criterios }))).toEqual({});
+  });
 });
 
 describe('aDatosEvaluacion', () => {
