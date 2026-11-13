@@ -152,6 +152,20 @@ describe('rutas de la aplicación', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Matrícula' })).toBeInTheDocument();
   });
 
+  it('un administrador entra a Usuarios y ve el enlace en el menú', async () => {
+    iniciarComo('administrador');
+    mostrar('/usuarios');
+    expect(await screen.findByRole('heading', { level: 1, name: 'Usuarios' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Usuarios' })).toBeInTheDocument();
+  });
+
+  it('un docente no entra a Usuarios ni lo ve en el menú', () => {
+    iniciarComo('docente');
+    mostrar('/usuarios');
+    expect(screen.getByText('No tenés permiso para ver esta página.')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Usuarios' })).not.toBeInTheDocument();
+  });
+
   it('un docente entra a la lista de evaluaciones y ve el enlace en el menú', async () => {
     iniciarComo('docente');
     mostrar('/evaluaciones');

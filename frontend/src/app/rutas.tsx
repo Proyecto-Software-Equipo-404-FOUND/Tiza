@@ -10,6 +10,7 @@ import { PaginaNuevaEvaluacion } from '@/features/evaluaciones/pages/PaginaNueva
 import { PaginaMatriculas } from '@/features/matriculas/PaginaMatriculas';
 import { PaginaEntrega } from '@/features/revision-notas/pages/PaginaEntrega';
 import { PaginaResultados } from '@/features/revision-notas/pages/PaginaResultados';
+import { PaginaUsuarios } from '@/features/usuarios/PaginaUsuarios';
 import { PaginaSalaAlumno } from '@/features/sala-alumno/PaginaSalaAlumno';
 import { PaginaSalaDocente } from '@/features/sala-docente/PaginaSalaDocente';
 import { Layout } from './Layout';
@@ -58,6 +59,11 @@ export const rutas: RouteObject[] = [
                   { path: '/evaluaciones/:evaluacionId/resultados', element: <PaginaResultados /> },
                   { path: '/evaluaciones/:evaluacionId/resultados/:entregaId', element: <PaginaEntrega /> },
                 ],
+              },
+              {
+                // Solo administrador: alta de alumnos y docentes (POST /api/auth/register)
+                element: <RutaProtegida roles={['administrador']} />,
+                children: [{ path: '/usuarios', element: <PaginaUsuarios /> }],
               },
               {
                 // Solo alumnos
