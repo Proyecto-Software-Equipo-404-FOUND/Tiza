@@ -7,7 +7,7 @@ import { mensajeDeError } from '@/shared/api/errores';
 import { BannerError } from '@/shared/components/BannerError';
 import { Boton } from '@/shared/components/Boton';
 import { Campo } from '@/shared/components/Campo';
-import { IconoLapiz, Logo } from '@/shared/components/Logo';
+import { IconoTiza, Logo } from '@/shared/components/Logo';
 import { Tarjeta } from '@/shared/components/Tarjeta';
 import { iniciarSesion } from '../api/auth';
 import { rutaInicial } from '../rutaInicial';
@@ -81,7 +81,7 @@ export function PaginaLogin() {
             <Tarjeta
               titulo='Ingresar a Tiza'
               subtitulo='Tu espacio para aprender y evaluar'
-              icono={<IconoLapiz className='h-9 w-9' />}
+              icono={<IconoTiza className='h-9 w-9' />}
             >
               <form onSubmit={enviar} noValidate className='flex flex-col gap-5'>
                 <Campo
