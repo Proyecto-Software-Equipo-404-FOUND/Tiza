@@ -28,6 +28,31 @@ export const handlersMatriculas = [
     return HttpResponse.json(rol && rol !== 'Alumno' ? [] : alumnos);
   }),
 
+  // POST /api/auth/register por el gateway (solo Administrador crea alumnos). Email repetido → 409.
+  http.post('*/api/v1/identidad/auth/register', async ({ request }) => {
+    const { nombre, apellido, email, rol } = (await request.json()) as {
+      nombre: string;
+      apellido: string;
+      email: string;
+      rol: string;
+    };
+    if (usuarios.some((u) => u.email === email) || alumnos.some((a) => a.email === email)) {
+      return HttpResponse.json({ title: 'Conflicto', status: 409, detail: 'Ya existe un usuario con ese email.' }, { status: 409 });
+    }
+    const id = crypto.randomUUID();
+    // Todos entran a la base de usuarios (es la que usa el login del mock, así el nuevo usuario puede ingresar);
+    // además los alumnos van a la lista de matrícula y los docentes los atiende rol=Docente.
+    usuarios.push({
+      id,
+      nombre: `${nombre} ${apellido}`,
+      email,
+      rol: rol === 'Alumno' ? 'alumno' : 'docente',
+      institucionId: INSTITUCION_A,
+    });
+    if (rol === 'Alumno') alumnos.push({ id, nombre, apellido, email, rol: 'Alumno' });
+    return HttpResponse.json({ id, message: 'Usuario registrado correctamente.' }, { status: 201 });
+  }),
+
   // Como el servidor: por defecto solo las activas; con soloActivas=false también las dadas de baja
   http.get('*/api/v1/cohortes/:cohorteId/matriculas', ({ params, request }) => {
     const soloActivas = new URL(request.url).searchParams.get('soloActivas') !== 'false';
