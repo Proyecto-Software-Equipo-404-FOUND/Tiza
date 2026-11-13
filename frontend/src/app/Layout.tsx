@@ -1,4 +1,4 @@
-import { ClipboardList, GraduationCap, Home, Radio } from 'lucide-react';
+import { ClipboardList, GraduationCap, Home, Radio, UserPlus } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -73,6 +73,11 @@ export function Layout() {
               <ItemMenu to='/evaluaciones' icono={<ClipboardList className='h-5 w-5' aria-hidden='true' />}>
                 Evaluaciones
               </ItemMenu>
+              {usuario?.rol === 'administrador' && (
+                <ItemMenu to='/usuarios' icono={<UserPlus className='h-5 w-5' aria-hidden='true' />}>
+                  Usuarios
+                </ItemMenu>
+              )}
             </>
           )}
         </nav>
