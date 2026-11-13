@@ -55,7 +55,6 @@ export const rutas: RouteObject[] = [
                   { path: '/evaluaciones/nueva', element: <PaginaNuevaEvaluacion /> },
                   { path: '/evaluaciones/:evaluacionId', element: <PaginaEvaluacion /> },
                   { path: '/evaluaciones/:evaluacionId/editar', element: <PaginaEditarEvaluacion /> },
-                  { path: '/evaluaciones/:evaluacionId/sala', element: <PaginaSalaDocente /> },
                   { path: '/evaluaciones/:evaluacionId/resultados', element: <PaginaResultados /> },
                   { path: '/evaluaciones/:evaluacionId/resultados/:entregaId', element: <PaginaEntrega /> },
                 ],
@@ -64,6 +63,11 @@ export const rutas: RouteObject[] = [
                 // Solo administrador: alta de alumnos y docentes (POST /api/auth/register)
                 element: <RutaProtegida roles={['administrador']} />,
                 children: [{ path: '/usuarios', element: <PaginaUsuarios /> }],
+              },
+              {
+                // Solo el docente conduce la sala: el hub rechaza al administrador (contrato sala-hub-v1, 4.2)
+                element: <RutaProtegida roles={['docente']} />,
+                children: [{ path: '/evaluaciones/:evaluacionId/sala', element: <PaginaSalaDocente /> }],
               },
               {
                 // Solo alumnos

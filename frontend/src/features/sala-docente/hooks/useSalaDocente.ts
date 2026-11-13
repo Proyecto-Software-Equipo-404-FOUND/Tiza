@@ -9,6 +9,7 @@ import type {
   EstadoSalaEvento,
   FaseSalaDocente,
   PreguntaActual,
+  RespuestaRegistradaEvento,
   SalaFinalizadaEvento,
   SalaIniciadaEvento,
 } from '../tipos';
@@ -24,6 +25,8 @@ export function useSalaDocente(conexion: ConexionSala, salaId: string) {
   const [lista, setLista] = useState<Lista>({ alumnos: [], idsVistos: new Set() });
   const [totalConectados, setTotalConectados] = useState(0);
   const [pregunta, setPregunta] = useState<PreguntaActual | null>(null);
+  // Alumnos que ya respondieron, por pregunta (llega con el evento respuestaRegistrada)
+  const [respondieron, setRespondieron] = useState<Record<string, ReadonlySet<string>>>({});
   const [fechaLimiteSala, setFechaLimiteSala] = useState<string | null>(null);
   const [desfaseMs, setDesfaseMs] = useState(0);
   const [motivoCierre, setMotivoCierre] = useState<SalaFinalizadaEvento['motivo'] | null>(null);
@@ -66,6 +69,21 @@ export function useSalaDocente(conexion: ConexionSala, salaId: string) {
       if (!activo) return;
       setPregunta(carga as PreguntaActual);
       setFase('enCurso');
+    });
+    conexion.escuchar('respuestaRegistrada', (carga) => {
+      if (!activo) return;
+      const evento = carga as RespuestaRegistradaEvento;
+      setRespondieron((previo) => {
+        const ids = new Set(previo[evento.preguntaId] ?? []);
+        ids.add(evento.alumnoId);
+        return { ...previo, [evento.preguntaId]: ids };
+      });
+    });
+    // Foto de presencia que manda el hub al unirse el docente: solo se usa el total
+    conexion.escuchar('alumnosConectados', (carga) => {
+      if (!activo) return;
+      const total = (carga as { totalConectados?: unknown }).totalConectados;
+      if (typeof total === 'number') setTotalConectados(total);
     });
     conexion.escuchar('salaFinalizada', (carga) => {
       if (!activo) return;
@@ -117,7 +135,9 @@ export function useSalaDocente(conexion: ConexionSala, salaId: string) {
   );
 
   const iniciar = useCallback(() => ejecutar('IniciarSala'), [ejecutar]);
-  const siguiente = useCallback(() => ejecutar('AvanzarPregunta'), [ejecutar]);
+  // SignalR no admite parámetros opcionales: el hub declara AvanzarPregunta(Guid? preguntaId),
+  // así que hay que mandar el argumento. null = avanzar a la siguiente en orden.
+  const siguiente = useCallback(() => ejecutar('AvanzarPregunta', null), [ejecutar]);
   const finalizar = useCallback(() => ejecutar('FinalizarSala', 'Docente'), [ejecutar]);
 
   const puedeAvanzar = fase === 'enCurso' && !!pregunta && pregunta.indice < pregunta.totalPreguntas;
@@ -134,6 +154,7 @@ export function useSalaDocente(conexion: ConexionSala, salaId: string) {
     trabajando,
     error,
     puedeAvanzar,
+    respondieronPreguntaActual: pregunta ? (respondieron[pregunta.preguntaId]?.size ?? 0) : 0,
     reunirse: unirse,
     iniciar,
     siguiente,

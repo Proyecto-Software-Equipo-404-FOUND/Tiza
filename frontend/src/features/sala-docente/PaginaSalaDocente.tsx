@@ -75,14 +75,20 @@ function PanelSala({ sala, conexion: conexionInyectada, onAbrirOtra }: PropsPane
                 limiteUtc={fechaLimiteSala ?? sala.fechaVencimiento}
                 desfaseMs={desfaseMs}
               />
-              {fase === 'enCurso' && (
-                <CronometroPanel etiqueta='Pregunta' limiteUtc={pregunta?.fechaLimiteUtc ?? null} desfaseMs={desfaseMs} />
-              )}
+              {/* Hoy cada pregunta vence junto con la sala: el segundo reloj se muestra solo si difiere */}
+              {fase === 'enCurso' &&
+                pregunta?.fechaLimiteUtc &&
+                pregunta.fechaLimiteUtc !== (fechaLimiteSala ?? sala.fechaVencimiento) && (
+                  <CronometroPanel etiqueta='Pregunta' limiteUtc={pregunta.fechaLimiteUtc} desfaseMs={desfaseMs} />
+                )}
             </div>
 
             {fase === 'enCurso' && pregunta && (
               <p className='font-bold text-tiza-bosque'>
                 Pregunta {pregunta.indice}/{pregunta.totalPreguntas}
+                <span className='ml-3 font-normal text-tiza-bosque/80'>
+                  Respondieron {sala_.respondieronPreguntaActual} de {totalConectados}
+                </span>
               </p>
             )}
 
@@ -205,9 +211,9 @@ export function PaginaSalaDocente({ conexion }: Props) {
   const [sala, setSala] = useState<SalaCreada | null>(() => recuperarSala(evaluacionId, usuarioId));
   const abrir = useAbrirSala();
 
-  const alAbrir = (capacidadMaxima: number) =>
+  const alAbrir = (capacidadMaxima: number, duracionMinutos: number) =>
     abrir.mutate(
-      { evaluacionId, capacidadMaxima },
+      { evaluacionId, capacidadMaxima, duracionMinutos },
       {
         onSuccess: (creada) => {
           guardarSala(evaluacionId, usuarioId, creada);
