@@ -30,11 +30,12 @@ public class GetMatriculacionesByCohorteQueryHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_ConCohorteInactiva_DebeRetornarNull()
+    public async Task HandleAsync_ConCohorteInactiva_DebePermitirConsultarMatriculacionesHistoricas()
     {
-        // Arrange
+        // Arrange: Se da de baja la cohorte pero se debe permitir auditar sus matriculaciones
+        var institucionId = Guid.NewGuid();
         var cohorte = new Cohorte(
-            Guid.NewGuid(),
+            institucionId,
             Guid.NewGuid(),
             Guid.NewGuid(),
             "Comisión Inactiva",
@@ -43,6 +44,9 @@ public class GetMatriculacionesByCohorteQueryHandlerTests
         cohorte.Desactivar();
         await _cohorteRepo.AddAsync(cohorte);
 
+        var matriculacion = new Matriculacion(institucionId, cohorte.Id, Guid.NewGuid());
+        await _matriculacionRepo.AddAsync(matriculacion);
+
         var handler = new GetMatriculacionesByCohorteQueryHandler(_cohorteRepo, _matriculacionRepo);
         var query = new GetMatriculacionesByCohorteQuery(cohorte.Id);
 
@@ -50,7 +54,9 @@ public class GetMatriculacionesByCohorteQueryHandlerTests
         var resultado = await handler.HandleAsync(query);
 
         // Assert
-        Assert.Null(resultado);
+        Assert.NotNull(resultado);
+        Assert.Single(resultado);
+        Assert.Equal(matriculacion.Id, resultado[0].Id);
     }
 
     [Fact]

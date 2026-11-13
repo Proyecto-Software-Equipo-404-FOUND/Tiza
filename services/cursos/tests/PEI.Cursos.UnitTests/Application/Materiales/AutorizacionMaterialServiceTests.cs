@@ -138,4 +138,60 @@ public class AutorizacionMaterialServiceTests
 
         _service.ValidarAccesoTextoInterno();
     }
+
+    [Fact]
+    public async Task ValidarPermisoLectura_CuandoCursoInactivoYEsAdministrador_PermiteAcceso()
+    {
+        // Consulta historica: El administrador puede leer apuntes aunque el curso este inactivo
+        var cursoInactivo = new Curso(_institucionId, "Curso Inactivo", "Area");
+        cursoInactivo.AsignarId(_cursoId);
+        cursoInactivo.Desactivar();
+        await _cursoRepository.AddAsync(cursoInactivo);
+
+        _tenantContext.Rol = "Administrador";
+
+        await _service.ValidarPermisoLecturaAsync(_cursoId);
+    }
+
+    [Fact]
+    public async Task ValidarPermisoLectura_CuandoCursoNoExiste_LanzaKeyNotFoundException()
+    {
+        _tenantContext.Rol = "Administrador";
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _service.ValidarPermisoLecturaAsync(_cursoId)
+        );
+    }
+
+    [Fact]
+    public async Task ValidarPermisoLectura_CuandoEsAlumno_LanzaForbiddenException()
+    {
+        var curso = new Curso(_institucionId, "Curso Activo", "Area");
+        curso.AsignarId(_cursoId);
+        await _cursoRepository.AddAsync(curso);
+
+        _tenantContext.Rol = "Alumno";
+
+        var ex = await Assert.ThrowsAsync<ForbiddenException>(() =>
+            _service.ValidarPermisoLecturaAsync(_cursoId)
+        );
+        Assert.Contains("No tenés permiso", ex.Message);
+    }
+
+    [Fact]
+    public async Task ValidarPermisoLectura_CuandoDocenteTieneCohorteEnCursoInactivo_PermiteAcceso()
+    {
+        var cursoInactivo = new Curso(_institucionId, "Curso Inactivo", "Area");
+        cursoInactivo.AsignarId(_cursoId);
+        cursoInactivo.Desactivar();
+        await _cursoRepository.AddAsync(cursoInactivo);
+
+        var cohorte = new Cohorte(_institucionId, _cursoId, _docenteId, "Comision 1A", "2026-1C");
+        await _cohorteRepository.AddAsync(cohorte);
+
+        _tenantContext.Rol = "Docente";
+        _tenantContext.UsuarioId = _docenteId;
+
+        await _service.ValidarPermisoLecturaAsync(_cursoId);
+    }
 }

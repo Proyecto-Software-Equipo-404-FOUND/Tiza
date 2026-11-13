@@ -54,10 +54,10 @@ public class Matriculacion : BaseEntity
     public void DarDeBaja()
     {
         if (Estado == EstadoMatriculacion.Baja)
-            throw new DomainException("La matriculación ya se encuentra dada de baja.");
+            throw new InvalidOperationException("La matriculación ya se encuentra dada de baja.");
 
         if (Estado == EstadoMatriculacion.Completada)
-            throw new DomainException("No es posible dar de baja una cursada que ya ha sido completada.");
+            throw new InvalidOperationException("No es posible dar de baja una cursada que ya ha sido completada.");
 
         Estado = EstadoMatriculacion.Baja;
         FechaModificacionUtc = DateTime.UtcNow;
@@ -77,10 +77,10 @@ public class Matriculacion : BaseEntity
     public void Reactivar()
     {
         if (Estado == EstadoMatriculacion.Activa)
-            throw new DomainException("La matriculación ya se encuentra activa.");
+            throw new InvalidOperationException("La matriculación ya se encuentra activa.");
 
         if (Estado == EstadoMatriculacion.Completada)
-            throw new DomainException("No es posible reactivar una matriculación completada.");
+            throw new InvalidOperationException("No es posible reactivar una matriculación completada.");
 
         Estado = EstadoMatriculacion.Activa;
         FechaModificacionUtc = DateTime.UtcNow;

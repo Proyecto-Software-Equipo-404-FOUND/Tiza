@@ -665,8 +665,8 @@
         "tags": [
           "Matriculaciones"
         ],
-        "summary": "Obtiene el listado de matriculaciones de una cohorte (S2-CU-01).",
-        "description": "Retorna la lista inmutable de matriculaciones de la cohorte especificada, admitiendo filtrado opcional por matriculaciones activas para consumo de Sala en Vivo.",
+        "summary": "Obtiene el listado de matriculaciones de una cohorte en modo operativo o histórico (S2-CU-01).",
+        "description": "Retorna la lista inmutable de matriculaciones de la cohorte especificada, admitiendo la consulta de cohortes inactivas en modo histórico y filtrado opcional por matriculaciones activas para consumo de Sala en Vivo.",
         "operationId": "GetMatriculaciones",
         "parameters": [
           {
@@ -721,7 +721,7 @@
             "description": "Rol no autorizado. Roles permitidos: Administrador o Docente."
           },
           "404": {
-            "description": "Cohorte inexistente, inactiva o perteneciente a otra institución.",
+            "description": "Cohorte inexistente o perteneciente a otra institución.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -876,6 +876,130 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "Matriculaciones"
+        ],
+        "summary": "Da de baja la matrícula de un alumno en una cohorte.",
+        "description": "Baja lógica de la matriculación de un alumno en la cohorte especificada. Preserva el registro para consistencia histórica de la cursada.",
+        "operationId": "DarDeBajaMatriculacion",
+        "parameters": [
+          {
+            "name": "cohorteId",
+            "in": "path",
+            "description": "UUID de la cohorte.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "UUID de la inscripción/matrícula a dar de baja.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Matrícula dada de baja exitosamente (sin contenido)."
+          },
+          "401": {
+            "description": "JWT ausente o inválido."
+          },
+          "403": {
+            "description": "Rol no autorizado. Roles permitidos: Administrador o Docente."
+          },
+          "404": {
+            "description": "Matrícula o cohorte inexistente, o de otra institución.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicto: la matrícula no admite la baja en su estado actual.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cohortes/{cohorteId}/matriculas/{id}/reactivar": {
+      "post": {
+        "tags": [
+          "Matriculaciones"
+        ],
+        "summary": "Reactiva una matrícula dada de baja en una cohorte.",
+        "description": "Reincorpora formalmente al alumno restableciendo su matrícula a estado Activa.",
+        "operationId": "ReactivarMatriculacion",
+        "parameters": [
+          {
+            "name": "cohorteId",
+            "in": "path",
+            "description": "UUID de la cohorte.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "UUID de la inscripción/matrícula a reactivar.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Matrícula reactivada exitosamente (sin contenido)."
+          },
+          "401": {
+            "description": "JWT ausente o inválido."
+          },
+          "403": {
+            "description": "Rol no autorizado. Roles permitidos: Administrador o Docente."
+          },
+          "404": {
+            "description": "Matrícula o cohorte inexistente, o de otra institución.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicto: la matrícula no admite la reactivación en su estado actual.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/cursos/{cursoId}/materiales": {
@@ -1010,8 +1134,8 @@
         "tags": [
           "Materiales"
         ],
-        "summary": "Lista los apuntes del curso.",
-        "description": "Devuelve las fichas sin el texto extraído, de la más nueva a la más vieja. Solo materiales activos. Permisos (RN-MAT-01/02): Administrador de la institución, o Docente asignado a alguna cohorte activa del curso. Alumno → 403.",
+        "summary": "Lista los apuntes del curso (admite cursos inactivos en modo histórico).",
+        "description": "Devuelve las fichas sin el texto extraído, de la más nueva a la más vieja. Solo materiales activos. Admite la consulta histórica de cursos inactivos si el usuario está autorizado. Permisos (RN-MAT-01/02): Administrador de la institución, o Docente asignado a alguna cohorte del curso. Alumno → 403.",
         "operationId": "ListarMateriales",
         "parameters": [
           {
