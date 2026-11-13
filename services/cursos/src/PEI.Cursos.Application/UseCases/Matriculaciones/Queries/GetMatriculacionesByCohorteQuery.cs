@@ -6,5 +6,7 @@ namespace PEI.Cursos.Application.UseCases.Matriculaciones.Queries;
 Admite un filtro opcional para recuperar exclusivamente matriculaciones activas. */
 public record GetMatriculacionesByCohorteQuery(
     Guid CohorteId,
-    bool? SoloActivas = true
+    bool? SoloActivas = true,
+    // Sala en Vivo solo habilita el ingreso si la cohorte sigue activa (el historial sí admite inactivas)
+    bool SoloCohorteActiva = false
 );

@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -160,5 +162,43 @@ public class MatriculacionesController : ControllerBase
         }
 
         return NoContent();
+    }
+
+    /* Indica si un alumno tiene matrícula activa en la cohorte (200 con la matrícula o 404).
+    Lo consume Sala en Vivo cuando un alumno se une por PIN, reenviando el token del propio alumno:
+    por eso un alumno puede consultarse solo a sí mismo; administrador y docente, a cualquiera.
+    Una cohorte inactiva no habilita el ingreso aunque conserve matrículas activas. */
+    [Authorize(Policy = CursosAuthorization.GestionOAlumnoPropio)]
+    [HttpGet("alumnos/{alumnoId:guid}")]
+    [ProducesResponseType(typeof(MatriculacionDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetMatriculaActivaDeAlumno(
+        [FromRoute] Guid cohorteId,
+        [FromRoute] Guid alumnoId,
+        CancellationToken cancellationToken)
+    {
+        var esAdministradorODocente = User.IsInRole(CursosAuthorization.Administrador)
+            || User.IsInRole(CursosAuthorization.Docente);
+        var sub = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (!esAdministradorODocente && !string.Equals(sub, alumnoId.ToString(), StringComparison.OrdinalIgnoreCase))
+        {
+            return Forbid();
+        }
+
+        var matriculaciones = await _mediator.SendAsync<GetMatriculacionesByCohorteQuery, IReadOnlyList<MatriculacionDto>?>(
+            new GetMatriculacionesByCohorteQuery(cohorteId, true, SoloCohorteActiva: true),
+            cancellationToken
+        );
+
+        var matricula = matriculaciones?.FirstOrDefault(m => m.AlumnoId == alumnoId);
+
+        if (matricula is null)
+        {
+            return NotFound(new { error = "El alumno no tiene una matrícula activa en la cohorte indicada." });
+        }
+
+        return Ok(matricula);
     }
 }

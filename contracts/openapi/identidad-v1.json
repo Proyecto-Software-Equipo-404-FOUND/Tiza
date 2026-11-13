@@ -396,8 +396,7 @@
               ]
             }
           }
-        ],
-        "x-estado": "planificado"
+        ]
       }
     },
     "/api/usuarios/{id}": {
@@ -447,8 +446,7 @@
               "format": "uuid"
             }
           }
-        ],
-        "x-estado": "planificado"
+        ]
       }
     },
     "/api/usuarios/alumnos/importacion": {
