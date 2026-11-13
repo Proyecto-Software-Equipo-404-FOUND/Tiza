@@ -89,6 +89,32 @@ public sealed class CursosAuthorizationHttpTests
         }
     }
 
+    [Fact]
+    public async Task MatriculaActivaDeAlumno_ElAlumnoSoloSeConsultaASiMismo()
+    {
+        using var factory = new CursosFactory();
+        using var client = factory.CreateClient();
+        var propia = $"{Matriculas}/alumnos/{Usuario}";
+        var ajena = $"{Matriculas}/alumnos/{Guid.NewGuid()}";
+
+        using (var sinToken = await client.GetAsync(propia))
+            Assert.Equal(HttpStatusCode.Unauthorized, sinToken.StatusCode);
+
+        client.DefaultRequestHeaders.Authorization = new("Bearer", factory.Token("Alumno", TenantA));
+        using (var deSiMismo = await client.GetAsync(propia))
+            Assert.Equal(HttpStatusCode.OK, deSiMismo.StatusCode);
+        var llamadas = factory.Llamadas;
+        using (var deOtro = await client.GetAsync(ajena))
+            Assert.Equal(HttpStatusCode.Forbidden, deOtro.StatusCode);
+        Assert.Equal(llamadas, factory.Llamadas);
+
+        client.DefaultRequestHeaders.Authorization = new("Bearer", factory.Token("Docente", TenantA));
+        using (var docente = await client.GetAsync(propia))
+            Assert.Equal(HttpStatusCode.OK, docente.StatusCode);
+        using (var noMatriculado = await client.GetAsync(ajena))
+            Assert.Equal(HttpStatusCode.NotFound, noMatriculado.StatusCode);
+    }
+
     [Theory]
     [InlineData("firma", HttpStatusCode.Unauthorized)]
     [InlineData("vencido", HttpStatusCode.Unauthorized)]
@@ -145,13 +171,15 @@ public sealed class CursosAuthorizationHttpTests
             .SelectMany(path => path.Value.Operations.Select(operation => (path.Key, operation.Key, Operation: operation.Value)))
             .ToArray();
 
-        Assert.Equal(15, operations.Length);
+        Assert.Equal(16, operations.Length);
         foreach (var (path, verb, operation) in operations)
         {
             Assert.Empty(operation.Responses["401"].Content);
             Assert.Empty(operation.Responses["403"].Content);
-            var roles = verb == OperationType.Get || path.Contains("matriculas", StringComparison.Ordinal)
-                ? "Administrador o Docente" : "Administrador";
+            var roles = path.Contains("/alumnos/", StringComparison.Ordinal)
+                ? "Administrador, Docente o el propio Alumno"
+                : verb == OperationType.Get || path.Contains("matriculas", StringComparison.Ordinal)
+                    ? "Administrador o Docente" : "Administrador";
             Assert.Equal($"Rol no autorizado. Roles permitidos: {roles}.", operation.Responses["403"].Description);
         }
         Assert.DoesNotContain("Roles permitidos:", document.Paths["/api/v1/cursos/{cursoId}/materiales"]

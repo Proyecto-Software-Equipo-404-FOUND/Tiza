@@ -164,4 +164,20 @@ public class GetMatriculacionesByCohorteQueryHandlerTests
         var ex = await Assert.ThrowsAsync<DomainException>(() => handler.HandleAsync(query));
         Assert.Contains("obligatorio", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public async Task HandleAsync_SoloCohorteActivaConCohorteInactiva_RetornaNull()
+    {
+        // Sala en Vivo no habilita el ingreso a una cohorte dada de baja, aunque el historial sí la lea
+        var institucionId = Guid.NewGuid();
+        var cohorte = new Cohorte(institucionId, Guid.NewGuid(), Guid.NewGuid(), "Comision Cerrada", "2026-2C");
+        await _cohorteRepo.AddAsync(cohorte);
+        await _matriculacionRepo.AddAsync(new Matriculacion(institucionId, cohorte.Id, Guid.NewGuid()));
+        cohorte.Desactivar();
+
+        var handler = new GetMatriculacionesByCohorteQueryHandler(_cohorteRepo, _matriculacionRepo);
+
+        Assert.Null(await handler.HandleAsync(new GetMatriculacionesByCohorteQuery(cohorte.Id, true, SoloCohorteActiva: true)));
+        Assert.NotNull(await handler.HandleAsync(new GetMatriculacionesByCohorteQuery(cohorte.Id, true)));
+    }
 }
