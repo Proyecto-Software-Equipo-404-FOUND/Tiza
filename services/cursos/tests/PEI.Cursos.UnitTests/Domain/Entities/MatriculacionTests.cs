@@ -63,26 +63,26 @@ public class MatriculacionTests
     }
 
     [Fact]
-    public void DarDeBaja_SiYaEstaEnBaja_DebeLanzarDomainException()
+    public void DarDeBaja_SiYaEstaEnBaja_DebeLanzarInvalidOperationException()
     {
         // Arrange
         var matriculacion = new Matriculacion(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
         matriculacion.DarDeBaja();
 
         // Act & Assert
-        var ex = Assert.Throws<DomainException>(() => matriculacion.DarDeBaja());
+        var ex = Assert.Throws<InvalidOperationException>(() => matriculacion.DarDeBaja());
         Assert.Contains("ya se encuentra dada de baja", ex.Message);
     }
 
     [Fact]
-    public void DarDeBaja_SobreMatriculacionCompletada_DebeLanzarDomainException()
+    public void DarDeBaja_SobreMatriculacionCompletada_DebeLanzarInvalidOperationException()
     {
         // Arrange: Alumno que ya aprobó/completó la cursada
         var matriculacion = new Matriculacion(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
         matriculacion.Completar();
 
         // Act & Assert: No se puede dar de baja una cursada completada
-        var ex = Assert.Throws<DomainException>(() => matriculacion.DarDeBaja());
+        var ex = Assert.Throws<InvalidOperationException>(() => matriculacion.DarDeBaja());
         Assert.Contains("ya ha sido completada", ex.Message);
     }
 
@@ -128,15 +128,15 @@ public class MatriculacionTests
     }
 
     [Fact]
-    public void Reactivar_SobreMatriculacionActivaOCompletada_DebeLanzarDomainException()
+    public void Reactivar_SobreMatriculacionActivaOCompletada_DebeLanzarInvalidOperationException()
     {
         // Arrange 1: Activa
         var matriculacionActiva = new Matriculacion(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
-        Assert.Throws<DomainException>(() => matriculacionActiva.Reactivar());
+        Assert.Throws<InvalidOperationException>(() => matriculacionActiva.Reactivar());
 
         // Arrange 2: Completada
         var matriculacionCompletada = new Matriculacion(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
         matriculacionCompletada.Completar();
-        Assert.Throws<DomainException>(() => matriculacionCompletada.Reactivar());
+        Assert.Throws<InvalidOperationException>(() => matriculacionCompletada.Reactivar());
     }
 }

@@ -10,7 +10,7 @@ using PEI.Cursos.Domain.Exceptions;
 namespace PEI.Cursos.Application.UseCases.Matriculaciones.Queries;
 
 /* Manejador de la consulta GetMatriculacionesByCohorteQuery.
-Valida que la cohorte exista y este activa para el tenant autenticado,
+Valida que la cohorte exista para el tenant autenticado (admitiendo cohortes inactivas en modo historico),
 y retorna la lista de inscripciones proyectadas a DTOs de salida inmutables. */
 public class GetMatriculacionesByCohorteQueryHandler : IRequestHandler<GetMatriculacionesByCohorteQuery, IReadOnlyList<MatriculacionDto>?>
 {
@@ -34,9 +34,9 @@ public class GetMatriculacionesByCohorteQueryHandler : IRequestHandler<GetMatric
             throw new DomainException("El identificador de la cohorte es obligatorio.");
         }
 
-        // 1. Validar que la cohorte exista para el tenant y no este dada de baja
+        // 1. Validar que la cohorte exista para el tenant (admite cohortes inactivas en modo historico)
         var cohorte = await _cohorteRepository.GetByIdAsync(request.CohorteId, cancellationToken);
-        if (cohorte is null || !cohorte.Activo)
+        if (cohorte is null)
         {
             return null;
         }

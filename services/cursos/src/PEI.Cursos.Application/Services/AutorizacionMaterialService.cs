@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using PEI.BuildingBlocks.Errors;
@@ -74,6 +75,53 @@ public class AutorizacionMaterialService : IAutorizacionMaterialService
 
         // Cualquier otro rol no reconocido es denegado
         throw new ForbiddenException("No tenés permiso para gestionar el material de este curso.");
+    }
+
+    public async Task ValidarPermisoLecturaAsync(Guid cursoId, CancellationToken cancellationToken = default)
+    {
+        // 1. Regla anti-enumeracion: Si el curso no existe o no pertenece a la institucion, responde 404 (admite curso inactivo)
+        var curso = await _cursoRepository.GetByIdAsync(cursoId, cancellationToken);
+        if (curso is null)
+        {
+            throw new KeyNotFoundException($"El curso con ID '{cursoId}' no existe o no pertenece a la institucion.");
+        }
+
+        var rol = _tenantContext.Rol;
+
+        // 2. Administrador tiene acceso de lectura total sobre los cursos de su institucion
+        if (string.Equals(rol, "Administrador", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        // 3. Regla RN-MAT-02: El alumno tiene prohibido consultar el material
+        if (string.Equals(rol, "Alumno", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ForbiddenException("No tenés permiso para consultar el material de este curso.");
+        }
+
+        // 4. Regla RN-MAT-01: El docente puede consultar si esta asignado a alguna cohorte del curso
+        if (string.Equals(rol, "Docente", StringComparison.OrdinalIgnoreCase))
+        {
+            var usuarioId = _tenantContext.UsuarioId;
+            if (!usuarioId.HasValue || usuarioId.Value == Guid.Empty)
+            {
+                throw new ForbiddenException("No tenés permiso para consultar el material de este curso.");
+            }
+
+            var cohortes = await _cohorteRepository.GetByCursoIdAsync(cursoId, cancellationToken);
+            var tieneCohorte = cohortes.Any(c => c.DocenteId == usuarioId.Value);
+
+            if (!tieneCohorte)
+            {
+                throw new ForbiddenException("No tenés permiso para consultar el material de este curso.");
+            }
+
+            return;
+        }
+
+        // Cualquier otro rol no reconocido es denegado
+        throw new ForbiddenException("No tenés permiso para consultar el material de este curso.");
     }
 
     public void ValidarAccesoTextoInterno()

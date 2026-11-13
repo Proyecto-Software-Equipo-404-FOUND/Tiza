@@ -29,7 +29,7 @@ public class MatriculacionesController : ControllerBase
 
     /* Obtiene el listado de matriculaciones asociadas a la cohorte especificada.
     Soporta filtrado opcional por matriculaciones activas para consumo de Sala en Vivo (Caso de Uso S2-CU-01).
-    Retorna 404 Not Found si la cohorte no existe, pertenece a otra institucion o esta inactiva. */
+    Retorna 404 Not Found si la cohorte no existe o pertenece a otra institucion. */
     [Authorize(Policy = CursosAuthorization.AdministradorODocente)]
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<MatriculacionDto>), StatusCodes.Status200OK)]
@@ -49,7 +49,7 @@ public class MatriculacionesController : ControllerBase
 
         if (matriculaciones is null)
         {
-            return NotFound(new { error = $"No se encontro la cohorte con ID '{cohorteId}' o no se encuentra activa." });
+            return NotFound(new { error = $"No se encontro la cohorte con ID '{cohorteId}'." });
         }
 
         return Ok(matriculaciones);
@@ -104,5 +104,61 @@ public class MatriculacionesController : ControllerBase
             new { cohorteId, id = matriculacionCreada.Id },
             matriculacionCreada
         );
+    }
+
+    /* Da de baja la matricula de un alumno en la cohorte especificada.
+    Retorna 204 NoContent en exito, 404 NotFound si no existe o no corresponde a la cohorte,
+    o 409 Conflict via ProblemDetailsMiddleware si el estado actual no admite la baja. */
+    [Authorize(Policy = CursosAuthorization.AdministradorODocente)]
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> DarDeBaja(
+        [FromRoute] Guid cohorteId,
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken)
+    {
+        var command = new DarDeBajaMatriculacionCommand(cohorteId, id);
+
+        var resultado = await _mediator.SendAsync<DarDeBajaMatriculacionCommand, bool>(
+            command,
+            cancellationToken
+        );
+
+        if (!resultado)
+        {
+            return NotFound(new { error = $"No se encontro la matriculacion con ID '{id}' en la cohorte especificada." });
+        }
+
+        return NoContent();
+    }
+
+    /* Reactiva una matricula previamente dada de baja reincorporando al alumno en la cohorte.
+    Retorna 204 NoContent en exito, 404 NotFound si no existe o no corresponde a la cohorte,
+    o 409 Conflict via ProblemDetailsMiddleware si el estado actual no admite la reactivacion. */
+    [Authorize(Policy = CursosAuthorization.AdministradorODocente)]
+    [HttpPost("{id:guid}/reactivar")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Reactivar(
+        [FromRoute] Guid cohorteId,
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken)
+    {
+        var command = new ReactivarMatriculacionCommand(cohorteId, id);
+
+        var resultado = await _mediator.SendAsync<ReactivarMatriculacionCommand, bool>(
+            command,
+            cancellationToken
+        );
+
+        if (!resultado)
+        {
+            return NotFound(new { error = $"No se encontro la matriculacion con ID '{id}' en la cohorte especificada." });
+        }
+
+        return NoContent();
     }
 }
