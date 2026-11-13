@@ -13,6 +13,11 @@ TestResults/
 
 ## Node & Frontend
 node_modules/
+cypress/screenshots/
+cypress/videos/
+cypress/downloads/
+cypress.env.json
+tests/s2-qa01/results/
 dist/
 dist-ssr/
 *.local

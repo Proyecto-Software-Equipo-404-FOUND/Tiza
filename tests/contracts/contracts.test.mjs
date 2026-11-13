@@ -17,6 +17,25 @@ for (const name of readdirSync(path.join(root, 'contracts/openapi')).filter(x =>
 }
 const ajv = new Ajv2020({ allErrors: true, strict: false });
 addFormats(ajv);
+for (const name of ['lote-entregas-v1', 'resultado-lote-entregas-v1']) {
+  const contract = read(`contracts/schemas/${name}.schema.json`);
+  const check = ajv.compile(contract);
+  test(`${name}: ejemplos publicados contra draft 2020-12`, () => {
+    assert.ok(contract.examples?.length > 0, 'El contrato debe conservar ejemplos');
+    for (const example of contract.examples) {
+      assert.equal(check(example), true, JSON.stringify(check.errors));
+    }
+  });
+  test(`${name}: rechaza campos obligatorios ausentes y UUID inválido`, () => {
+    for (const field of contract.required) {
+      const invalid = structuredClone(contract.examples[0]);
+      delete invalid[field];
+      assert.equal(check(invalid), false, `Aceptó ejemplo sin ${field}`);
+    }
+    const invalid = { ...contract.examples[0], loteId: 'no-es-uuid' };
+    assert.equal(check(invalid), false);
+  });
+}
 const schema = read('contracts/schemas/preguntas-v1.schema.json');
 const validate = ajv.compile(schema);
 const id = '00000000-0000-4000-8000-000000000101';
