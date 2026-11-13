@@ -15,8 +15,10 @@ export type Matricula = {
   alumnoNombre?: string;
 };
 
+// Por defecto el servidor devuelve solo las activas (soloActivas=true); se piden todas para poder
+// mostrar aparte las dadas de baja.
 export const listarMatriculas = (cohorteId: string) =>
-  pedir<Matricula[]>(`/api/v1/cohortes/${cohorteId}/matriculas`);
+  pedir<Matricula[]>(`/api/v1/cohortes/${cohorteId}/matriculas?soloActivas=false`);
 
 export const matricularAlumno = (cohorteId: string, alumnoId: string) =>
   pedir<Matricula>(`/api/v1/cohortes/${cohorteId}/matriculas`, {

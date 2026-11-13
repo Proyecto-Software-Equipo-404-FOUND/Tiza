@@ -11,7 +11,7 @@ import { ApiError } from '@/shared/api/cliente';
 import { mensajeDeError } from '@/shared/api/errores';
 import type { Cohorte } from '@/shared/api/tipos';
 import { useActualizarCohorte } from '../hooks/useActualizarCohorte';
-import { DOCENTES_SEMILLA } from '../semillas';
+import { useDocentes } from '../hooks/useDocentes';
 
 const esquema = z.object({
   nombre: z.string().trim().min(1, 'Ingresá un nombre').max(100, 'Máximo 100 caracteres'),
@@ -32,10 +32,11 @@ export function FormularioEditarCohorte({ cursoId, cohorte, onTerminar }: Props)
   const cliente = useQueryClient();
   const { mostrar } = useAviso();
 
-  // Si el docente actual no está en la lista provisoria, se conserva como opción para no perderlo
-  const docentes = DOCENTES_SEMILLA.some((d) => d.id === cohorte.docenteId)
-    ? DOCENTES_SEMILLA
-    : [...DOCENTES_SEMILLA, { id: cohorte.docenteId, nombre: 'Docente actual' }];
+  const { data: lista = [], isPending: cargandoDocentes, isError: falloDocentes, refetch } = useDocentes();
+  // Si el docente actual no está en la lista (por ejemplo, ya no está activo), se conserva como opción para no perderlo
+  const docentes = lista.some((d) => d.id === cohorte.docenteId)
+    ? lista
+    : [...lista, { id: cohorte.docenteId, nombre: 'Docente actual' }];
 
   const enviar = (evento: FormEvent<HTMLFormElement>) => {
     evento.preventDefault();
@@ -98,7 +99,7 @@ export function FormularioEditarCohorte({ cursoId, cohorte, onTerminar }: Props)
         value={docenteId}
         onChange={(evento) => setDocenteId(evento.target.value)}
         error={errores.docenteId}
-        disabled={actualizar.isPending}
+        disabled={actualizar.isPending || cargandoDocentes}
       >
         {docentes.map((docente) => (
           <option key={docente.id} value={docente.id}>
@@ -106,6 +107,10 @@ export function FormularioEditarCohorte({ cursoId, cohorte, onTerminar }: Props)
           </option>
         ))}
       </CampoSelect>
+
+      {falloDocentes && (
+        <BannerError mensaje='No pudimos cargar los docentes.' onReintentar={() => refetch()} />
+      )}
 
       {actualizar.isError && (
         <BannerError

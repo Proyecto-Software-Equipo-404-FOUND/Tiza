@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw';
 import { usuarios, cursos } from './datos';
 import { crearTokenFalso } from './token';
+import { handlersUsuarios } from './usuarios';
 import { handlersMatriculas } from './matriculas';
 import { handlersCohortes } from './cohortes';
 import { handlersEvaluaciones } from './evaluaciones';
@@ -9,6 +10,9 @@ import { handlersEntregas } from './entregas';
 import { handlersMateriales } from './materiales';
 
 export const handlers = [
+  // Primero: atiende solo rol=Docente y deja pasar el resto a los otros handlers de la misma ruta
+  ...handlersUsuarios,
+
   // Ruta real por el gateway: el transform la entrega a Identidad como /api/auth/login
   http.post('*/api/v1/identidad/auth/login', async ({ request }) => {
     const { email } = (await request.json()) as { email: string; password: string };
@@ -101,11 +105,11 @@ export const handlers = [
     return HttpResponse.json(curso);
   }),
 
-  // Baja lógica en el backend; el mock la quita de la lista
+  // Baja lógica como en el backend: el curso sigue en la lista, con activo=false
   http.delete('*/api/v1/cursos/:id', ({ params }) => {
-    const indice = cursos.findIndex((c) => c.id === params.id);
-    if (indice === -1) return HttpResponse.json({ title: 'No encontrado', status: 404 }, { status: 404 });
-    cursos.splice(indice, 1);
+    const curso = cursos.find((c) => c.id === params.id);
+    if (!curso) return HttpResponse.json({ title: 'No encontrado', status: 404 }, { status: 404 });
+    curso.activo = false;
     return new HttpResponse(null, { status: 204 });
   }),
   ...handlersMatriculas,
