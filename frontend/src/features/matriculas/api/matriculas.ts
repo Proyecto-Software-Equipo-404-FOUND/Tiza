@@ -26,6 +26,14 @@ export const matricularAlumno = (cohorteId: string, alumnoId: string) =>
     body: JSON.stringify({ alumnoId }),
   });
 
+// Baja lógica: la matrícula pasa a estado Baja y queda en «Matrículas inactivas». 204 sin cuerpo.
+export const darDeBajaMatricula = (cohorteId: string, matriculaId: string) =>
+  pedir<void>(`/api/v1/cohortes/${cohorteId}/matriculas/${matriculaId}`, { method: 'DELETE' });
+
+// Vuelve a activar una matrícula dada de baja (POST …/reactivar, 204). 409 si el estado no lo permite.
+export const reactivarMatricula = (cohorteId: string, matriculaId: string) =>
+  pedir<void>(`/api/v1/cohortes/${cohorteId}/matriculas/${matriculaId}/reactivar`, { method: 'POST' });
+
 // Forma de UsuarioResumen en contracts/openapi/identidad-v1.json (GET /api/usuarios, S2-ID-10)
 type UsuarioResumen = { id: string; nombre: string; apellido: string; email: string; rol: string };
 

@@ -86,4 +86,28 @@ export const handlersMatriculas = [
       headers: { Location: `/api/v1/cohortes/${cohorteId}/matriculas/${nueva.id}` },
     });
   }),
+
+  // Baja lógica como el servidor: 204, la matrícula queda en estado Baja; si ya estaba de baja, 409
+  http.delete('*/api/v1/cohortes/:cohorteId/matriculas/:id', ({ params }) => {
+    const matricula = matriculas.find((m) => m.cohorteId === params.cohorteId && m.id === params.id);
+    if (!matricula) return HttpResponse.json({ title: 'Matrícula no encontrada', status: 404 }, { status: 404 });
+    if (matricula.estado === 'Baja') {
+      return HttpResponse.json(
+        { title: 'Conflicto', status: 409, detail: 'La matriculación ya se encuentra dada de baja.' },
+        { status: 409 },
+      );
+    }
+    matricula.estado = 'Baja';
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.post('*/api/v1/cohortes/:cohorteId/matriculas/:id/reactivar', ({ params }) => {
+    const matricula = matriculas.find((m) => m.cohorteId === params.cohorteId && m.id === params.id);
+    if (!matricula) return HttpResponse.json({ title: 'Matrícula no encontrada', status: 404 }, { status: 404 });
+    if (matricula.estado === 'Activa') {
+      return HttpResponse.json({ title: 'Conflicto', status: 409, detail: 'La matriculación ya se encuentra activa.' }, { status: 409 });
+    }
+    matricula.estado = 'Activa';
+    return new HttpResponse(null, { status: 204 });
+  }),
 ];

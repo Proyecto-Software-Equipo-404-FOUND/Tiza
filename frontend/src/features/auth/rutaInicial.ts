@@ -1,4 +1,4 @@
 import type { Rol } from '@/shared/api/tipos';
 
-// Docente y administrador van a /cursos. Qué ve el alumno es una pregunta pendiente para el PO.
-export const rutaInicial = (rol: Rol) => (rol === 'alumno' ? '/' : '/cursos');
+// Decisión del PO (12/11): todos los roles entran por Inicio; desde el menú van a cada sección.
+export const rutaInicial = (_rol: Rol) => '/';

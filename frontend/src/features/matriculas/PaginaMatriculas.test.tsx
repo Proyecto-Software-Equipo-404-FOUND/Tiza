@@ -202,4 +202,35 @@ describe('PaginaMatriculas', () => {
     expect(await screen.findByRole('cell', { name: 'Alumno 1' })).toBeInTheDocument();
     expect(screen.getByLabelText('Alumno')).toBeEnabled();
   });
+
+  it('da de baja a un alumno después de confirmar', async () => {
+    vi.mocked(api.listarMatriculas).mockResolvedValue([matricula]);
+    vi.mocked(api.darDeBajaMatricula).mockResolvedValue(undefined);
+    mostrarPagina();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Dar de baja' }));
+    expect(api.darDeBajaMatricula).not.toHaveBeenCalled();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Sí, dar de baja' }));
+    await waitFor(() => expect(api.darDeBajaMatricula).toHaveBeenCalledWith('c1', 'm1'));
+    expect(await screen.findByText('Alumno dado de baja de la cohorte.')).toBeInTheDocument();
+  });
+
+  it('las matrículas inactivas no ofrecen dar de baja', async () => {
+    vi.mocked(api.listarMatriculas).mockResolvedValue([{ ...matricula, estado: 'Baja' }]);
+    mostrarPagina();
+
+    expect(await screen.findByRole('cell', { name: 'Alumno 1' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Dar de baja' })).not.toBeInTheDocument();
+  });
+
+  it('reactiva una matrícula dada de baja', async () => {
+    vi.mocked(api.listarMatriculas).mockResolvedValue([{ ...matricula, estado: 'Baja' }]);
+    vi.mocked(api.reactivarMatricula).mockResolvedValue(undefined);
+    mostrarPagina();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Reactivar' }));
+    await waitFor(() => expect(api.reactivarMatricula).toHaveBeenCalledWith('c1', 'm1'));
+    expect(await screen.findByText('Matrícula reactivada.')).toBeInTheDocument();
+  });
 });

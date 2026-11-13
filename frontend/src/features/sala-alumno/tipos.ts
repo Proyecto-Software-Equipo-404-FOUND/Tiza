@@ -9,6 +9,8 @@ export type CodigoSala =
   | 'ALUMNO_YA_EN_SALA'
   | 'ALUMNO_NO_EN_SALA'
   | 'SALA_FINALIZADA'
+  | 'ALUMNO_NO_MATRICULADO'
+  | 'MATRICULA_NO_VERIFICADA'
   | 'ERROR_INTERNO';
 
 export type EstadoDeSala = 'Activa' | 'EnCurso' | 'Finalizada';

@@ -202,7 +202,7 @@ describe('rutas de la aplicación', () => {
   it('quien ya tiene sesión no ve el login', () => {
     iniciarComo('docente');
     mostrar('/login');
-    expect(screen.getByRole('heading', { name: 'Cursos' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Corregí en minutos/ })).toBeInTheDocument();
   });
 
   it('una ruta inexistente muestra «no encontrada»', () => {
@@ -236,6 +236,12 @@ describe('rutas de la aplicación', () => {
     mostrar('/evaluaciones/ev-1/sala');
     expect(screen.getByText('No tenés permiso para ver esta página.')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { level: 1, name: 'Sala en vivo' })).not.toBeInTheDocument();
+  });
+
+  it('el administrador no entra al panel de la sala (solo lo conduce el docente)', () => {
+    iniciarComo('administrador');
+    mostrar('/evaluaciones/ev-1/sala');
+    expect(screen.getByText('No tenés permiso para ver esta página.')).toBeInTheDocument();
   });
 
   it('un docente entra a los resultados de una evaluación', async () => {

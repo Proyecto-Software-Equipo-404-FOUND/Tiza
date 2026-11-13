@@ -8,7 +8,7 @@ describe('FormularioAbrirSala', () => {
     const onAbrir = vi.fn();
     render(<FormularioAbrirSala cargando={false} onAbrir={onAbrir} />);
     await userEvent.click(screen.getByRole('button', { name: 'Abrir sala' }));
-    expect(onAbrir).toHaveBeenCalledWith(40);
+    expect(onAbrir).toHaveBeenCalledWith(40, 60);
   });
 
   it('no envía una capacidad fuera de rango y muestra el error', async () => {
@@ -35,5 +35,26 @@ describe('FormularioAbrirSala', () => {
     render(<FormularioAbrirSala cargando error='No se pudo abrir la sala. Intentá de nuevo.' onAbrir={vi.fn()} />);
     expect(screen.getByText('No se pudo abrir la sala. Intentá de nuevo.')).toBeInTheDocument();
     expect(screen.getByRole('button')).toBeDisabled();
+  });
+
+  it('abre la sala con la duración que elige el docente', async () => {
+    const onAbrir = vi.fn();
+    render(<FormularioAbrirSala cargando={false} onAbrir={onAbrir} />);
+    const campo = screen.getByLabelText(/Duración en minutos/);
+    await userEvent.clear(campo);
+    await userEvent.type(campo, '45');
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir sala' }));
+    expect(onAbrir).toHaveBeenCalledWith(40, 45);
+  });
+
+  it('no envía una duración fuera de rango', async () => {
+    const onAbrir = vi.fn();
+    render(<FormularioAbrirSala cargando={false} onAbrir={onAbrir} />);
+    const campo = screen.getByLabelText(/Duración en minutos/);
+    await userEvent.clear(campo);
+    await userEvent.type(campo, '300');
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir sala' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('entre 5 y 240');
+    expect(onAbrir).not.toHaveBeenCalled();
   });
 });
