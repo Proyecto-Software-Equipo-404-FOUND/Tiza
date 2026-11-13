@@ -36,7 +36,7 @@ public class GetMatriculacionesByCohorteQueryHandler : IRequestHandler<GetMatric
 
         // 1. Validar que la cohorte exista para el tenant (admite cohortes inactivas en modo historico)
         var cohorte = await _cohorteRepository.GetByIdAsync(request.CohorteId, cancellationToken);
-        if (cohorte is null)
+        if (cohorte is null || (request.SoloCohorteActiva && !cohorte.Activo))
         {
             return null;
         }

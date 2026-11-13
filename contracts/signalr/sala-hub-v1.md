@@ -236,7 +236,12 @@ UnirseASala(pin: number) -> void | ResultadoUnirseASala
 ```
 
 - **Errores:** `SALA_NO_ENCONTRADA`, `SALA_OTRA_INSTITUCION`, `SALA_LLENA`,
-  `SALA_FINALIZADA`, `NO_AUTORIZADO`, `ERROR_INTERNO` (sección 8).
+  `SALA_FINALIZADA`, `ALUMNO_NO_MATRICULADO`, `MATRICULA_NO_VERIFICADA`, `NO_AUTORIZADO`,
+  `ERROR_INTERNO` (sección 8).
+- **Matrícula:** solo entra el alumno con matrícula **activa** en la cohorte a la que se
+  publicó la evaluación. Sala lo consulta a Cursos
+  (`GET /api/v1/cohortes/{cohorteId}/matriculas/alumnos/{alumnoId}`) reenviando el token del
+  propio alumno. Si Cursos no responde, no se deja entrar (`MATRICULA_NO_VERIFICADA`).
 
 ### 5.2 `EnviarRespuesta(payload)`
 
@@ -422,7 +427,7 @@ documentan para que Frontend 2 y QA puedan construir el panel y las pruebas desd
 | --- | --- | --- | --- |
 | `UnirseASalaDocente(salaId)` | `{ salaId: UUID }` o UUID posicional | Valida que el docente pertenezca a la institución de la sala; agrega la conexión a `{salaId}:docentes`; envía `estadoSala` al llamador | `NO_AUTORIZADO`, `SALA_NO_ENCONTRADA`, `SALA_FINALIZADA` |
 | `IniciarSala()` | ninguno | Pasa la sala a `EnCurso`, fija `iniciadaUtc`, publica la primera pregunta y emite `salaIniciada` + `preguntaActual` | `NO_AUTORIZADO`, `SALA_NO_ENCONTRADA`, `SALA_YA_INICIADA`, `SIN_PREGUNTAS` |
-| `AvanzarPregunta(preguntaId?)` | UUID opcional | Cierra la pregunta vigente y publica la siguiente (o la indicada). Emite `preguntaActual`. Si no se indica, avanza en orden | `NO_AUTORIZADO`, `PREGUNTA_INEXISTENTE`, `SALA_NO_INICIADA`, `SALA_FINALIZADA` |
+| `AvanzarPregunta(preguntaId?)` | UUID o `null` (**obligatorio enviar el argumento**: SignalR no admite parámetros opcionales, así que para avanzar en orden se invoca `AvanzarPregunta(null)`) | Cierra la pregunta vigente y publica la siguiente (o la indicada). Emite `preguntaActual`. Si no se indica, avanza en orden | `NO_AUTORIZADO`, `PREGUNTA_INEXISTENTE`, `SALA_NO_INICIADA`, `SALA_FINALIZADA` |
 | `FinalizarSala(motivo?)` | `Docente` o `TiempoAgotado` | Pasa la sala a `Finalizada`, fija `finalizadaUtc`, emite `salaFinalizada` una sola vez y envía las entregas a Evaluaciones (ver 5.6) | `NO_AUTORIZADO`, `SALA_NO_ENCONTRADA` |
 
 `IniciarSala`, `AvanzarPregunta` y `FinalizarSala` deben ser **idempotentes**: repetir la
@@ -945,6 +950,8 @@ le llega un mensaje legible.
 | `NO_AUTORIZADO` | Handshake / `HubException` | El rol no puede ejecutar el método o no pertenece a la sala | No | Mostrar “no autorizado” | 403 |
 | `SALA_NO_ENCONTRADA` | `HubException` / `Rechazada` | PIN inexistente, sala inactiva/eliminada o PIN vencido. El handler legado de SA-04 también usa este mensaje para salas finalizadas | No | Pedir PIN de nuevo | 404 |
 | `SALA_OTRA_INSTITUCION` | `HubException` | La sala pertenece a otro tenant | No | No revelar detalles; cerrar | 403 |
+| `ALUMNO_NO_MATRICULADO` | `HubException` | El alumno no tiene matrícula activa en la cohorte de la evaluación | No | Avisar que consulte con el docente | 403 |
+| `MATRICULA_NO_VERIFICADA` | `HubException` | Cursos o Evaluaciones no respondieron al verificar la matrícula | Sí | Reintentar en unos segundos | 503 |
 | `SALA_LLENA` | `HubException` | `CantidadParticipantes >= CapacidadMaxima` | No | Avisar al docente | 409 |
 | `ALUMNO_YA_EN_SALA` | `HubException` (solo SA-04 legado) | El alumno ya estaba registrado; en reconexión debe tratarse como éxito | No | Si el `salaId` coincide, continuar; si no, cerrar | 409 |
 | `SALA_FINALIZADA` | `HubException` / `Rechazada` / `error` | La sala ya cerró | No | Mostrar resultados; no enviar | 410 |

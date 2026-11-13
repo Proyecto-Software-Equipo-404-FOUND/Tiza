@@ -607,8 +607,19 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "La cohorte tiene alumnos con matrícula activa: hay que darlos de baja primero.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
-        }
+        },
+        "description": "No se puede dar de baja una cohorte con alumnos matriculados (matrícula activa): responde 409."
       }
     },
     "/api/v1/cohortes/{id}/validacion": {
@@ -1342,6 +1353,66 @@
                 "example": {
                   "title": "Material no encontrado.",
                   "status": 404
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cohortes/{cohorteId}/matriculas/alumnos/{alumnoId}": {
+      "get": {
+        "tags": [
+          "Matriculaciones"
+        ],
+        "summary": "Indica si un alumno tiene matrícula activa en una cohorte activa.",
+        "description": "Lo consume Sala en Vivo al unirse por PIN, reenviando el token del propio alumno. Un Alumno solo puede consultarse a sí mismo (sub = alumnoId); Administrador y Docente pueden consultar a cualquiera de su institución. Una cohorte inactiva responde 404 aunque conserve matrículas activas.",
+        "operationId": "GetMatriculaActivaDeAlumno",
+        "parameters": [
+          {
+            "name": "cohorteId",
+            "in": "path",
+            "description": "UUID de la cohorte.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "alumnoId",
+            "in": "path",
+            "description": "UUID del alumno (claim sub).",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "El alumno tiene matrícula activa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatriculacionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "JWT ausente o inválido."
+          },
+          "403": {
+            "description": "Rol no autorizado, o un alumno consultando a otro alumno."
+          },
+          "404": {
+            "description": "No tiene matrícula activa, o la cohorte no existe o está inactiva.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }

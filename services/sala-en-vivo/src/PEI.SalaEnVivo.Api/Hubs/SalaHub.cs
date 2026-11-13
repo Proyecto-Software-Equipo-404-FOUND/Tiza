@@ -57,7 +57,8 @@ namespace PEI.SalaEnVivo.Api.Hubs
                     new UnirseASalaPorPINCommand(
                         pin,
                         alumnoId,
-                        institucionId),
+                        institucionId,
+                        ObtenerTokenAcceso()),
                     Context.ConnectionAborted);
 
                 Context.Items["SalaId"] = salaId;
@@ -88,6 +89,30 @@ namespace PEI.SalaEnVivo.Api.Hubs
             {
                 throw new HubException(ex.Message);
             }
+        }
+
+        /// <summary>
+        /// Token del usuario conectado, para reenviarlo a Cursos al verificar la matrícula.
+        /// Con WebSockets llega en la query (access_token); con otros transportes, en el header.
+        /// </summary>
+        private string? ObtenerTokenAcceso()
+        {
+            var http = Context.GetHttpContext();
+
+            if (http == null)
+            {
+                return null;
+            }
+
+            var encabezado = http.Request.Headers["Authorization"].ToString();
+
+            if (encabezado.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                return encabezado.Substring("Bearer ".Length).Trim();
+            }
+
+            var query = http.Request.Query["access_token"].ToString();
+            return string.IsNullOrWhiteSpace(query) ? null : query;
         }
 
         public async Task<EstadoSalaDto> ObtenerEstadoSala()
