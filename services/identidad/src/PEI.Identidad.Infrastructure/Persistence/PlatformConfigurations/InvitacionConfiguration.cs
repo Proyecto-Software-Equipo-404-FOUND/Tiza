@@ -8,7 +8,7 @@ public sealed class InvitacionConfiguration : IEntityTypeConfiguration<Invitacio
 {
     public void Configure(EntityTypeBuilder<InvitacionAdministrador> b)
     {
-        b.ToTable("InvitacionAdministrador"); b.HasKey(x => x.Id);
+        b.ToTable("InvitacionUsuario"); b.HasKey(x => x.Id);
         b.Property(x => x.TokenHash).HasMaxLength(64).IsRequired();
         b.HasIndex(x => x.TokenHash).IsUnique(); b.HasIndex(x => x.UsuarioId).IsUnique();
     }

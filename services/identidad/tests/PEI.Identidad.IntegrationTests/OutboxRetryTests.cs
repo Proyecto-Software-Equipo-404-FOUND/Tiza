@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.DataProtection;
+﻿using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -176,11 +176,12 @@ public sealed partial class TenantIsolationTests
     [DatabaseFact]
     public async Task H1_MigracionPreservaEntregaExistenteEIndiceCoincideConConsulta()
     {
-        var actor = await InicializarPlataformaAsync(); EntregaInvitacion original;
+        var actor = await InicializarPlataformaAsync(); EntregaInvitacion original; InvitacionAdministrador invitacionOriginal;
         await using (var setup = PlatformContext())
         {
             await PlatformData(setup).CrearInstitucionAsync(actor, Alta(), default);
             original = await setup.Set<EntregaInvitacion>().AsNoTracking().SingleAsync();
+            invitacionOriginal = await setup.Set<InvitacionAdministrador>().AsNoTracking().SingleAsync();
             await setup.GetService<IMigrator>().MigrateAsync("20261021031817_PlatformInvitations");
             await setup.Database.MigrateAsync();
         }
@@ -190,7 +191,60 @@ public sealed partial class TenantIsolationTests
         Assert.Equal(original.Creada, fila.Creada); Assert.Equal(original.Intentos, fila.Intentos);
         Assert.Equal(original.Destinatario, fila.Destinatario); Assert.Null(fila.ProximoIntento);
         Assert.Equal(original.InvitacionId, fila.InvitacionId); Assert.Equal(original.Entregada, fila.Entregada);
+        var invitacion = await db.Set<InvitacionAdministrador>().AsNoTracking().SingleAsync();
+        Assert.Equal(invitacionOriginal.Id, invitacion.Id);
+        Assert.Equal(invitacionOriginal.UsuarioId, invitacion.UsuarioId);
+        Assert.Equal(invitacionOriginal.TokenHash, invitacion.TokenHash);
+        Assert.Equal(invitacionOriginal.Vencimiento, invitacion.Vencimiento);
+        Assert.Equal(invitacionOriginal.Utilizada, invitacion.Utilizada);
         Assert.False(db.Database.HasPendingModelChanges());
+        var constraints = await db.Database.SqlQuery<string>($"""
+            SELECT conname AS "Value" FROM pg_constraint
+            WHERE connamespace = current_schema()::regnamespace
+              AND conname IN ('FK_InvitacionUsuario_Usuario', 'CK_InvitacionUsuario_Hash',
+                              'FK_EntregaInvitacion_InvitacionUsuario_InvitacionId')
+            ORDER BY conname
+            """).ToListAsync();
+        Assert.Equal(new[] { "CK_InvitacionUsuario_Hash", "FK_EntregaInvitacion_InvitacionUsuario_InvitacionId", "FK_InvitacionUsuario_Usuario" }, constraints);
+        var invitationIndexes = await db.Database.SqlQuery<string>($"""
+            SELECT indexname AS "Value" FROM pg_indexes
+            WHERE schemaname = {schema}
+              AND indexname IN ('IX_InvitacionUsuario_TokenHash', 'IX_InvitacionUsuario_UsuarioId',
+                                'IX_EntregaInvitacion_InvitacionId')
+            ORDER BY indexname
+            """).ToListAsync();
+        Assert.Equal(new[] { "IX_EntregaInvitacion_InvitacionId", "IX_InvitacionUsuario_TokenHash", "IX_InvitacionUsuario_UsuarioId" }, invitationIndexes);
+        var trigger = await db.Database.SqlQuery<int>($"""
+            SELECT count(*)::int AS "Value"
+            FROM pg_trigger t
+            JOIN pg_class c ON c.oid = t.tgrelid
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = current_schema()
+              AND c.relname = 'InvitacionUsuario'
+              AND t.tgname = 'pei_invitacion_usuario_inmutable'
+              AND NOT t.tgisinternal
+            """).SingleAsync();
+                    var triggersDetalle = await db.Database.SqlQuery<string>($"""
+            SELECT
+                n.nspname || '.' || c.relname || ' | ' ||
+                t.tgname || ' | ' || pg_get_triggerdef(t.oid) AS "Value"
+            FROM pg_trigger t
+            JOIN pg_class c ON c.oid = t.tgrelid
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = current_schema()
+              AND t.tgname LIKE '%invitacion%'
+              AND NOT t.tgisinternal
+            ORDER BY c.relname, t.tgname
+            """).ToListAsync();
+
+        foreach (var detalle in triggersDetalle)
+        {
+            Console.WriteLine($"TRIGGER_DIAGNOSTICO: {detalle}");
+        }
+
+
+
+        Assert.Equal(1, trigger);
         var index = await db.Database.SqlQuery<string>($"""
             SELECT indexdef AS "Value" FROM pg_indexes
             WHERE schemaname = {schema} AND indexname = 'IX_EntregaInvitacion_PendienteElegible'

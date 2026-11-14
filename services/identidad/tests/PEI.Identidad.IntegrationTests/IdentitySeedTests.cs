@@ -107,7 +107,7 @@ public sealed partial class TenantIsolationTests
         var after = await SeedSnapshot();
         Assert.All(before, value => Assert.Contains(value, after));
         Assert.Equal(0, await all.Database.SqlQueryRaw<int>("""
-            SELECT ((SELECT count(*) FROM "CuentaPlataforma") + (SELECT count(*) FROM "InvitacionAdministrador") +
+            SELECT ((SELECT count(*) FROM "CuentaPlataforma") + (SELECT count(*) FROM "InvitacionUsuario") +
                 (SELECT count(*) FROM "EntregaInvitacion") + (SELECT count(*) FROM "BootstrapPlataforma") +
                 (SELECT count(*) FROM "AuditoriaPlataforma"))::int AS "Value"
             """).SingleAsync());

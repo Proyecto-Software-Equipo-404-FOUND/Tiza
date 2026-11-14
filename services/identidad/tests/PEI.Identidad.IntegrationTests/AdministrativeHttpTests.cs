@@ -10,9 +10,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using PEI.Identidad.Application.Plataforma;
 using PEI.Identidad.Domain.Entities;
 using PEI.Identidad.Infrastructure.Persistence;
 using PEI.Identidad.Infrastructure.Security;
+using PEI.Identidad.Infrastructure.Plataforma;
 
 namespace PEI.Identidad.IntegrationTests;
 public sealed partial class TenantIsolationTests
@@ -38,6 +40,8 @@ public sealed partial class TenantIsolationTests
             builder.UseEnvironment("Testing");
             builder.ConfigureServices(s =>
             {
+                s.RemoveAll<IEmailSender>(); s.AddSingleton<IEmailSender>(new EmailPrueba());
+                foreach (var descriptor in s.Where(x => x.ImplementationType == typeof(InvitacionesWorker)).ToList()) s.Remove(descriptor);
                 s.RemoveAll<DbContextOptions<IdentidadDbContext>>();
                 s.AddDbContext<IdentidadDbContext>(o => o.UseNpgsql(connection, n => n.MigrationsHistoryTable("__EFMigrationsHistory", schema)));
             });

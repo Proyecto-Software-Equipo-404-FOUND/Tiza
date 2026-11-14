@@ -11,13 +11,30 @@ using PEI.Identidad.Infrastructure.Security;
 namespace PEI.Identidad.Infrastructure.Plataforma;
 
 // Buzón cifrado local; nunca escribe enlaces de activación en logs ni archivos en claro.
+public sealed class InvitationSenderRegistrationValidator(IServiceProvider services) : IHostedService
+{
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        using var scope = services.CreateScope();
+        // El Outbox puede acumular entregas cifradas mientras el despliegue no tenga
+        // proveedor configurado. Si existe uno, validar que pueda construirse al iniciar.
+        _ = scope.ServiceProvider.GetService<IEmailSender>();
+        return Task.CompletedTask;
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+}
+
 public sealed class DevelopmentEmailSender(PlataformaOptions options, IDataProtectionProvider protection) : IEmailSender
 {
     public const string Purpose = "Tiza.ID06.BuzonDesarrollo.v1";
     public async Task EnviarAsync(MensajeEmail mensaje, CancellationToken ct)
     {
-        Directory.CreateDirectory(options.DevelopmentMailDirectory);
-        var destino = Path.Combine(options.DevelopmentMailDirectory, mensaje.Id.ToString("N") + ".mail");
+        var directory = string.IsNullOrWhiteSpace(options.DevelopmentMailDirectory)
+            ? Path.Combine(Path.GetTempPath(), "tiza-identidad-development-mail")
+            : options.DevelopmentMailDirectory;
+        Directory.CreateDirectory(directory);
+        var destino = Path.Combine(directory, mensaje.Id.ToString("N") + ".mail");
         if (File.Exists(destino)) return; // Idempotencia para reintentos tras un envío exitoso.
         var temporal = destino + "." + Guid.NewGuid().ToString("N") + ".tmp";
         try
@@ -84,6 +101,11 @@ public sealed class InvitacionesWorker(IServiceScopeFactory scopes, ILogger<Invi
             try
             {
                 await using var scope = scopes.CreateAsyncScope();
+                if (scope.ServiceProvider.GetService<IEmailSender>() is null)
+                {
+                    if (!await timer.WaitForNextTickAsync(stoppingToken)) break;
+                    continue;
+                }
                 await scope.ServiceProvider.GetRequiredService<InvitacionesOutbox>().ProcesarUnaAsync(stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }
