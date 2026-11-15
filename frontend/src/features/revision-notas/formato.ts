@@ -37,3 +37,24 @@ export const nombreCompleto = (usuario: Pick<UsuarioResumen, 'nombre' | 'apellid
 
 /** Cuando Identidad no devuelve el nombre se muestra algo reconocible en vez de un UUID entero. */
 export const nombreDeReemplazo = (alumnoId: string) => `Alumno ···${alumnoId.slice(-4)}`;
+
+/** Alertas de foco que ocurrieron mientras el alumno estaba en una pregunta. */
+export const alertasDePregunta = (alertas: AlertaFocoDetalle[], preguntaId: string) =>
+  alertas.filter((alerta) => alerta.preguntaId === preguntaId);
+
+/** «Pregunta 2», o «Fuera de una pregunta» si la alerta no trae pregunta (o no coincide con ninguna). */
+export function etiquetaPreguntaDeAlerta(alerta: AlertaFocoDetalle, preguntaIds: string[]) {
+  const indice = alerta.preguntaId ? preguntaIds.indexOf(alerta.preguntaId) : -1;
+  return indice === -1 ? 'Fuera de una pregunta' : `Pregunta ${indice + 1}`;
+}
+
+/** «Salió 2 veces (1 roja) · 1 min 5 s en total». */
+export function resumenSalidas(alertas: AlertaFocoDetalle[]) {
+  const rojas = alertas.filter(esRoja).length;
+  const total = alertas.reduce((suma, alerta) => suma + alerta.duracionMs, 0);
+  const veces = alertas.length === 1 ? 'Salió 1 vez' : `Salió ${alertas.length} veces`;
+  // La insignia ya dice la peor gravedad: solo se aclara cuántas son rojas cuando hay mezcla
+  const hayMezcla = rojas > 0 && rojas < alertas.length;
+  const gravedad = !hayMezcla ? '' : rojas === 1 ? ' (1 roja)' : ` (${rojas} rojas)`;
+  return `${veces}${gravedad} de la pantalla · ${formatearDuracion(total)} en total`;
+}
