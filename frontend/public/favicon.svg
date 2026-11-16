@@ -1,0 +1,8 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='5.3 -0.1 23.2 26.2'>
+  <g transform='translate(0 -2) rotate(38 16 14)' stroke-linejoin='round' stroke-linecap='round'>
+    <path d='M11 5 V19 Q11 20 11.7 21 L14 24.6 Q14.8 25.9 16.1 25.5 L19.9 24.1 Q21 23.7 21 22.6 V5 Z' fill='#F3F8F6' stroke='#2F7D5B' stroke-width='1.4' />
+    <path d='M11.8 19.4 Q11.8 20 12.4 20.9 L14.6 24.2 Q15.1 24.9 15.9 24.6 L19.5 23.3 Q20.2 23 19.9 22.4 L16.6 20 Z' fill='#DCEBE4' />
+    <ellipse cx='16' cy='5' rx='5' ry='2.3' fill='#BFE5D3' stroke='#2F7D5B' stroke-width='1.4' />
+    <path d='M13.2 10.5 V13.5 M13.2 16 V17.5' stroke='#BFE5D3' stroke-width='1.5' fill='none' />
+  </g>
+</svg>

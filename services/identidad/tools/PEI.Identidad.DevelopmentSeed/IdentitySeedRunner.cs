@@ -30,7 +30,7 @@ public sealed class IdentitySeedRunner(IPasswordHasher passwords)
         // This is deliberately a short, offline development operation, never an API path.
         await Execute("""
             LOCK TABLE "Institucion", "Usuario", "RegistroEmail", "CuentaPlataforma",
-                "RefreshToken", "InvitacionAdministrador", "EntregaInvitacion",
+                "RefreshToken", "InvitacionUsuario", "EntregaInvitacion",
                 "BootstrapPlataforma", "AuditoriaPlataforma" IN SHARE ROW EXCLUSIVE MODE
             """, ct);
         await ValidateSchema(ct);
@@ -261,7 +261,7 @@ public sealed class IdentitySeedRunner(IPasswordHasher passwords)
         ("RegistroEmail", "pei_registro_email_no_update", "pei_proteger_modificacion_registro_email"),
         ("RegistroEmail", "pei_registro_email_no_truncate", "pei_proteger_eliminacion_registro_email"),
         ("RegistroEmail", "pei_registro_email_validar", "pei_validar_reserva_email"),
-        ("InvitacionAdministrador", "pei_invitacion_inmutable", "pei_invitacion_inmutable"),
+        ("InvitacionUsuario", "pei_invitacion_usuario_inmutable", "pei_invitacion_usuario_inmutable"),
         ("BootstrapPlataforma", "pei_bootstrap_no_update", "pei_proteger_modificacion_registro_email"),
         ("BootstrapPlataforma", "pei_bootstrap_no_truncate", "pei_proteger_eliminacion_registro_email"),
         ("AuditoriaPlataforma", "pei_auditoria_no_update", "pei_proteger_modificacion_registro_email"),

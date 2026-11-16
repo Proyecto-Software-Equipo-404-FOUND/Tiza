@@ -19,6 +19,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using PEI.Identidad.Api.Security;
 using PEI.BuildingBlocks.MultiTenancy;
@@ -26,9 +27,11 @@ using PEI.Identidad.Application.Exceptions;
 using PEI.Identidad.Domain.Entities;
 using PEI.Identidad.Domain.Security;
 using PEI.Identidad.Infrastructure.Security;
+using PEI.Identidad.Infrastructure.Plataforma;
 using PEI.Identidad.Infrastructure.Tenancy;
 using IdentityTenantContextContract = PEI.Identidad.Application.Abstractions.ITenantContext;
 using PEI.Identidad.Application.Abstractions;
+using PEI.Identidad.Application.Plataforma;
 
 namespace PEI.Identidad.UnitTests;
 
@@ -60,6 +63,7 @@ public sealed class IdentityHttpFactory(int limit = 1000, string hostEnvironment
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment(hostEnvironment);
+        builder.ConfigureLogging(logging => logging.ClearProviders());
         builder.ConfigureAppConfiguration((_, c) => c.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["ConnectionStrings:IdentidadDb"] = "Host=127.0.0.1;Port=1;Database=not_used",
@@ -72,6 +76,8 @@ public sealed class IdentityHttpFactory(int limit = 1000, string hostEnvironment
         }));
         builder.ConfigureServices(s =>
         {
+            s.RemoveAll<IEmailSender>(); s.AddSingleton<IEmailSender, TestEmailSender>();
+            foreach (var descriptor in s.Where(x => x.ImplementationType == typeof(InvitacionesWorker)).ToList()) s.Remove(descriptor);
             s.RemoveAll<IAuthenticationDataAccess>(); s.RemoveAll<IRegistrationDataAccess>(); s.RemoveAll<IAuthenticatedUserValidator>();
             s.AddSingleton<IAuthenticationDataAccess>(Store); s.AddSingleton<IRegistrationDataAccess>(Store); s.AddSingleton<IAuthenticatedUserValidator>(Store);
             s.RemoveAll<IAuthenticationTokenWriter>(); s.AddSingleton<IAuthenticationTokenWriter>(Store);
