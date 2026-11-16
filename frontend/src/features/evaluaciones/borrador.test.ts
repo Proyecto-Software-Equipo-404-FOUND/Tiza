@@ -23,7 +23,9 @@ describe('validar', () => {
   });
 
   it('rechaza un título de más de 200 caracteres', () => {
-    expect(validar({ ...borradorVacio(), titulo: 'x'.repeat(201) }).titulo).toBe('Máximo 200 caracteres');
+    expect(validar({ ...borradorVacio(), titulo: 'x'.repeat(201) }).titulo).toBe(
+      'Máximo 200 caracteres',
+    );
   });
 
   it('pide enunciado, puntaje, texto de opciones y una opción correcta', () => {
@@ -39,7 +41,10 @@ describe('validar', () => {
   it('pide al menos 2 opciones', () => {
     const base = conPregunta({});
     const [pregunta] = base.preguntas;
-    const errores = validar({ ...base, preguntas: [{ ...pregunta, opciones: pregunta.opciones.slice(0, 1) }] });
+    const errores = validar({
+      ...base,
+      preguntas: [{ ...pregunta, opciones: pregunta.opciones.slice(0, 1) }],
+    });
     expect(errores[`${pregunta.id}.opciones`]).toBe('Agregá al menos 2 opciones');
   });
 
@@ -49,6 +54,31 @@ describe('validar', () => {
     const errores = validar(conPregunta({ tipo: 'Abierta', criterios: [criterio] }));
     expect(errores['c1.descripcion']).toBe('Describí el criterio');
     expect(errores['c1.puntaje']).toBe('Ingresá un puntaje de 0 o más');
+  });
+
+  it('con rúbrica, los criterios tienen que sumar exactamente el puntaje máximo', () => {
+    const criterios = [
+      { clave: 'c1', descripcion: 'A', puntaje: '3' },
+      { clave: 'c2', descripcion: 'B', puntaje: '2' },
+    ];
+    const pregunta = (puntajeMaximo: string) =>
+      conPregunta({ tipo: 'Abierta', puntajeMaximo, criterios });
+    // Cada llamada a pregunta() arma una pregunta con id nuevo: se busca el mensaje entre los errores
+    const errores = (puntajeMaximo: string) => Object.values(validar(pregunta(puntajeMaximo)));
+
+    expect(errores('4')).toContain('Los criterios suman más que el puntaje máximo de la pregunta');
+    expect(errores('10')).toContain(
+      'Los criterios tienen que sumar el puntaje máximo de la pregunta',
+    );
+    expect(validar(pregunta('5'))).toEqual({});
+  });
+
+  it('no se queja por decimales que suman justo el máximo', () => {
+    const criterios = [
+      { clave: 'c1', descripcion: 'A', puntaje: '0.1' },
+      { clave: 'c2', descripcion: 'B', puntaje: '0.2' },
+    ];
+    expect(validar(conPregunta({ tipo: 'Abierta', puntajeMaximo: '0.3', criterios }))).toEqual({});
   });
 });
 
@@ -96,7 +126,10 @@ describe('aDatosEvaluacion', () => {
     expect(sin).not.toHaveProperty('opciones');
 
     const con = aDatosEvaluacion(
-      conPregunta({ tipo: 'Abierta', criterios: [{ clave: 'c1', descripcion: ' Define ', puntaje: '3' }] }),
+      conPregunta({
+        tipo: 'Abierta',
+        criterios: [{ clave: 'c1', descripcion: ' Define ', puntaje: '3' }],
+      }),
     ).preguntasJson.preguntas[0];
     expect(con.rubrica).toEqual({ criterios: [{ descripcion: 'Define', puntaje: 3 }] });
   });

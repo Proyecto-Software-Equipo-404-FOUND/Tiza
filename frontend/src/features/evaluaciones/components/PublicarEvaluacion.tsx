@@ -25,6 +25,9 @@ export function PublicarEvaluacion({ evaluacion }: Props) {
   const cliente = useQueryClient();
   const { mostrar } = useAviso();
 
+  // Los cursos y cohortes dados de baja no se ofrecen para publicar
+  const cohortesActivas = (cohortes.data ?? []).filter((cohorte) => cohorte.activo);
+
   const sinPreguntas = evaluacion.preguntasJson.preguntas.length === 0;
   const hayConflicto = publicar.error instanceof ApiError && publicar.error.estado === 409;
 
@@ -66,7 +69,7 @@ export function PublicarEvaluacion({ evaluacion }: Props) {
             disabled={publicar.isPending}
           >
             <option value=''>Elegí un curso</option>
-            {cursos.data.items.map((curso) => (
+            {cursos.data.items.filter((curso) => curso.activo).map((curso) => (
               <option key={curso.id} value={curso.id}>
                 {curso.nombre}
               </option>
@@ -86,8 +89,8 @@ export function PublicarEvaluacion({ evaluacion }: Props) {
             onChange={(evento) => setCohorteId(evento.target.value)}
             disabled={publicar.isPending}
           >
-            <option value=''>{cohortes.data.length === 0 ? 'Este curso no tiene cohortes' : 'Elegí una cohorte'}</option>
-            {cohortes.data.map((cohorte) => (
+            <option value=''>{cohortesActivas.length === 0 ? 'Este curso no tiene cohortes' : 'Elegí una cohorte'}</option>
+            {cohortesActivas.map((cohorte) => (
               <option key={cohorte.id} value={cohorte.id}>
                 {cohorte.nombre} · {cohorte.periodo}
               </option>

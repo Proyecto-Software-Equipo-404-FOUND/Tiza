@@ -61,8 +61,15 @@ export function borradorDesde(evaluacion: Evaluacion): EvaluacionBorrador {
 
 const esNumeroValido = (texto: string) => texto.trim() !== '' && Number.isFinite(Number(texto)) && Number(texto) >= 0;
 
+/** Evita errores de coma flotante al sumar decimales (0.1 + 0.2). */
+export const redondearPuntos = (valor: number) => Math.round(valor * 100) / 100;
+
 export const sumaCriterios = (criterios: CriterioBorrador[]) =>
   criterios.reduce((suma, criterio) => suma + (esNumeroValido(criterio.puntaje) ? Number(criterio.puntaje) : 0), 0);
+
+/** Puntos del máximo que los criterios todavía no repartieron (negativo si se pasaron). */
+export const puntosSinRepartir = (pregunta: PreguntaBorrador) =>
+  redondearPuntos(Number(pregunta.puntajeMaximo) - sumaCriterios(pregunta.criterios));
 
 export function validar(borrador: EvaluacionBorrador): ErroresBorrador {
   const errores: ErroresBorrador = {};
@@ -86,6 +93,13 @@ export function validar(borrador: EvaluacionBorrador): ErroresBorrador {
       for (const criterio of pregunta.criterios) {
         if (!criterio.descripcion.trim()) errores[`${criterio.clave}.descripcion`] = 'Describí el criterio';
         if (!esNumeroValido(criterio.puntaje)) errores[`${criterio.clave}.puntaje`] = 'Ingresá un puntaje de 0 o más';
+      }
+      // Con rúbrica, los criterios reparten todo el puntaje de la pregunta: ni más ni menos de lo que vale.
+      // Sin criterios no se exige nada (la IA corrige solo con el puntaje máximo).
+      if (pregunta.criterios.length > 0 && esNumeroValido(pregunta.puntajeMaximo)) {
+        const diferencia = puntosSinRepartir(pregunta);
+        if (diferencia < 0) errores[`${pregunta.id}.criterios`] = 'Los criterios suman más que el puntaje máximo de la pregunta';
+        if (diferencia > 0) errores[`${pregunta.id}.criterios`] = 'Los criterios tienen que sumar el puntaje máximo de la pregunta';
       }
     }
   }

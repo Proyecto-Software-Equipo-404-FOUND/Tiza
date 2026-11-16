@@ -58,6 +58,15 @@ vi.mock('@/features/evaluaciones/api/evaluaciones', () => ({
   eliminarEvaluacion: vi.fn(),
 }));
 
+vi.mock('@/features/revision-notas/api/entregas', () => ({
+  listarEntregas: vi.fn().mockResolvedValue([]),
+  obtenerEntrega: vi.fn().mockRejectedValue(new Error('sin backend en este test')),
+}));
+
+vi.mock('@/features/revision-notas/api/usuarios', () => ({
+  listarAlumnos: vi.fn().mockResolvedValue([]),
+}));
+
 vi.mock('@/features/sala-alumno/crearConexionSala', async () => {
   const { crearConexionFalsa } = await import('@/shared/realtime/conexionFalsa');
   return { crearConexionSala: () => crearConexionFalsa().conexion };
@@ -143,6 +152,20 @@ describe('rutas de la aplicación', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Matrícula' })).toBeInTheDocument();
   });
 
+  it('un administrador entra a Usuarios y ve el enlace en el menú', async () => {
+    iniciarComo('administrador');
+    mostrar('/usuarios');
+    expect(await screen.findByRole('heading', { level: 1, name: 'Usuarios' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Usuarios' })).toBeInTheDocument();
+  });
+
+  it('un docente no entra a Usuarios ni lo ve en el menú', () => {
+    iniciarComo('docente');
+    mostrar('/usuarios');
+    expect(screen.getByText('No tenés permiso para ver esta página.')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Usuarios' })).not.toBeInTheDocument();
+  });
+
   it('un docente entra a la lista de evaluaciones y ve el enlace en el menú', async () => {
     iniciarComo('docente');
     mostrar('/evaluaciones');
@@ -179,7 +202,7 @@ describe('rutas de la aplicación', () => {
   it('quien ya tiene sesión no ve el login', () => {
     iniciarComo('docente');
     mostrar('/login');
-    expect(screen.getByRole('heading', { name: 'Cursos' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Corregí en minutos/ })).toBeInTheDocument();
   });
 
   it('una ruta inexistente muestra «no encontrada»', () => {
@@ -215,4 +238,33 @@ describe('rutas de la aplicación', () => {
     expect(screen.queryByRole('heading', { level: 1, name: 'Sala en vivo' })).not.toBeInTheDocument();
   });
 
+  it('el administrador no entra al panel de la sala (solo lo conduce el docente)', () => {
+    iniciarComo('administrador');
+    mostrar('/evaluaciones/ev-1/sala');
+    expect(screen.getByText('No tenés permiso para ver esta página.')).toBeInTheDocument();
+  });
+
+  it('un docente entra a los resultados de una evaluación', async () => {
+    iniciarComo('docente');
+    mostrar('/evaluaciones/ev-1/resultados');
+    expect(await screen.findByRole('navigation', { name: 'Secciones de la evaluación' })).toBeInTheDocument();
+  });
+
+  it('un alumno no entra a los resultados de una evaluación', () => {
+    iniciarComo('alumno');
+    mostrar('/evaluaciones/ev-1/resultados');
+    expect(screen.getByText('No tenés permiso para ver esta página.')).toBeInTheDocument();
+  });
+
+  it('un docente entra al detalle de una entrega', () => {
+    iniciarComo('docente');
+    mostrar('/evaluaciones/ev-1/resultados/en-1');
+    expect(screen.queryByText('No tenés permiso para ver esta página.')).not.toBeInTheDocument();
+  });
+
+  it('un alumno no entra al detalle de una entrega', () => {
+    iniciarComo('alumno');
+    mostrar('/evaluaciones/ev-1/resultados/en-1');
+    expect(screen.getByText('No tenés permiso para ver esta página.')).toBeInTheDocument();
+  });
 });

@@ -24,8 +24,8 @@ public class ListarMaterialesPorCursoQueryHandler : IRequestHandler<ListarMateri
 
     public async Task<IReadOnlyList<MaterialCursoDto>> HandleAsync(ListarMaterialesPorCursoQuery request, CancellationToken cancellationToken = default)
     {
-        // 1. Validar que el curso exista en el tenant (404) y que el usuario tenga permisos (403)
-        await _autorizacionService.ValidarPermisoGestionAsync(request.CursoId, cancellationToken);
+        // 1. Validar que el curso exista en el tenant (404) y que el usuario tenga permisos de lectura (403)
+        await _autorizacionService.ValidarPermisoLecturaAsync(request.CursoId, cancellationToken);
 
         // 2. Obtener materiales activos ordenados por fecha descendente
         var materiales = await _materialRepository.GetByCursoIdAsync(request.CursoId, cancellationToken);

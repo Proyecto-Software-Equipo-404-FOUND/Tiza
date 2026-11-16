@@ -26,12 +26,12 @@ namespace PEI.Cursos.UnitTests.Api;
 
 public sealed class CursosAuthorizationHttpTests
 {
-    private static readonly Guid TenantA = Guid.NewGuid();
-    private static readonly Guid TenantB = Guid.NewGuid();
-    private static readonly Guid Usuario = Guid.NewGuid();
-    private static readonly Guid Curso = Guid.NewGuid();
-    private static readonly Guid Cohorte = Guid.NewGuid();
-    private static readonly Guid Matricula = Guid.NewGuid();
+    private static readonly Guid TenantA = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+    private static readonly Guid TenantB = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+    private static readonly Guid Usuario = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc");
+    private static readonly Guid Curso = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd");
+    private static readonly Guid Cohorte = Guid.Parse("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee");
+    private static readonly Guid Matricula = Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff");
     private const string Cursos = "/api/v1/cursos";
     private static readonly string CursoPath = $"{Cursos}/{Curso}";
     private static readonly string Cohortes = $"{CursoPath}/cohortes";
@@ -77,6 +77,7 @@ public sealed class CursosAuthorizationHttpTests
                 request.Content = JsonContent.Create(new { nombre = "Prueba", area = "Datos", periodo = "2026-2C", docenteId = Usuario, alumnoId = Usuario });
 
             using var response = await client.SendAsync(request);
+            var body = await response.Content.ReadAsStringAsync();
             Assert.Equal((HttpStatusCode)esperado, response.StatusCode);
             if (esperado is 401 or 403)
             {
@@ -86,6 +87,32 @@ public sealed class CursosAuthorizationHttpTests
             }
             Assert.Equal(llamadas + (esperado < 400 ? 1 : 0), factory.Llamadas);
         }
+    }
+
+    [Fact]
+    public async Task MatriculaActivaDeAlumno_ElAlumnoSoloSeConsultaASiMismo()
+    {
+        using var factory = new CursosFactory();
+        using var client = factory.CreateClient();
+        var propia = $"{Matriculas}/alumnos/{Usuario}";
+        var ajena = $"{Matriculas}/alumnos/{Guid.NewGuid()}";
+
+        using (var sinToken = await client.GetAsync(propia))
+            Assert.Equal(HttpStatusCode.Unauthorized, sinToken.StatusCode);
+
+        client.DefaultRequestHeaders.Authorization = new("Bearer", factory.Token("Alumno", TenantA));
+        using (var deSiMismo = await client.GetAsync(propia))
+            Assert.Equal(HttpStatusCode.OK, deSiMismo.StatusCode);
+        var llamadas = factory.Llamadas;
+        using (var deOtro = await client.GetAsync(ajena))
+            Assert.Equal(HttpStatusCode.Forbidden, deOtro.StatusCode);
+        Assert.Equal(llamadas, factory.Llamadas);
+
+        client.DefaultRequestHeaders.Authorization = new("Bearer", factory.Token("Docente", TenantA));
+        using (var docente = await client.GetAsync(propia))
+            Assert.Equal(HttpStatusCode.OK, docente.StatusCode);
+        using (var noMatriculado = await client.GetAsync(ajena))
+            Assert.Equal(HttpStatusCode.NotFound, noMatriculado.StatusCode);
     }
 
     [Theory]
@@ -144,13 +171,15 @@ public sealed class CursosAuthorizationHttpTests
             .SelectMany(path => path.Value.Operations.Select(operation => (path.Key, operation.Key, Operation: operation.Value)))
             .ToArray();
 
-        Assert.Equal(13, operations.Length);
+        Assert.Equal(16, operations.Length);
         foreach (var (path, verb, operation) in operations)
         {
             Assert.Empty(operation.Responses["401"].Content);
             Assert.Empty(operation.Responses["403"].Content);
-            var roles = verb == OperationType.Get || path.Contains("matriculas", StringComparison.Ordinal)
-                ? "Administrador o Docente" : "Administrador";
+            var roles = path.Contains("/alumnos/", StringComparison.Ordinal)
+                ? "Administrador, Docente o el propio Alumno"
+                : verb == OperationType.Get || path.Contains("matriculas", StringComparison.Ordinal)
+                    ? "Administrador o Docente" : "Administrador";
             Assert.Equal($"Rol no autorizado. Roles permitidos: {roles}.", operation.Responses["403"].Description);
         }
         Assert.DoesNotContain("Roles permitidos:", document.Paths["/api/v1/cursos/{cursoId}/materiales"]

@@ -18,9 +18,10 @@ public class EvaluacionesHttpClient : IEvaluacionesClient
 
     /// <summary>
     /// Cuerpo del request hacia POST interno/entregas/{entregaId}/calificacion-sugerida
-    /// según contrato EV-06.
+    /// según contrato evaluaciones-v1.json (S2-CT-01).
     /// </summary>
     private sealed record RegistrarSugerenciaRequest(
+        Guid? PreguntaId,
         decimal NotaSugerida,
         string Justificacion,
         string DesgloseJson);
@@ -41,42 +42,54 @@ public class EvaluacionesHttpClient : IEvaluacionesClient
         decimal notaSugerida,
         string justificacion,
         string desgloseJson,
+        Guid? preguntaId = null,
         CancellationToken ct = default)
     {
-        // Modo stub: S2-EV-02 aún no disponible en el entorno local
+        // Modo stub: Evaluaciones aún no disponible en el entorno local
         if (!_settings.HabilitarIntegracion)
         {
             _logger.LogInformation(
                 "[EvaluacionesHttpClient] Integración deshabilitada (stub). " +
-                "Simulando OK para EntregaId={EntregaId}, Nota={Nota}",
-                entregaId, notaSugerida);
+                "Simulando OK para EntregaId={EntregaId}, PreguntaId={PreguntaId}, Nota={Nota}",
+                entregaId, preguntaId, notaSugerida);
             return true;
         }
 
         var url = $"interno/entregas/{entregaId}/calificacion-sugerida";
 
         _logger.LogInformation(
-            "[EvaluacionesHttpClient] POST {Url} | Nota={Nota}",
-            url, notaSugerida);
+            "[EvaluacionesHttpClient] POST {Url} | PreguntaId={PreguntaId}, Nota={Nota}",
+            url, preguntaId, notaSugerida);
 
         try
         {
-            var body = new RegistrarSugerenciaRequest(notaSugerida, justificacion, desgloseJson);
-            var response = await _http.PostAsJsonAsync(url, body, ct);
+            var body = new RegistrarSugerenciaRequest(preguntaId, notaSugerida, justificacion, desgloseJson);
+
+            using var requestMsg = new HttpRequestMessage(HttpMethod.Post, url)
+            {
+                Content = JsonContent.Create(body)
+            };
+
+            // Header de autenticación interna requerido por Evaluaciones (→ 401 sin él)
+            if (!string.IsNullOrWhiteSpace(_settings.ApiKeyInterna))
+                requestMsg.Headers.Add("X-Api-Key-Interna", _settings.ApiKeyInterna);
+
+            var response = await _http.SendAsync(requestMsg, ct);
 
             if (response.IsSuccessStatusCode)
             {
                 _logger.LogInformation(
-                    "[EvaluacionesHttpClient] Sugerencia registrada OK para EntregaId={EntregaId}",
-                    entregaId);
+                    "[EvaluacionesHttpClient] Sugerencia registrada OK para EntregaId={EntregaId}, PreguntaId={PreguntaId}",
+                    entregaId, preguntaId);
                 return true;
             }
 
             var errorBody = await response.Content.ReadAsStringAsync(ct);
             _logger.LogWarning(
-                "[EvaluacionesHttpClient] HTTP {Status} al registrar sugerencia para EntregaId={EntregaId}. Body: {Body}",
+                "[EvaluacionesHttpClient] HTTP {Status} al registrar sugerencia para EntregaId={EntregaId}, PreguntaId={PreguntaId}. Body: {Body}",
                 (int)response.StatusCode,
                 entregaId,
+                preguntaId,
                 errorBody[..Math.Min(300, errorBody.Length)]);
             return false;
         }

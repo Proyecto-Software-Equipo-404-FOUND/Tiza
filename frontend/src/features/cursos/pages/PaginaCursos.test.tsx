@@ -1,14 +1,16 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { PaginaCursos } from './PaginaCursos';
+import { useEsAdministrador } from '@/features/auth/useEsAdministrador';
 import { useCursos } from '../hooks/useCursos';
 import { ApiError } from '@/shared/api/cliente';
 import type { Curso } from '@/shared/api/tipos';
 import { CURSO_1_ID, INSTITUCION_A } from '@/mocks/datos';
 
 vi.mock('../hooks/useCursos', () => ({ useCursos: vi.fn() }));
+vi.mock('@/features/auth/useEsAdministrador', () => ({ useEsAdministrador: vi.fn() }));
 vi.mock('../components/FormularioCurso', () => ({
   FormularioCurso: () => <div>formulario</div>,
 }));
@@ -54,6 +56,10 @@ function renderizar() {
 }
 
 describe('PaginaCursos', () => {
+  beforeEach(() => {
+    vi.mocked(useEsAdministrador).mockReturnValue(true);
+  });
+
   it('muestra el spinner mientras carga', () => {
     simular({ isPending: true });
     renderizar();
@@ -118,5 +124,45 @@ describe('PaginaCursos', () => {
     await userEvent.click(screen.getByRole('button', { name: 'cancelar edición' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(screen.getByRole('heading', { name: 'Crear nuevo curso' })).toBeInTheDocument();
+  });
+
+  it('a un docente no le ofrece crear, editar ni eliminar cursos, pero sí ver cohortes', () => {
+    vi.mocked(useEsAdministrador).mockReturnValue(false);
+    simular({ data: paginado([{ id: CURSO_1_ID, institucionId: INSTITUCION_A, nombre: 'Programación I', area: 'Sistemas', activo: true, fechaCreacionUtc: '2026-10-09T12:00:00Z' }]) });
+    renderizar();
+
+    expect(screen.queryByRole('heading', { name: 'Crear nuevo curso' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Acciones' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/acciones de Programación I/)).not.toBeInTheDocument();
+    expect(screen.getByText('Programación I')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Ver cohortes/ })).toBeInTheDocument();
+  });
+
+  it('a un administrador le ofrece crear y la columna de acciones', () => {
+    simular({ data: paginado([{ id: CURSO_1_ID, institucionId: INSTITUCION_A, nombre: 'Programación I', area: 'Sistemas', activo: true, fechaCreacionUtc: '2026-10-09T12:00:00Z' }]) });
+    renderizar();
+
+    expect(screen.getByRole('heading', { name: 'Crear nuevo curso' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Acciones' })).toBeInTheDocument();
+  });
+
+  it('los cursos dados de baja van a la sección de inactivos y no a la lista de activos', () => {
+    const base = { institucionId: INSTITUCION_A, area: 'Sistemas', fechaCreacionUtc: '2026-10-09T12:00:00Z' };
+    simular({
+      data: paginado([
+        { ...base, id: CURSO_1_ID, nombre: 'Programación I', activo: true },
+        { ...base, id: 'c-baja', nombre: 'Algoritmos', activo: false },
+      ]),
+    });
+    renderizar();
+
+    const activos = screen.getByRole('heading', { name: 'Tus cursos activos' }).closest('section')!;
+    const inactivos = screen.getByRole('heading', { name: 'Cursos inactivos' }).closest('section')!;
+    expect(within(activos).getByText('Programación I')).toBeInTheDocument();
+    expect(within(activos).queryByText('Algoritmos')).not.toBeInTheDocument();
+    expect(within(inactivos).getByText('Algoritmos')).toBeInTheDocument();
+    // Los inactivos son solo lectura
+    expect(within(inactivos).queryByRole('button')).not.toBeInTheDocument();
+    expect(within(inactivos).queryByRole('link')).not.toBeInTheDocument();
   });
 });

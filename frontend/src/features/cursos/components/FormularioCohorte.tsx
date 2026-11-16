@@ -10,7 +10,7 @@ import { useAviso } from '@/shared/components/Aviso';
 import { ApiError } from '@/shared/api/cliente';
 import { mensajeDeError } from '@/shared/api/errores';
 import { useCrearCohorte } from '../hooks/useCrearCohorte';
-import { DOCENTES_SEMILLA } from '../semillas';
+import { useDocentes } from '../hooks/useDocentes';
 
 const esquema = z.object({
   nombre: z.string().trim().min(1, 'Ingresá un nombre').max(100, 'Máximo 100 caracteres'),
@@ -23,7 +23,10 @@ type ErroresCampo = { nombre?: string; periodo?: string; docenteId?: string };
 export function FormularioCohorte({ cursoId }: { cursoId: string }) {
   const [nombre, setNombre] = useState('');
   const [periodo, setPeriodo] = useState('');
-  const [docenteId, setDocenteId] = useState(DOCENTES_SEMILLA[0].id);
+  const [docenteElegido, setDocenteElegido] = useState('');
+  const { data: docentes = [], isPending: cargandoDocentes, isError: falloDocentes, refetch } = useDocentes();
+  // Mientras no elija otro, queda el primero de la lista
+  const docenteId = docenteElegido || docentes[0]?.id || '';
   const [errores, setErrores] = useState<ErroresCampo>({});
   const crear = useCrearCohorte(cursoId);
   const cliente = useQueryClient();
@@ -88,16 +91,21 @@ export function FormularioCohorte({ cursoId }: { cursoId: string }) {
         id='docente-cohorte'
         icono={<UserRound className='h-5 w-5' aria-hidden='true' />}
         value={docenteId}
-        onChange={(evento) => setDocenteId(evento.target.value)}
+        onChange={(evento) => setDocenteElegido(evento.target.value)}
         error={errores.docenteId}
-        disabled={crear.isPending}
+        disabled={crear.isPending || cargandoDocentes}
       >
-        {DOCENTES_SEMILLA.map((docente) => (
+        {cargandoDocentes && <option value=''>Cargando docentes…</option>}
+        {docentes.map((docente) => (
           <option key={docente.id} value={docente.id}>
             {docente.nombre}
           </option>
         ))}
       </CampoSelect>
+
+      {falloDocentes && (
+        <BannerError mensaje='No pudimos cargar los docentes.' onReintentar={() => refetch()} />
+      )}
 
       {crear.isError && (
         <BannerError

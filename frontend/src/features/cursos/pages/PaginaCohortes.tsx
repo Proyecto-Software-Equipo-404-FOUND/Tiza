@@ -6,9 +6,10 @@ import { Tabla, type Columna } from '@/shared/components/Tabla';
 import { Tarjeta } from '@/shared/components/Tarjeta';
 import { Modal } from '@/shared/components/Modal';
 import { EnlaceBoton } from '@/shared/components/EnlaceBoton';
-import { GraduationCap } from 'lucide-react';
+import { Archive, GraduationCap } from 'lucide-react';
 import { mensajeDeError } from '@/shared/api/errores';
 import type { Cohorte } from '@/shared/api/tipos';
+import { useEsAdministrador } from '@/features/auth/useEsAdministrador';
 import { useCurso } from '../hooks/useCurso';
 import { useCohortes } from '../hooks/useCohortes';
 import { AccionesCohorte } from '../components/AccionesCohorte';
@@ -19,6 +20,7 @@ const crearColumnas = (
   cursoId: string,
   onEditar: (cohorte: Cohorte) => void,
   onEliminada: (id: string) => void,
+  conAcciones: boolean,
 ): Columna<Cohorte>[] => [
   { titulo: 'Nombre', celda: (cohorte) => cohorte.nombre },
   { titulo: 'Período', celda: (cohorte) => cohorte.periodo },
@@ -34,18 +36,31 @@ const crearColumnas = (
       </EnlaceBoton>
     ),
   },
-  {
-    titulo: 'Acciones',
-    celda: (cohorte) => (
-      <AccionesCohorte cursoId={cursoId} cohorte={cohorte} onEditar={onEditar} onEliminada={onEliminada} />
-    ),
-  },
+  // Editar y eliminar son solo del administrador: al docente no se le ofrece lo que el servidor rechaza
+  ...(conAcciones
+    ? [
+        {
+          titulo: 'Acciones',
+          celda: (cohorte: Cohorte) => (
+            <AccionesCohorte cursoId={cursoId} cohorte={cohorte} onEditar={onEditar} onEliminada={onEliminada} />
+          ),
+        },
+      ]
+    : []),
+];
+
+// Cohortes dadas de baja: solo lectura (el servidor las sigue devolviendo con activo=false)
+const columnasInactivas: Columna<Cohorte>[] = [
+  { titulo: 'Nombre', celda: (cohorte) => cohorte.nombre },
+  { titulo: 'Período', celda: (cohorte) => cohorte.periodo },
+  { titulo: 'Estado', celda: () => 'Inactiva' },
 ];
 
 export function PaginaCohortes() {
   const { cursoId = '' } = useParams();
   const { data: curso } = useCurso(cursoId);
   const { data: cohortes, isPending, isError, error, refetch } = useCohortes(cursoId);
+  const esAdministrador = useEsAdministrador();
   // La cohorte se conserva al cerrar la ventana para que el formulario no desaparezca durante la animación de salida
   const [enEdicion, setEnEdicion] = useState<Cohorte | null>(null);
   const [editando, setEditando] = useState(false);
@@ -58,7 +73,9 @@ export function PaginaCohortes() {
   const alEliminar = (id: string) => {
     if (enEdicion?.id === id) setEditando(false);
   };
-  const columnas = crearColumnas(cursoId, editar, alEliminar);
+  const activas = cohortes?.filter((cohorte) => cohorte.activo) ?? [];
+  const inactivas = cohortes?.filter((cohorte) => !cohorte.activo) ?? [];
+  const columnas = crearColumnas(cursoId, editar, alEliminar, esAdministrador);
 
   return (
     <main className='mx-auto flex max-w-4xl flex-col gap-4 p-6'>
@@ -69,9 +86,11 @@ export function PaginaCohortes() {
         Cohortes{curso ? ` de ${curso.nombre}` : ''}
       </h1>
 
-      <Tarjeta titulo='Nueva cohorte'>
-        <FormularioCohorte cursoId={cursoId} />
-      </Tarjeta>
+      {esAdministrador && (
+        <Tarjeta titulo='Nueva cohorte'>
+          <FormularioCohorte cursoId={cursoId} />
+        </Tarjeta>
+      )}
 
       {isPending && <Spinner texto='Cargando cohortes…' />}
 
@@ -80,29 +99,46 @@ export function PaginaCohortes() {
       {cohortes && (
         <Tabla
           columnas={columnas}
-          filas={cohortes}
+          filas={activas}
           clave={(cohorte) => cohorte.id}
           textoVacio='Todavía no hay cohortes en este curso.'
         />
       )}
 
-      <Modal
-        abierto={editando}
-        titulo='Editar cohorte'
-        subtitulo={enEdicion ? `Estás editando «${enEdicion.nombre}».` : undefined}
-        onCerrar={() => setEditando(false)}
-        cerrarAlClicAfuera={false}
-        ancho='mediano'
-      >
-        {enEdicion && (
-          <FormularioEditarCohorte
-            key={enEdicion.id}
-            cursoId={cursoId}
-            cohorte={enEdicion}
-            onTerminar={() => setEditando(false)}
+      {cohortes && (
+        <Tarjeta
+          titulo='Cohortes inactivas'
+          subtitulo='Las cohortes eliminadas. Ya no se les pueden asignar exámenes.'
+          icono={<Archive className='h-6 w-6 text-tiza-pasto' aria-hidden='true' />}
+        >
+          <Tabla
+            columnas={columnasInactivas}
+            filas={inactivas}
+            clave={(cohorte) => cohorte.id}
+            textoVacio='No hay cohortes inactivas.'
           />
-        )}
-      </Modal>
+        </Tarjeta>
+      )}
+
+      {esAdministrador && (
+        <Modal
+          abierto={editando}
+          titulo='Editar cohorte'
+          subtitulo={enEdicion ? `Estás editando «${enEdicion.nombre}».` : undefined}
+          onCerrar={() => setEditando(false)}
+          cerrarAlClicAfuera={false}
+          ancho='mediano'
+        >
+          {enEdicion && (
+            <FormularioEditarCohorte
+              key={enEdicion.id}
+              cursoId={cursoId}
+              cohorte={enEdicion}
+              onTerminar={() => setEditando(false)}
+            />
+          )}
+        </Modal>
+      )}
     </main>
   );
 }

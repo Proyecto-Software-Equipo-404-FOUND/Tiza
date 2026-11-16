@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
-import { FileText, GraduationCap, Sparkles, Users } from 'lucide-react';
+import { Archive, FileText, GraduationCap, Sparkles, Users } from 'lucide-react';
+import { useEsAdministrador } from '@/features/auth/useEsAdministrador';
 import { useCursos } from '../hooks/useCursos';
 import { Spinner } from '@/shared/components/Spinner';
 import { BannerError } from '@/shared/components/BannerError';
@@ -17,6 +18,7 @@ import { IconoArea } from '../components/IconoArea';
 const crearColumnas = (
   onEditar: (curso: Curso) => void,
   onEliminado: (id: string) => void,
+  conAcciones: boolean,
 ): Columna<Curso>[] => [
   {
     titulo: 'Nombre',
@@ -52,10 +54,32 @@ const crearColumnas = (
       </EnlaceBoton>
     ),
   },
+  // Editar y eliminar son solo del administrador: al docente no se le ofrece lo que el servidor rechaza
+  ...(conAcciones
+    ? [
+        {
+          titulo: 'Acciones',
+          celda: (curso: Curso) => (
+            <AccionesCurso curso={curso} onEditar={onEditar} onEliminado={onEliminado} />
+          ),
+        },
+      ]
+    : []),
+];
+
+// Cursos dados de baja: solo lectura (la baja es lógica, el servidor los sigue devolviendo con activo=false)
+const columnasInactivos: Columna<Curso>[] = [
   {
-    titulo: 'Acciones',
-    celda: (curso) => <AccionesCurso curso={curso} onEditar={onEditar} onEliminado={onEliminado} />,
+    titulo: 'Nombre',
+    celda: (curso) => (
+      <span className='flex items-center gap-3 font-semibold text-tiza-bosque/70'>
+        <IconoArea area={curso.area} />
+        {curso.nombre}
+      </span>
+    ),
   },
+  { titulo: 'Área', celda: (curso) => curso.area },
+  { titulo: 'Estado', celda: () => 'Inactivo' },
 ];
 
 const circulo = (icono: ReactNode) => (
@@ -66,6 +90,7 @@ const circulo = (icono: ReactNode) => (
 
 export function PaginaCursos() {
   const { data: resultado, isPending, isError, error, refetch } = useCursos();
+  const esAdministrador = useEsAdministrador();
   // El curso se conserva al cerrar la ventana para que el formulario no desaparezca durante la animación de salida
   const [enEdicion, setEnEdicion] = useState<Curso | null>(null);
   const [editando, setEditando] = useState(false);
@@ -78,29 +103,37 @@ export function PaginaCursos() {
   const alEliminar = (id: string) => {
     if (enEdicion?.id === id) setEditando(false);
   };
-  const columnas = crearColumnas(editar, alEliminar);
+  const activos = resultado?.items.filter((curso) => curso.activo) ?? [];
+  const inactivos = resultado?.items.filter((curso) => !curso.activo) ?? [];
+  const columnas = crearColumnas(editar, alEliminar, esAdministrador);
 
   return (
     <main className='mx-auto flex max-w-7xl flex-col gap-6 p-6'>
       <header>
         <h1 className='font-heading text-4xl font-extrabold text-tiza-bosque'>Cursos</h1>
         <p className='mt-1 text-tiza-bosque/70'>
-          Organizá tus cursos y accedé a sus cohortes y matrículas.
+          {esAdministrador
+            ? 'Organizá tus cursos y accedé a sus cohortes y matrículas.'
+            : 'Accedé a los cursos, sus cohortes, matrículas y apuntes.'}
         </p>
       </header>
 
-      <div className='grid grid-cols-1 items-start gap-6 lg:grid-cols-[20rem_minmax(0,1fr)]'>
-        <Tarjeta
-          titulo='Crear nuevo curso'
-          subtitulo='Completá la información para crear un nuevo curso.'
-          icono={circulo(<GraduationCap className='h-6 w-6' aria-hidden='true' />)}
-        >
-          <FormularioCurso />
-        </Tarjeta>
+      <div
+        className={`grid grid-cols-1 items-start gap-6 ${esAdministrador ? 'lg:grid-cols-[20rem_minmax(0,1fr)]' : ''}`}
+      >
+        {esAdministrador && (
+          <Tarjeta
+            titulo='Crear nuevo curso'
+            subtitulo='Completá la información para crear un nuevo curso.'
+            icono={circulo(<GraduationCap className='h-6 w-6' aria-hidden='true' />)}
+          >
+            <FormularioCurso />
+          </Tarjeta>
+        )}
 
         <Tarjeta
           titulo='Tus cursos activos'
-          subtitulo='Los cursos que ya creaste y sus cohortes.'
+          subtitulo={esAdministrador ? 'Los cursos que ya creaste y sus cohortes.' : 'Los cursos y sus cohortes.'}
           icono={circulo(<Users className='h-6 w-6' aria-hidden='true' />)}
         >
           {isPending && <Spinner texto='Cargando cursos…' />}
@@ -111,7 +144,7 @@ export function PaginaCursos() {
             <>
               <Tabla
                 columnas={columnas}
-                filas={resultado.items}
+                filas={activos}
                 clave={(curso) => curso.id}
                 textoVacio='Todavía no hay cursos.'
               />
@@ -130,18 +163,35 @@ export function PaginaCursos() {
         </Tarjeta>
       </div>
 
-      <Modal
-        abierto={editando}
-        titulo='Editar curso'
-        subtitulo={enEdicion ? `Estás editando «${enEdicion.nombre}».` : undefined}
-        onCerrar={() => setEditando(false)}
-        cerrarAlClicAfuera={false}
-        ancho='mediano'
-      >
-        {enEdicion && (
-          <FormularioEditarCurso key={enEdicion.id} curso={enEdicion} onTerminar={() => setEditando(false)} />
-        )}
-      </Modal>
+      {resultado && (
+        <Tarjeta
+          titulo='Cursos inactivos'
+          subtitulo='Los cursos eliminados. Ya no se les pueden asignar exámenes.'
+          icono={circulo(<Archive className='h-6 w-6' aria-hidden='true' />)}
+        >
+          <Tabla
+            columnas={columnasInactivos}
+            filas={inactivos}
+            clave={(curso) => curso.id}
+            textoVacio='No hay cursos inactivos.'
+          />
+        </Tarjeta>
+      )}
+
+      {esAdministrador && (
+        <Modal
+          abierto={editando}
+          titulo='Editar curso'
+          subtitulo={enEdicion ? `Estás editando «${enEdicion.nombre}».` : undefined}
+          onCerrar={() => setEditando(false)}
+          cerrarAlClicAfuera={false}
+          ancho='mediano'
+        >
+          {enEdicion && (
+            <FormularioEditarCurso key={enEdicion.id} curso={enEdicion} onTerminar={() => setEditando(false)} />
+          )}
+        </Modal>
+      )}
     </main>
   );
 }

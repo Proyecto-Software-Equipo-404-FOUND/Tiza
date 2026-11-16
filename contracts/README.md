@@ -36,11 +36,13 @@ Las diferencias conocidas entre el contrato y el código actual están en `"x-br
 | --- | --- | --- | --- |
 | Login, sesión y token | `openapi/identidad-v1.json` | Identidad | Frontend |
 | **Claims del JWT** | `openapi/identidad-v1.json` → `JwtInstitucional` | Identidad | **Los 5 servicios** |
-| Usuarios por rol *(planificado)* | `openapi/identidad-v1.json` → `/api/usuarios` | Identidad (#91) | Frontend: cohortes, matrículas, resultados |
+| Usuarios por rol | `openapi/identidad-v1.json` → `/api/usuarios?rol=` | Identidad (#91) | Frontend: cohortes, matrículas, resultados |
 | Alta masiva de alumnos *(planificado)* | `openapi/identidad-v1.json` → `/api/usuarios/alumnos/importacion` | Identidad (#135) | Frontend |
 | Cursos, cohortes y matrículas | `openapi/cursos-v1.json` | Cursos | Frontend |
 | Validar cohorte | `openapi/cursos-v1.json` → `/api/v1/cohortes/{id}/validacion` | Cursos | Evaluaciones (#145) |
 | Alumnos por cohorte | `openapi/cursos-v1.json` → `GET /api/v1/cohortes/{id}/matriculas` | Cursos | Frontend, Sala en vivo |
+| Matrícula activa de un alumno | `openapi/cursos-v1.json` → `GET /api/v1/cohortes/{cohorteId}/matriculas/alumnos/{alumnoId}` | Cursos | Sala en vivo (al unirse por PIN) |
+| Baja y reactivación de matrícula | `openapi/cursos-v1.json` → `DELETE …/matriculas/{id}` y `POST …/matriculas/{id}/reactivar` | Cursos | Frontend |
 | Material PDF *(planificado)* | `openapi/cursos-v1.json` → `/materiales` | Cursos (#137) | Frontend (#138) |
 | Texto del apunte *(planificado, interno)* | `openapi/cursos-v1.json` → `/api/v1/materiales/{id}/texto` | Cursos (#137) | IA (S3-IA-01) |
 | Evaluaciones (borrador y publicación) | `openapi/evaluaciones-v1.json` | Evaluaciones | Frontend |

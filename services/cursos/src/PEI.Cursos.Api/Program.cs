@@ -47,6 +47,9 @@ builder.Services.AddAuthorization(options =>
         policy.RequireAuthenticatedUser().RequireRole(CursosAuthorization.Administrador));
     options.AddPolicy(CursosAuthorization.AdministradorODocente, policy =>
         policy.RequireAuthenticatedUser().RequireRole(CursosAuthorization.Administrador, CursosAuthorization.Docente));
+    options.AddPolicy(CursosAuthorization.GestionOAlumnoPropio, policy =>
+        policy.RequireAuthenticatedUser().RequireRole(
+            CursosAuthorization.Administrador, CursosAuthorization.Docente, CursosAuthorization.Alumno));
 });
 
 // Configuracion de Swagger enriquecida con soporte para esquema Bearer (Pilar 2)

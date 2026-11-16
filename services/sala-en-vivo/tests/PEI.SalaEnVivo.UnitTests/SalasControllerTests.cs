@@ -159,5 +159,42 @@ namespace PEI.SalaEnVivo.UnitTests
             Assert.Equal(25, salaGuardada.CapacidadMaxima);
             Assert.InRange(salaGuardada.CodigoPIN, 100000, 999999);
         }
+
+        [Theory]
+        [InlineData(4)]
+        [InlineData(241)]
+        public async Task CrearSala_DuracionInvalida_DebeRetornar400BadRequest(int duracion)
+        {
+            var controller = CrearController(CrearDocentePrincipal(Guid.NewGuid()));
+            var request = new CrearSalaRequestDto(Guid.NewGuid(), 30, duracion);
+
+            var result = await controller.CrearSala(request, CancellationToken.None);
+
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+        [Theory]
+        [InlineData(null, 120)]
+        [InlineData(45, 45)]
+        public async Task CrearSala_Duracion_DefineElVencimiento(int? duracion, int minutosEsperados)
+        {
+            var evaluacionId = Guid.NewGuid();
+            _evaluacionesClient.Evaluaciones[evaluacionId] = new EvaluacionPreguntasDto(
+                evaluacionId,
+                "Publicada",
+                Array.Empty<PreguntaEvaluacionDto>());
+            var controller = CrearController(CrearDocentePrincipal(Guid.NewGuid()));
+            var antes = DateTime.UtcNow;
+
+            var result = await controller.CrearSala(
+                new CrearSalaRequestDto(evaluacionId, 30, duracion), CancellationToken.None);
+
+            Assert.IsType<CreatedResult>(result);
+            var vencimiento = _salaRepository.Salas[0].FechaVencimiento;
+            Assert.InRange(
+                vencimiento,
+                antes.AddMinutes(minutosEsperados).AddSeconds(-5),
+                DateTime.UtcNow.AddMinutes(minutosEsperados).AddSeconds(5));
+        }
     }
 }

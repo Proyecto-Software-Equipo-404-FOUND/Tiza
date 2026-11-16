@@ -28,6 +28,12 @@ namespace PEI.SalaEnVivo.Domain.Entities
         /// </summary>
         public string? MotivoCierre { get; set; }
 
+        /// <summary>
+        /// Indica que la sala se finalizó pero el lote de entregas no pudo enviarse
+        /// a Evaluaciones. El reintento definitivo queda para el Outbox de S3-SA-01.
+        /// </summary>
+        public bool EntregaPendiente { get; set; }
+
         public void Iniciar()
         {
             Estado = "EnCurso";

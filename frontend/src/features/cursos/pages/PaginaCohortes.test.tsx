@@ -1,8 +1,9 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { PaginaCohortes } from './PaginaCohortes';
+import { useEsAdministrador } from '@/features/auth/useEsAdministrador';
 import { useCurso } from '../hooks/useCurso';
 import { useCohortes } from '../hooks/useCohortes';
 import { ApiError } from '@/shared/api/cliente';
@@ -10,6 +11,7 @@ import type { Cohorte } from '@/shared/api/tipos';
 import { CURSO_1_ID, COHORTE_1_ID, DOCENTE_A_ID, INSTITUCION_A } from '@/mocks/datos';
 
 vi.mock('../hooks/useCurso', () => ({ useCurso: vi.fn() }));
+vi.mock('@/features/auth/useEsAdministrador', () => ({ useEsAdministrador: vi.fn() }));
 vi.mock('../hooks/useCohortes', () => ({ useCohortes: vi.fn() }));
 vi.mock('../components/FormularioCohorte', () => ({
   FormularioCohorte: () => <div>formulario</div>,
@@ -64,6 +66,10 @@ function renderizar() {
 }
 
 describe('PaginaCohortes', () => {
+  beforeEach(() => {
+    vi.mocked(useEsAdministrador).mockReturnValue(true);
+  });
+
   it('muestra el spinner mientras carga', () => {
     simular({ isPending: true });
     renderizar();
@@ -131,5 +137,46 @@ describe('PaginaCohortes', () => {
     await userEvent.click(screen.getByRole('button', { name: 'cancelar edición' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(screen.getByRole('heading', { name: 'Nueva cohorte' })).toBeInTheDocument();
+  });
+
+  it('a un docente no le ofrece crear, editar ni eliminar cohortes, pero sí ver la matrícula', () => {
+    vi.mocked(useEsAdministrador).mockReturnValue(false);
+    simular({
+      data: [
+        {
+          id: COHORTE_1_ID,
+          cursoId: CURSO_1_ID,
+          docenteId: DOCENTE_A_ID,
+          nombre: 'Cohorte 2026 - Mañana',
+          periodo: '2026-1C',
+          activo: true,
+          fechaCreacionUtc: '2026-10-09T12:00:00Z',
+        },
+      ],
+    });
+    renderizar();
+
+    expect(screen.queryByRole('heading', { name: 'Nueva cohorte' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Acciones' })).not.toBeInTheDocument();
+    expect(screen.getByText('Cohorte 2026 - Mañana')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Ver matrícula/ })).toBeInTheDocument();
+  });
+
+  it('las cohortes dadas de baja van a la sección de inactivas y no a la lista de activas', () => {
+    const base = { cursoId: CURSO_1_ID, docenteId: DOCENTE_A_ID, periodo: '2026-1C', fechaCreacionUtc: '2026-10-09T12:00:00Z' };
+    simular({
+      data: [
+        { ...base, id: COHORTE_1_ID, nombre: 'Cohorte Mañana', activo: true },
+        { ...base, id: 'h-baja', nombre: 'Cohorte Noche', activo: false },
+      ],
+    });
+    renderizar();
+
+    const inactivas = screen.getByRole('heading', { name: 'Cohortes inactivas' }).closest('section')!;
+    expect(within(inactivas).getByText('Cohorte Noche')).toBeInTheDocument();
+    expect(within(inactivas).queryByText('Cohorte Mañana')).not.toBeInTheDocument();
+    expect(within(inactivas).queryByRole('button')).not.toBeInTheDocument();
+    // En la lista principal solo queda la activa (el único enlace a matrícula es el suyo)
+    expect(screen.getAllByRole('link', { name: 'Ver matrícula' })).toHaveLength(1);
   });
 });

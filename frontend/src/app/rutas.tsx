@@ -8,6 +8,9 @@ import { PaginaEvaluacion } from '@/features/evaluaciones/pages/PaginaEvaluacion
 import { PaginaEvaluaciones } from '@/features/evaluaciones/pages/PaginaEvaluaciones';
 import { PaginaNuevaEvaluacion } from '@/features/evaluaciones/pages/PaginaNuevaEvaluacion';
 import { PaginaMatriculas } from '@/features/matriculas/PaginaMatriculas';
+import { PaginaEntrega } from '@/features/revision-notas/pages/PaginaEntrega';
+import { PaginaResultados } from '@/features/revision-notas/pages/PaginaResultados';
+import { PaginaUsuarios } from '@/features/usuarios/PaginaUsuarios';
 import { PaginaSalaAlumno } from '@/features/sala-alumno/PaginaSalaAlumno';
 import { PaginaSalaDocente } from '@/features/sala-docente/PaginaSalaDocente';
 import { Layout } from './Layout';
@@ -52,8 +55,19 @@ export const rutas: RouteObject[] = [
                   { path: '/evaluaciones/nueva', element: <PaginaNuevaEvaluacion /> },
                   { path: '/evaluaciones/:evaluacionId', element: <PaginaEvaluacion /> },
                   { path: '/evaluaciones/:evaluacionId/editar', element: <PaginaEditarEvaluacion /> },
-                  { path: '/evaluaciones/:evaluacionId/sala', element: <PaginaSalaDocente /> },
+                  { path: '/evaluaciones/:evaluacionId/resultados', element: <PaginaResultados /> },
+                  { path: '/evaluaciones/:evaluacionId/resultados/:entregaId', element: <PaginaEntrega /> },
                 ],
+              },
+              {
+                // Solo administrador: alta de alumnos y docentes (POST /api/auth/register)
+                element: <RutaProtegida roles={['administrador']} />,
+                children: [{ path: '/usuarios', element: <PaginaUsuarios /> }],
+              },
+              {
+                // Solo el docente conduce la sala: el hub rechaza al administrador (contrato sala-hub-v1, 4.2)
+                element: <RutaProtegida roles={['docente']} />,
+                children: [{ path: '/evaluaciones/:evaluacionId/sala', element: <PaginaSalaDocente /> }],
               },
               {
                 // Solo alumnos

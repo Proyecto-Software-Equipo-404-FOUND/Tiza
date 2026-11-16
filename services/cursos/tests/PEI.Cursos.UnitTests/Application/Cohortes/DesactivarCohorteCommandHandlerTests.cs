@@ -13,6 +13,7 @@ Verifica la baja logica, aislamiento por curso y proteccion ante comisiones ya i
 public class DesactivarCohorteCommandHandlerTests
 {
     private readonly FakeCohorteRepository _cohorteRepo = new();
+    private readonly FakeMatriculacionRepository _matriculacionRepo = new();
     private readonly FakeUnitOfWork _uow = new();
 
     [Fact]
@@ -24,7 +25,7 @@ public class DesactivarCohorteCommandHandlerTests
         var cohorte = new Cohorte(institucionId, cursoId, Guid.NewGuid(), "Comision 1A", "2026-1C");
         await _cohorteRepo.AddAsync(cohorte);
 
-        var handler = new DesactivarCohorteCommandHandler(_cohorteRepo, _uow);
+        var handler = new DesactivarCohorteCommandHandler(_cohorteRepo, _matriculacionRepo, _uow);
         var command = new DesactivarCohorteCommand(cursoId, cohorte.Id);
 
         // Act
@@ -40,7 +41,7 @@ public class DesactivarCohorteCommandHandlerTests
     public async Task HandleAsync_CohorteInexistente_RetornaFalse()
     {
         // Arrange
-        var handler = new DesactivarCohorteCommandHandler(_cohorteRepo, _uow);
+        var handler = new DesactivarCohorteCommandHandler(_cohorteRepo, _matriculacionRepo, _uow);
         var command = new DesactivarCohorteCommand(Guid.NewGuid(), Guid.NewGuid());
 
         // Act
@@ -61,7 +62,7 @@ public class DesactivarCohorteCommandHandlerTests
         var cohorte = new Cohorte(institucionId, cursoIdReal, Guid.NewGuid(), "Comision 1A", "2026-1C");
         await _cohorteRepo.AddAsync(cohorte);
 
-        var handler = new DesactivarCohorteCommandHandler(_cohorteRepo, _uow);
+        var handler = new DesactivarCohorteCommandHandler(_cohorteRepo, _matriculacionRepo, _uow);
         var command = new DesactivarCohorteCommand(cursoIdErroneo, cohorte.Id);
 
         // Act
@@ -83,10 +84,52 @@ public class DesactivarCohorteCommandHandlerTests
         cohorte.Desactivar();
         await _cohorteRepo.AddAsync(cohorte);
 
-        var handler = new DesactivarCohorteCommandHandler(_cohorteRepo, _uow);
+        var handler = new DesactivarCohorteCommandHandler(_cohorteRepo, _matriculacionRepo, _uow);
         var command = new DesactivarCohorteCommand(cursoId, cohorte.Id);
 
         // Act & Assert
         await Assert.ThrowsAsync<DomainException>(() => handler.HandleAsync(command));
+    }
+
+    [Fact]
+    public async Task HandleAsync_CohorteConAlumnosActivos_LanzaInvalidOperationYNoDesactiva()
+    {
+        // Arrange
+        var institucionId = Guid.NewGuid();
+        var cursoId = Guid.NewGuid();
+        var cohorte = new Cohorte(institucionId, cursoId, Guid.NewGuid(), "Comision Con Alumnos", "2026-1C");
+        await _cohorteRepo.AddAsync(cohorte);
+        await _matriculacionRepo.AddAsync(new Matriculacion(institucionId, cohorte.Id, Guid.NewGuid()));
+
+        var handler = new DesactivarCohorteCommandHandler(_cohorteRepo, _matriculacionRepo, _uow);
+        var command = new DesactivarCohorteCommand(cursoId, cohorte.Id);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(() => handler.HandleAsync(command));
+        Assert.True(cohorte.Activo);
+        Assert.Equal(0, _uow.CommitsRealizados);
+    }
+
+    [Fact]
+    public async Task HandleAsync_CohorteConMatriculasDadasDeBaja_DesactivaIgual()
+    {
+        // Arrange
+        var institucionId = Guid.NewGuid();
+        var cursoId = Guid.NewGuid();
+        var cohorte = new Cohorte(institucionId, cursoId, Guid.NewGuid(), "Comision Vacia", "2026-1C");
+        await _cohorteRepo.AddAsync(cohorte);
+        var matricula = new Matriculacion(institucionId, cohorte.Id, Guid.NewGuid());
+        matricula.DarDeBaja();
+        await _matriculacionRepo.AddAsync(matricula);
+
+        var handler = new DesactivarCohorteCommandHandler(_cohorteRepo, _matriculacionRepo, _uow);
+        var command = new DesactivarCohorteCommand(cursoId, cohorte.Id);
+
+        // Act
+        var resultado = await handler.HandleAsync(command);
+
+        // Assert
+        Assert.True(resultado);
+        Assert.False(cohorte.Activo);
     }
 }

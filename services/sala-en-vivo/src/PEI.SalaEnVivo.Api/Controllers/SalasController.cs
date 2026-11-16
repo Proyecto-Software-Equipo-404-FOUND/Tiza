@@ -42,6 +42,16 @@ namespace PEI.SalaEnVivo.Api.Controllers
                 });
             }
 
+            if (request.DuracionMinutos is int duracion
+                && (duracion < CrearSalaCommand.DuracionMinima || duracion > CrearSalaCommand.DuracionMaxima))
+            {
+                return BadRequest(new ProblemDetails
+                {
+                    Title = $"La duración debe estar entre {CrearSalaCommand.DuracionMinima} y {CrearSalaCommand.DuracionMaxima} minutos.",
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+
             var institucionClaim = User.FindFirst("institucion_id")?.Value
                 ?? User.FindFirst("InstitucionId")?.Value;
 
@@ -58,7 +68,8 @@ namespace PEI.SalaEnVivo.Api.Controllers
             {
                 InstitucionId = institucionId,
                 EvaluacionId = request.EvaluacionId,
-                CapacidadMaxima = request.CapacidadMaxima
+                CapacidadMaxima = request.CapacidadMaxima,
+                DuracionMinutos = request.DuracionMinutos ?? CrearSalaCommand.DuracionPorDefecto
             };
 
             try

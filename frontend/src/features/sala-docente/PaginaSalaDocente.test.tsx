@@ -100,7 +100,7 @@ describe('PaginaSalaDocente', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Abrir sala' }));
 
     expect(mutate).toHaveBeenCalledWith(
-      { evaluacionId: EVALUACION, capacidadMaxima: 40 },
+      { evaluacionId: EVALUACION, capacidadMaxima: 40, duracionMinutos: 60 },
       expect.any(Object),
     );
   });
@@ -226,7 +226,7 @@ describe('PaginaSalaDocente', () => {
     await waitFor(() => expect(siguiente).toBeEnabled());
     await userEvent.click(siguiente);
 
-    expect(conexion.invocar).toHaveBeenCalledWith('AvanzarPregunta');
+    expect(conexion.invocar).toHaveBeenCalledWith('AvanzarPregunta', null);
   });
 
   it('Finalizar pide confirmación y recién al confirmar invoca FinalizarSala', async () => {

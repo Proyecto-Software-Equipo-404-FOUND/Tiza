@@ -8,11 +8,22 @@ import { Spinner } from '@/shared/components/Spinner';
 import { Tabla, type Columna } from '@/shared/components/Tabla';
 import { Tarjeta } from '@/shared/components/Tarjeta';
 import { useAviso } from '@/shared/components/Aviso';
-import { listarAlumnos, listarMatriculas, matricularAlumno, type Matricula } from './api/matriculas';
+import { ModalConfirmacion } from '@/shared/components/ModalConfirmacion';
+import {
+  darDeBajaMatricula,
+  listarAlumnos,
+  listarMatriculas,
+  matricularAlumno,
+  reactivarMatricula,
+  type Alumno,
+  type Matricula,
+} from './api/matriculas';
+import { estaDeBaja, fechaCorta, nombreDeAlumno } from './nombres';
 
-const columnas: Columna<Matricula>[] = [
-  { titulo: 'Alumno', celda: (m) => m.alumnoNombre },
+const crearColumnas = (alumnos: Alumno[]): Columna<Matricula>[] => [
+  { titulo: 'Alumno', celda: (m) => nombreDeAlumno(m, alumnos) },
   { titulo: 'Estado', celda: (m) => m.estado },
+  { titulo: 'Desde', celda: (m) => fechaCorta(m.fechaAlta) ?? '—' },
 ];
 
 // Marco común de la pantalla: así «cargando» y «error» también quedan dentro de <main>
@@ -36,6 +47,7 @@ export function PaginaMatriculas() {
   const [errorAlMatricular, setErrorAlMatricular] = useState<string | null>(null);
   // Un ref se actualiza al instante; el estado de la mutación recién llega en el próximo render
   const enviando = useRef(false);
+  const [aDarDeBaja, setADarDeBaja] = useState<Matricula | null>(null);
 
   const matriculas = useQuery({
     queryKey: ['matriculas', cohorteId],
@@ -57,12 +69,32 @@ export function PaginaMatriculas() {
     },
   });
 
+  const darDeBaja = useMutation({
+    mutationFn: (matricula: Matricula) => darDeBajaMatricula(cohorteId, matricula.id),
+    onSuccess: () => {
+      mostrar('exito', 'Alumno dado de baja de la cohorte.');
+      void clienteQuery.invalidateQueries({ queryKey: ['matriculas', cohorteId] });
+    },
+    onError: (error) => mostrar('error', mensajeDeError(error)),
+    onSettled: () => setADarDeBaja(null),
+  });
+
+  const reactivar = useMutation({
+    mutationFn: (matricula: Matricula) => reactivarMatricula(cohorteId, matricula.id),
+    onSuccess: () => {
+      mostrar('exito', 'Matrícula reactivada.');
+      void clienteQuery.invalidateQueries({ queryKey: ['matriculas', cohorteId] });
+    },
+    onError: (error) => mostrar('error', mensajeDeError(error)),
+  });
+
   const recargar = () => {
     setErrorAlMatricular(null);
     void matriculas.refetch();
     void alumnos.refetch();
   };
 
+  // Se espera a ambas listas la primera vez; si la de alumnos falla, no se bloquea la pantalla (ver más abajo)
   if (matriculas.isPending || alumnos.isPending) {
     return (
       <Marco>
@@ -71,13 +103,10 @@ export function PaginaMatriculas() {
     );
   }
 
-  if (matriculas.isError || alumnos.isError) {
+  if (matriculas.isError) {
     return (
       <Marco>
-        <BannerError
-          mensaje={mensajeDeError(matriculas.error ?? alumnos.error)}
-          onReintentar={recargar}
-        />
+        <BannerError mensaje={mensajeDeError(matriculas.error)} onReintentar={recargar} />
       </Marco>
     );
   }
@@ -85,7 +114,46 @@ export function PaginaMatriculas() {
   // No se ofrecen los alumnos que ya están matriculados en esta cohorte
   const listaMatriculas = matriculas.data ?? [];
   const yaMatriculados = new Set(listaMatriculas.map((m) => m.alumnoId));
-  const disponibles = (alumnos.data ?? []).filter((a) => !yaMatriculados.has(a.id));
+  const listaAlumnos = alumnos.data ?? [];
+  const disponibles = listaAlumnos.filter((a) => !yaMatriculados.has(a.id));
+  const columnas = crearColumnas(listaAlumnos);
+  const columnasActivas: Columna<Matricula>[] = [
+    ...columnas,
+    {
+      titulo: 'Acción',
+      celda: (m) => (
+        <Boton
+          type='button'
+          variante='secundario'
+          className='!px-3 !py-1 text-sm'
+          disabled={darDeBaja.isPending}
+          onClick={() => setADarDeBaja(m)}
+        >
+          Dar de baja
+        </Boton>
+      ),
+    },
+  ];
+  const columnasDeBaja: Columna<Matricula>[] = [
+    ...columnas,
+    {
+      titulo: 'Acción',
+      celda: (m) => (
+        <Boton
+          type='button'
+          variante='secundario'
+          className='!px-3 !py-1 text-sm'
+          cargando={reactivar.isPending && reactivar.variables?.id === m.id}
+          disabled={reactivar.isPending}
+          onClick={() => reactivar.mutate(m)}
+        >
+          Reactivar
+        </Boton>
+      ),
+    },
+  ];
+  const activas = listaMatriculas.filter((m) => !estaDeBaja(m));
+  const deBaja = listaMatriculas.filter(estaDeBaja);
 
   const enviar = (evento: FormEvent) => {
     evento.preventDefault();
@@ -107,7 +175,7 @@ export function PaginaMatriculas() {
               id='alumno'
               value={alumnoId}
               onChange={(e) => setAlumnoId(e.target.value)}
-              disabled={matricular.isPending}
+              disabled={matricular.isPending || alumnos.isError}
               className='rounded-xl border border-tiza-borde bg-white px-3 py-3 text-tiza-bosque disabled:opacity-50'
             >
               <option value=''>Elegí un alumno</option>
@@ -122,8 +190,17 @@ export function PaginaMatriculas() {
             Matricular
           </Boton>
         </form>
-        {disponibles.length === 0 && (
+        {alumnos.isSuccess && disponibles.length === 0 && (
           <p className='mt-2 text-sm text-tiza-bosque/70'>No quedan alumnos para matricular.</p>
+        )}
+        {/* Sin la lista no se puede elegir a quién matricular, pero los matriculados se siguen viendo */}
+        {alumnos.isError && (
+          <div className='mt-3'>
+            <BannerError
+              mensaje='No pudimos cargar la lista de alumnos para matricular. Los matriculados se muestran igual.'
+              onReintentar={() => void alumnos.refetch()}
+            />
+          </div>
         )}
       </Tarjeta>
 
@@ -131,12 +208,34 @@ export function PaginaMatriculas() {
 
       <Tarjeta titulo='Alumnos matriculados'>
         <Tabla
-          columnas={columnas}
-          filas={listaMatriculas}
+          columnas={columnasActivas}
+          filas={activas}
           clave={(m) => m.id}
           textoVacio='Todavía no hay alumnos matriculados en esta cohorte.'
         />
       </Tarjeta>
+
+      <Tarjeta titulo='Matrículas inactivas' subtitulo='Alumnos dados de baja de esta cohorte.'>
+        <Tabla
+          columnas={columnasDeBaja}
+          filas={deBaja}
+          clave={(m) => m.id}
+          textoVacio='No hay matrículas inactivas.'
+        />
+      </Tarjeta>
+
+      <ModalConfirmacion
+        abierto={aDarDeBaja !== null}
+        titulo='Dar de baja al alumno'
+        mensaje={
+          aDarDeBaja
+            ? `${nombreDeAlumno(aDarDeBaja, listaAlumnos)} deja de estar matriculado en esta cohorte y ya no va a poder entrar a sus salas en vivo.`
+            : ''
+        }
+        textoConfirmar='Sí, dar de baja'
+        onConfirmar={() => aDarDeBaja && !darDeBaja.isPending && darDeBaja.mutate(aDarDeBaja)}
+        onCancelar={() => setADarDeBaja(null)}
+      />
     </Marco>
   );
 }

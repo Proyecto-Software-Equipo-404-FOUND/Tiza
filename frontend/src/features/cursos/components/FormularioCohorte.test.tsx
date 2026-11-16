@@ -1,14 +1,16 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { FormularioCohorte } from './FormularioCohorte';
 import { useCrearCohorte } from '../hooks/useCrearCohorte';
 import { DOCENTE_A_ID } from '../semillas';
+import { useDocentes } from '../hooks/useDocentes';
 import { ApiError } from '@/shared/api/cliente';
 import { CURSO_1_ID } from '@/mocks/datos';
 
 vi.mock('../hooks/useCrearCohorte', () => ({ useCrearCohorte: vi.fn() }));
+vi.mock('../hooks/useDocentes', () => ({ useDocentes: vi.fn() }));
 vi.mock('@/shared/components/Aviso', () => ({
   useAviso: () => ({ mostrar: vi.fn() }),
 }));
@@ -34,7 +36,21 @@ function mostrarFormulario() {
   );
 }
 
+function simularDocentes(estado: Record<string, unknown> = {}) {
+  vi.mocked(useDocentes).mockReturnValue({
+    data: [{ id: DOCENTE_A_ID, nombre: 'Docente A' }],
+    isPending: false,
+    isError: false,
+    refetch: vi.fn(),
+    ...estado,
+  } as unknown as ReturnType<typeof useDocentes>);
+}
+
 describe('FormularioCohorte', () => {
+  beforeEach(() => {
+    simularDocentes();
+  });
+
   it('no envía si el nombre y el período están vacíos', async () => {
     const mutate = simular();
     mostrarFormulario();
@@ -84,6 +100,44 @@ describe('FormularioCohorte', () => {
     mostrarFormulario();
 
     expect(screen.getByRole('alert')).toHaveTextContent('Alguien modificó este dato');
+    expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
+  });
+
+  it('ofrece los docentes que devuelve Identidad y envía el que se elige', async () => {
+    simularDocentes({
+      data: [
+        { id: DOCENTE_A_ID, nombre: 'Docente A' },
+        { id: 'd-2', nombre: 'Marta Díaz' },
+      ],
+    });
+    const mutate = simular();
+    mostrarFormulario();
+
+    await userEvent.type(screen.getByLabelText('Nombre de la cohorte'), 'Cohorte 2026 - Noche');
+    await userEvent.type(screen.getByLabelText('Período'), '2026-1C');
+    await userEvent.selectOptions(screen.getByLabelText('Docente'), 'Marta Díaz');
+    await userEvent.click(screen.getByRole('button', { name: 'Crear cohorte' }));
+
+    expect(mutate).toHaveBeenCalledWith(
+      { nombre: 'Cohorte 2026 - Noche', periodo: '2026-1C', docenteId: 'd-2' },
+      expect.anything(),
+    );
+  });
+
+  it('mientras cargan los docentes deshabilita el selector', () => {
+    simularDocentes({ data: undefined, isPending: true });
+    simular();
+    mostrarFormulario();
+
+    expect(screen.getByLabelText('Docente')).toBeDisabled();
+  });
+
+  it('si fallan los docentes avisa y permite reintentar', () => {
+    simularDocentes({ data: undefined, isPending: false, isError: true });
+    simular();
+    mostrarFormulario();
+
+    expect(screen.getByText('No pudimos cargar los docentes.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
   });
 });

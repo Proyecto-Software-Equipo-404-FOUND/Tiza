@@ -68,11 +68,11 @@ export const handlersCohortes = [
     return HttpResponse.json(cohorte);
   }),
 
-  // Baja lógica en el backend; el mock la quita de la lista
+  // Baja lógica como en el backend: la cohorte sigue en la lista, con activo=false
   http.delete('*/api/v1/cursos/:cursoId/cohortes/:id', ({ params }) => {
-    const indice = cohortes.findIndex((c) => c.id === params.id && c.cursoId === params.cursoId);
-    if (indice === -1) return HttpResponse.json({ title: 'No encontrada', status: 404 }, { status: 404 });
-    cohortes.splice(indice, 1);
+    const cohorte = cohortes.find((c) => c.id === params.id && c.cursoId === params.cursoId);
+    if (!cohorte) return HttpResponse.json({ title: 'No encontrada', status: 404 }, { status: 404 });
+    cohorte.activo = false;
     return new HttpResponse(null, { status: 204 });
   }),
 ];

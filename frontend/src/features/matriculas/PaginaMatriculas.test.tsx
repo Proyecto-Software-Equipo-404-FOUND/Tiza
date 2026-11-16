@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -13,12 +13,14 @@ const alumnos = [
   { id: 'a1', nombre: 'Alumno 1' },
   { id: 'a2', nombre: 'Alumno 2' },
 ];
+// Como responde el servidor: trae el id del alumno pero no su nombre
 const matricula = {
   id: 'm1',
+  institucionId: 'i1',
   cohorteId: 'c1',
   alumnoId: 'a1',
-  alumnoNombre: 'Alumno 1',
-  estado: 'Activa' as const,
+  fechaAlta: '2026-10-31T12:00:00Z',
+  estado: 'Activa',
 };
 
 function mostrarPagina() {
@@ -73,6 +75,22 @@ describe('PaginaMatriculas', () => {
     expect(await screen.findByRole('cell', { name: 'Alumno 1' })).toBeInTheDocument();
     expect(screen.queryByRole('option', { name: 'Alumno 1' })).not.toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Alumno 2' })).toBeInTheDocument();
+  });
+
+  it('muestra aparte las matrículas dadas de baja', async () => {
+    vi.mocked(api.listarMatriculas).mockResolvedValue([
+      matricula,
+      { ...matricula, id: 'm2', alumnoId: 'a2', estado: 'Baja' },
+    ]);
+    mostrarPagina();
+
+    const activas = (await screen.findByRole('heading', { name: 'Alumnos matriculados' })).closest('section')!;
+    const inactivas = screen.getByRole('heading', { name: 'Matrículas inactivas' }).closest('section')!;
+    expect(within(activas).getByRole('cell', { name: 'Alumno 1' })).toBeInTheDocument();
+    expect(within(activas).queryByRole('cell', { name: 'Alumno 2' })).not.toBeInTheDocument();
+    expect(within(inactivas).getByRole('cell', { name: 'Alumno 2' })).toBeInTheDocument();
+    // Quien está de baja tampoco se ofrece para volver a matricular desde la lista
+    expect(screen.queryByRole('option', { name: 'Alumno 2' })).not.toBeInTheDocument();
   });
 
   it('muestra el estado vacío', async () => {
@@ -153,5 +171,66 @@ describe('PaginaMatriculas', () => {
 
     const mensajes = await screen.findAllByText('No se encontró lo que buscás.');
     expect(mensajes.length).toBeGreaterThan(0);
+  });
+
+  it('muestra el nombre del alumno aunque la matrícula solo traiga su id, y la fecha de alta', async () => {
+    vi.mocked(api.listarMatriculas).mockResolvedValue([matricula]);
+    mostrarPagina();
+
+    expect(await screen.findByRole('cell', { name: 'Alumno 1' })).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: '31/10/2026' })).toBeInTheDocument();
+  });
+
+  it('si el alumno no está en la lista muestra una referencia corta y no queda vacío', async () => {
+    vi.mocked(api.listarMatriculas).mockResolvedValue([{ ...matricula, alumnoId: 'xxxx-desconocido' }]);
+    mostrarPagina();
+
+    expect(await screen.findByRole('cell', { name: 'Alumno …nocido' })).toBeInTheDocument();
+  });
+
+  it('si falla la lista de alumnos igual muestra los matriculados y ofrece reintentar', async () => {
+    vi.mocked(api.listarMatriculas).mockResolvedValue([matricula]);
+    vi.mocked(api.listarAlumnos).mockRejectedValue(new ApiError(404, { status: 404 }));
+    mostrarPagina();
+
+    expect(await screen.findByText(/No pudimos cargar la lista de alumnos/)).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: 'Alumno …a1' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Alumno')).toBeDisabled();
+
+    vi.mocked(api.listarAlumnos).mockResolvedValue(alumnos);
+    await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+    expect(await screen.findByRole('cell', { name: 'Alumno 1' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Alumno')).toBeEnabled();
+  });
+
+  it('da de baja a un alumno después de confirmar', async () => {
+    vi.mocked(api.listarMatriculas).mockResolvedValue([matricula]);
+    vi.mocked(api.darDeBajaMatricula).mockResolvedValue(undefined);
+    mostrarPagina();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Dar de baja' }));
+    expect(api.darDeBajaMatricula).not.toHaveBeenCalled();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Sí, dar de baja' }));
+    await waitFor(() => expect(api.darDeBajaMatricula).toHaveBeenCalledWith('c1', 'm1'));
+    expect(await screen.findByText('Alumno dado de baja de la cohorte.')).toBeInTheDocument();
+  });
+
+  it('las matrículas inactivas no ofrecen dar de baja', async () => {
+    vi.mocked(api.listarMatriculas).mockResolvedValue([{ ...matricula, estado: 'Baja' }]);
+    mostrarPagina();
+
+    expect(await screen.findByRole('cell', { name: 'Alumno 1' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Dar de baja' })).not.toBeInTheDocument();
+  });
+
+  it('reactiva una matrícula dada de baja', async () => {
+    vi.mocked(api.listarMatriculas).mockResolvedValue([{ ...matricula, estado: 'Baja' }]);
+    vi.mocked(api.reactivarMatricula).mockResolvedValue(undefined);
+    mostrarPagina();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Reactivar' }));
+    await waitFor(() => expect(api.reactivarMatricula).toHaveBeenCalledWith('c1', 'm1'));
+    expect(await screen.findByText('Matrícula reactivada.')).toBeInTheDocument();
   });
 });

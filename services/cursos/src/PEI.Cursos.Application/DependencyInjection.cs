@@ -44,6 +44,8 @@ public static class DependencyInjection
 
         // Registrar Handlers de Matriculaciones (Casos de Uso CU-04 y S2-CU-01)
         services.AddScoped<IRequestHandler<MatricularAlumnoCommand, MatriculacionDto>, MatricularAlumnoCommandHandler>();
+        services.AddScoped<IRequestHandler<DarDeBajaMatriculacionCommand, bool>, DarDeBajaMatriculacionCommandHandler>();
+        services.AddScoped<IRequestHandler<ReactivarMatriculacionCommand, bool>, ReactivarMatriculacionCommandHandler>();
         services.AddScoped<IRequestHandler<GetMatriculacionByIdQuery, MatriculacionDto?>, GetMatriculacionByIdQueryHandler>();
         services.AddScoped<IRequestHandler<GetMatriculacionesByCohorteQuery, IReadOnlyList<MatriculacionDto>?>, GetMatriculacionesByCohorteQueryHandler>();
 

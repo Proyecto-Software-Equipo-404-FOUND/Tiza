@@ -92,6 +92,14 @@ describe('FormularioEvaluacion', () => {
     expect(onEnviar).not.toHaveBeenCalled();
   });
 
+  it('explica para qué sirve la rúbrica en las preguntas abiertas', async () => {
+    mostrar();
+    await agregarPregunta();
+    await userEvent.selectOptions(screen.getByLabelText('Tipo de la pregunta 1'), 'Abierta');
+    expect(screen.getByText('Rúbrica de corrección (opcional)')).toBeInTheDocument();
+    expect(screen.getByText(/la nota final siempre la decidís vos/)).toBeInTheDocument();
+  });
+
   it('arma una pregunta abierta con rúbrica y muestra cuánto suman los criterios', async () => {
     const { onEnviar } = mostrar();
     await userEvent.type(screen.getByLabelText('Título'), 'TP');
@@ -105,21 +113,64 @@ describe('FormularioEvaluacion', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Agregar criterio a la pregunta 1' }));
     await userEvent.type(screen.getByLabelText('Criterio 1 de la pregunta 1'), 'Define bien');
     await userEvent.type(screen.getByLabelText('Puntaje del criterio 1 de la pregunta 1'), '3');
-    expect(screen.getByText('Los criterios suman 3 de 5 puntos.')).toBeInTheDocument();
+    expect(screen.getByText(/Repartiste 3 de 5 puntos\. Te faltan 2:/)).toBeInTheDocument();
     await userEvent.clear(puntaje);
-    await userEvent.type(puntaje, '1');
-    expect(screen.getByText('Los criterios suman 3 de 1 punto.')).toBeInTheDocument();
-    await userEvent.clear(puntaje);
-    await userEvent.type(puntaje, '5');
+    await userEvent.type(puntaje, '3');
+    expect(screen.getByText(/Repartiste 3 de 3 puntos\. Quedó bien repartido\./)).toBeInTheDocument();
 
     await guardar();
     const [pregunta] = onEnviar.mock.calls[0][0].preguntasJson.preguntas;
     expect(pregunta).toMatchObject({
       tipo: 'Abierta',
-      puntajeMaximo: 5,
+      puntajeMaximo: 3,
       rubrica: { criterios: [{ descripcion: 'Define bien', puntaje: 3 }] },
     });
     expect(pregunta).not.toHaveProperty('opciones');
+  });
+
+  it('no deja guardar si los criterios no reparten todo el puntaje, y permite completar el resto', async () => {
+    const { onEnviar } = mostrar();
+    await userEvent.type(screen.getByLabelText('Título'), 'TP');
+    await agregarPregunta();
+    await userEvent.selectOptions(screen.getByLabelText('Tipo de la pregunta 1'), 'Abierta');
+    await userEvent.type(screen.getByLabelText('Enunciado de la pregunta 1'), 'Explicá una variable');
+    const puntaje = screen.getByLabelText('Puntaje máximo de la pregunta 1');
+    await userEvent.clear(puntaje);
+    await userEvent.type(puntaje, '5');
+    await userEvent.click(screen.getByRole('button', { name: 'Agregar criterio a la pregunta 1' }));
+    await userEvent.type(screen.getByLabelText('Criterio 1 de la pregunta 1'), 'Define bien');
+    await userEvent.type(screen.getByLabelText('Puntaje del criterio 1 de la pregunta 1'), '3');
+
+    await guardar();
+    expect(onEnviar).not.toHaveBeenCalled();
+    expect(screen.getByText('Revisá los campos marcados antes de guardar.')).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Asignar los 2 que faltan al último criterio de la pregunta 1' }),
+    );
+    expect(screen.getByLabelText('Puntaje del criterio 1 de la pregunta 1')).toHaveValue(5);
+    expect(screen.getByText(/Quedó bien repartido/)).toBeInTheDocument();
+    await guardar();
+    expect(onEnviar).toHaveBeenCalledTimes(1);
+  });
+
+  it('no deja guardar si los criterios reparten más puntos que el máximo de la pregunta', async () => {
+    const { onEnviar } = mostrar();
+    await userEvent.type(screen.getByLabelText('Título'), 'TP');
+    await agregarPregunta();
+    await userEvent.selectOptions(screen.getByLabelText('Tipo de la pregunta 1'), 'Abierta');
+    await userEvent.type(screen.getByLabelText('Enunciado de la pregunta 1'), 'Explicá una variable');
+    const puntaje = screen.getByLabelText('Puntaje máximo de la pregunta 1');
+    await userEvent.clear(puntaje);
+    await userEvent.type(puntaje, '4');
+    await userEvent.click(screen.getByRole('button', { name: 'Agregar criterio a la pregunta 1' }));
+    await userEvent.type(screen.getByLabelText('Criterio 1 de la pregunta 1'), 'Define bien');
+    await userEvent.type(screen.getByLabelText('Puntaje del criterio 1 de la pregunta 1'), '6');
+
+    expect(screen.getByText(/Repartiste 6 de 4 puntos\. Te pasaste por 2/)).toBeInTheDocument();
+    await guardar();
+    expect(onEnviar).not.toHaveBeenCalled();
+    expect(screen.getByText('Revisá los campos marcados antes de guardar.')).toBeInTheDocument();
   });
 
   it('se pueden agregar opciones, pero nunca quedan menos de 2', async () => {

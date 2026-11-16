@@ -24,6 +24,15 @@ describe('codigoDeError', () => {
     expect(codigoDeError(new Error(mensaje))).toBe(esperado);
   });
 
+  it('reconoce que el alumno no está matriculado en la cohorte', () => {
+    const error = new Error(
+      "An unexpected error occurred invoking 'UnirseASala' on the server. HubException: ALUMNO_NO_MATRICULADO: No estás matriculado en la cohorte de esta evaluación.",
+    );
+    expect(codigoDeError(error)).toBe('ALUMNO_NO_MATRICULADO');
+    expect(mensajeDeCodigo('ALUMNO_NO_MATRICULADO')).toContain('Consultá con tu docente');
+    expect(codigoDeError(new Error('MATRICULA_NO_VERIFICADA: Cursos no respondió.'))).toBe('MATRICULA_NO_VERIFICADA');
+  });
+
   it('usa ERROR_INTERNO para lo desconocido y para valores que no son Error', () => {
     expect(codigoDeError(new Error('algo raro'))).toBe('ERROR_INTERNO');
     expect(codigoDeError('texto suelto')).toBe('ERROR_INTERNO');

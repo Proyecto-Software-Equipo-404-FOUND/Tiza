@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using PEI.IA.Domain.Entities;
 using PEI.IA.McpServer.Tools;
 
@@ -5,164 +6,235 @@ namespace PEI.IA.UnitTests;
 
 public class RegistrarCalificacionToolTests
 {
-    // EntregaId y puntajeMaximo usados en todos los tests que necesitan valores válidos
-    private static readonly Guid EntregaIdValido = Guid.NewGuid();
-    private const decimal PuntajeMaximoValido = 10m;
+    // IDs y constantes reutilizadas
+    private static readonly Guid EntregaIdValido   = Guid.NewGuid();
+    private static readonly Guid PreguntaIdValido  = Guid.NewGuid();
+    private const decimal       PuntajeMaximoValido = 10m;
 
-    public RegistrarCalificacionToolTests()
+    // ── Helper para construir la tool con el stub de Evaluaciones ──────────
+
+    /// <summary>
+    /// Crea una instancia de la tool que responde <paramref name="callbackOk"/>
+    /// cada vez que se llama a RegistrarSugerenciaAsync.
+    /// </summary>
+    private static RegistrarCalificacionSugeridaTool CrearTool(bool callbackOk = true)
     {
-        RegistrarCalificacionSugeridaTool.Limpiar();
+        var stub = new EvaluacionesClientStub(callbackOk);
+        return new RegistrarCalificacionSugeridaTool(
+            stub,
+            NullLogger<RegistrarCalificacionSugeridaTool>.Instance);
     }
 
     // ── Happy path ──────────────────────────────────────────────────────────
 
     [Fact]
-    public void RegistrarCalificacion_ValoresValidos_RegistraEnMemoriaYRetornaExito()
+    public async Task RegistrarCalificacion_ValoresValidos_RetornaExito()
     {
-        // Arrange
-        var nota = 8.5m;
-        var justificacion = "El alumno comprende la abstracción y provee ejemplos correctos.";
-        var desglose = "[{\"criterio\":\"Definición\",\"puntajeMaximo\":5,\"puntajeOtorgado\":4.5}]";
+        var tool = CrearTool(callbackOk: true);
 
-        // Act
-        var result = RegistrarCalificacionSugeridaTool.RegistrarCalificacion(
-            EntregaIdValido, nota, PuntajeMaximoValido, justificacion, desglose);
+        var result = await tool.RegistrarCalificacion(
+            EntregaIdValido, PreguntaIdValido,
+            notaSugerida: 8.5m, puntajeMaximo: PuntajeMaximoValido,
+            justificacion: "El alumno comprende la abstracción y provee ejemplos correctos.",
+            desgloseJson: "[{\"criterio\":\"Definición\",\"puntajeMaximo\":5,\"puntajeOtorgado\":4.5}]");
 
-        // Assert
-        Assert.NotNull(result);
         Assert.True(result.Exito);
         Assert.Equal(8.5m, result.NotaSugerida);
         Assert.Null(result.Error);
-
-        var registros = RegistrarCalificacionSugeridaTool.ObtenerRegistros();
-        Assert.Single(registros);
-
-        var calificacion = registros.Values.First();
-        Assert.Equal(8.5m, calificacion.NotaSugerida);
-        Assert.Equal(justificacion, calificacion.Justificacion);
-        Assert.Equal(desglose, calificacion.DesglosePorCriterioJson);
-        Assert.NotEqual(Guid.Empty, calificacion.Id);
+        Assert.NotNull(result.Mensaje);
     }
 
     [Fact]
-    public void RegistrarCalificacion_NotaIgualAlMaximo_RegistraCorrectamente()
+    public async Task RegistrarCalificacion_NotaIgualAlMaximo_RegistraCorrectamente()
     {
-        // Nota exactamente en el límite debe ser aceptada
-        var result = RegistrarCalificacionSugeridaTool.RegistrarCalificacion(
-            EntregaIdValido, PuntajeMaximoValido, PuntajeMaximoValido, "Respuesta perfecta.");
+        var tool = CrearTool();
+
+        var result = await tool.RegistrarCalificacion(
+            EntregaIdValido, PreguntaIdValido,
+            PuntajeMaximoValido, PuntajeMaximoValido,
+            "Respuesta perfecta.");
 
         Assert.True(result.Exito);
         Assert.Equal(PuntajeMaximoValido, result.NotaSugerida);
     }
 
     [Fact]
-    public void RegistrarCalificacion_NotaCero_RegistraCorrectamente()
+    public async Task RegistrarCalificacion_NotaCero_RegistraCorrectamente()
     {
-        // Nota 0 es válida (respuesta completamente incorrecta)
-        var result = RegistrarCalificacionSugeridaTool.RegistrarCalificacion(
-            EntregaIdValido, 0m, PuntajeMaximoValido, "No responde el concepto solicitado.");
+        var tool = CrearTool();
+
+        var result = await tool.RegistrarCalificacion(
+            EntregaIdValido, PreguntaIdValido,
+            0m, PuntajeMaximoValido,
+            "No responde el concepto solicitado.");
 
         Assert.True(result.Exito);
         Assert.Equal(0m, result.NotaSugerida);
     }
 
+    // ── Callback hacia Evaluaciones ─────────────────────────────────────────
+
+    [Fact]
+    public async Task RegistrarCalificacion_LlamaCallbackConPreguntaId()
+    {
+        var stub = new EvaluacionesClientStub(true);
+        var tool = new RegistrarCalificacionSugeridaTool(
+            stub, NullLogger<RegistrarCalificacionSugeridaTool>.Instance);
+
+        await tool.RegistrarCalificacion(
+            EntregaIdValido, PreguntaIdValido,
+            7m, PuntajeMaximoValido, "Justificación correcta.");
+
+        Assert.Equal(1, stub.LlamadasRegistradas);
+        Assert.Equal(EntregaIdValido, stub.UltimoEntregaId);
+        Assert.Equal(PreguntaIdValido, stub.UltimoPreguntaId);
+        Assert.Equal(7m, stub.UltimaNotaSugerida);
+    }
+
+    [Fact]
+    public async Task RegistrarCalificacion_CuandoCallbackFalla_RetornaFallido()
+    {
+        var tool = CrearTool(callbackOk: false);
+
+        var result = await tool.RegistrarCalificacion(
+            EntregaIdValido, PreguntaIdValido,
+            6m, PuntajeMaximoValido, "Justificación válida.");
+
+        Assert.False(result.Exito);
+        Assert.NotNull(result.Error);
+    }
+
     // ── Validaciones: notaSugerida ───────────────────────────────────────────
 
     [Fact]
-    public void RegistrarCalificacion_NotaNegativa_RetornaErrorSinGuardar()
+    public async Task RegistrarCalificacion_NotaNegativa_RetornaErrorSinCallback()
     {
-        var result = RegistrarCalificacionSugeridaTool.RegistrarCalificacion(
-            EntregaIdValido, -1m, PuntajeMaximoValido, "Justificación");
+        var stub = new EvaluacionesClientStub(true);
+        var tool = new RegistrarCalificacionSugeridaTool(
+            stub, NullLogger<RegistrarCalificacionSugeridaTool>.Instance);
+
+        var result = await tool.RegistrarCalificacion(
+            EntregaIdValido, PreguntaIdValido, -1m, PuntajeMaximoValido, "Justificación");
 
         Assert.False(result.Exito);
-        Assert.NotNull(result.Error);
         Assert.Contains("negativa", result.Error);
-        Assert.Empty(RegistrarCalificacionSugeridaTool.ObtenerRegistros());
+        Assert.Equal(0, stub.LlamadasRegistradas); // sin callback
     }
 
     [Fact]
-    public void RegistrarCalificacion_NotaSuperaPuntajeMaximo_RetornaError()
+    public async Task RegistrarCalificacion_NotaSuperaPuntajeMaximo_RetornaError()
     {
-        // 11 > 10 → debe fallar
-        var result = RegistrarCalificacionSugeridaTool.RegistrarCalificacion(
-            EntregaIdValido, 11m, 10m, "Justificación válida.");
+        var tool = CrearTool();
+
+        var result = await tool.RegistrarCalificacion(
+            EntregaIdValido, PreguntaIdValido, 11m, 10m, "Justificación válida.");
 
         Assert.False(result.Exito);
-        Assert.NotNull(result.Error);
         Assert.Contains("excede", result.Error);
-        Assert.Empty(RegistrarCalificacionSugeridaTool.ObtenerRegistros());
     }
 
-    // ── Validaciones: puntajeMaximo ──────────────────────────────────────────
+    // ── Validaciones: puntajeMaximo ─────────────────────────────────────────
 
     [Fact]
-    public void RegistrarCalificacion_PuntajeMaximoCero_RetornaError()
+    public async Task RegistrarCalificacion_PuntajeMaximoCero_RetornaError()
     {
-        var result = RegistrarCalificacionSugeridaTool.RegistrarCalificacion(
-            EntregaIdValido, 5m, 0m, "Justificación válida.");
+        var tool = CrearTool();
 
-        Assert.False(result.Exito);
-        Assert.NotNull(result.Error);
-        Assert.Contains("mayor que cero", result.Error);
-        Assert.Empty(RegistrarCalificacionSugeridaTool.ObtenerRegistros());
-    }
-
-    [Fact]
-    public void RegistrarCalificacion_PuntajeMaximoNegativo_RetornaError()
-    {
-        var result = RegistrarCalificacionSugeridaTool.RegistrarCalificacion(
-            EntregaIdValido, 5m, -1m, "Justificación válida.");
+        var result = await tool.RegistrarCalificacion(
+            EntregaIdValido, PreguntaIdValido, 5m, 0m, "Justificación válida.");
 
         Assert.False(result.Exito);
         Assert.Contains("mayor que cero", result.Error);
     }
 
-    // ── Validaciones: justificacion ──────────────────────────────────────────
+    [Fact]
+    public async Task RegistrarCalificacion_PuntajeMaximoNegativo_RetornaError()
+    {
+        var tool = CrearTool();
+
+        var result = await tool.RegistrarCalificacion(
+            EntregaIdValido, PreguntaIdValido, 5m, -1m, "Justificación válida.");
+
+        Assert.False(result.Exito);
+        Assert.Contains("mayor que cero", result.Error);
+    }
+
+    // ── Validaciones: justificacion ─────────────────────────────────────────
 
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
     [InlineData(null)]
-    public void RegistrarCalificacion_JustificacionVacia_RetornaErrorSinGuardar(string? justificacionInvalida)
+    public async Task RegistrarCalificacion_JustificacionVacia_RetornaErrorSinCallback(string? justificacionInvalida)
     {
-        var result = RegistrarCalificacionSugeridaTool.RegistrarCalificacion(
-            EntregaIdValido, 7m, PuntajeMaximoValido, justificacionInvalida!);
+        var stub = new EvaluacionesClientStub(true);
+        var tool = new RegistrarCalificacionSugeridaTool(
+            stub, NullLogger<RegistrarCalificacionSugeridaTool>.Instance);
+
+        var result = await tool.RegistrarCalificacion(
+            EntregaIdValido, PreguntaIdValido, 7m, PuntajeMaximoValido, justificacionInvalida!);
 
         Assert.False(result.Exito);
-        Assert.NotNull(result.Error);
         Assert.Contains("obligatoria", result.Error);
-        Assert.Empty(RegistrarCalificacionSugeridaTool.ObtenerRegistros());
+        Assert.Equal(0, stub.LlamadasRegistradas);
     }
-
-    // ── Persistencia: entregaId ──────────────────────────────────────────────
 
     [Fact]
-    public void RegistrarCalificacion_GuardaEntregaId_Correcto()
+    public async Task RegistrarCalificacion_JustificacionSuperaLimite4000_RetornaError()
     {
-        var entregaId = Guid.NewGuid();
+        var tool = CrearTool();
+        var justificacionLarga = new string('x', 4001);
 
-        var result = RegistrarCalificacionSugeridaTool.RegistrarCalificacion(
-            entregaId, 8m, PuntajeMaximoValido, "Buena respuesta.");
+        var result = await tool.RegistrarCalificacion(
+            EntregaIdValido, PreguntaIdValido, 7m, PuntajeMaximoValido, justificacionLarga);
 
-        Assert.True(result.Exito);
-        var reg = RegistrarCalificacionSugeridaTool.ObtenerRegistros().Values.First();
-        Assert.Equal(entregaId, reg.EntregaId);
+        Assert.False(result.Exito);
+        Assert.Contains("4000", result.Error);
     }
 
-    // ── Entidad de dominio ───────────────────────────────────────────────────
+    // ── Entidad de dominio ──────────────────────────────────────────────────
 
     [Fact]
     public void CalificacionSugerida_Entidad_InicializaIdYFechaUtc()
     {
         var entidad = new CalificacionSugerida
         {
-            EntregaId    = Guid.NewGuid(),
-            NotaSugerida = 10,
+            EntregaId     = Guid.NewGuid(),
+            NotaSugerida  = 10,
             Justificacion = "Perfecto"
         };
 
         Assert.NotEqual(Guid.Empty, entidad.Id);
         Assert.NotEqual(Guid.Empty, entidad.EntregaId);
         Assert.True((DateTime.UtcNow - entidad.FechaRegistroUtc).TotalSeconds < 5);
+    }
+
+    // ── Stub de IEvaluacionesClient ─────────────────────────────────────────
+
+    private sealed class EvaluacionesClientStub : PEI.IA.Application.Interfaces.IEvaluacionesClient
+    {
+        private readonly bool _respuesta;
+
+        public int     LlamadasRegistradas { get; private set; }
+        public Guid    UltimoEntregaId     { get; private set; }
+        public Guid?   UltimoPreguntaId    { get; private set; }
+        public decimal UltimaNotaSugerida  { get; private set; }
+
+        public EvaluacionesClientStub(bool respuesta) => _respuesta = respuesta;
+
+        public Task<bool> RegistrarSugerenciaAsync(
+            Guid entregaId,
+            decimal notaSugerida,
+            string justificacion,
+            string desgloseJson,
+            Guid? preguntaId = null,
+            CancellationToken ct = default)
+        {
+            LlamadasRegistradas++;
+            UltimoEntregaId    = entregaId;
+            UltimoPreguntaId   = preguntaId;
+            UltimaNotaSugerida = notaSugerida;
+            return Task.FromResult(_respuesta);
+        }
     }
 }

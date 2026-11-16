@@ -1,8 +1,27 @@
 using ModelContextProtocol.AspNetCore;
 using ModelContextProtocol.Protocol.Types;
+using PEI.IA.Application.Interfaces;
+using PEI.IA.Infrastructure.Evaluaciones;
 using PEI.IA.McpServer.Resources;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// ── EvaluacionesHttpClient — callback hacia Evaluaciones desde la tool MCP ──
+var evaluacionesSettings = builder.Configuration
+    .GetSection("EvaluacionesSettings")
+    .Get<EvaluacionesSettings>() ?? new EvaluacionesSettings();
+
+// La clave interna viene de variable de entorno; nunca se hardcodea en el repo
+var apiKeyFromEnv = Environment.GetEnvironmentVariable("EVALUACIONES_API_KEY_INTERNA");
+if (!string.IsNullOrWhiteSpace(apiKeyFromEnv))
+    evaluacionesSettings.ApiKeyInterna = apiKeyFromEnv;
+
+builder.Services.AddSingleton(evaluacionesSettings);
+builder.Services.AddHttpClient<IEvaluacionesClient, EvaluacionesHttpClient>(client =>
+{
+    client.BaseAddress = new Uri(evaluacionesSettings.BaseUrl.TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromMilliseconds(evaluacionesSettings.TimeoutMs);
+});
 
 // ── Configurar servidor MCP con transporte HTTP stateless ──
 builder.Services
@@ -66,3 +85,4 @@ app.MapGet("/health", () => Results.Ok(new
 }));
 
 app.Run();
+

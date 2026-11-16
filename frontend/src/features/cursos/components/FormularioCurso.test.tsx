@@ -1,14 +1,16 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { FormularioCohorte } from './FormularioCohorte';
 import { useCrearCohorte } from '../hooks/useCrearCohorte';
+import { useDocentes } from '../hooks/useDocentes';
 import { DOCENTE_A_ID } from '../semillas';
 import { ApiError } from '@/shared/api/cliente';
 import { CURSO_1_ID } from '@/mocks/datos';
 
 vi.mock('../hooks/useCrearCohorte', () => ({ useCrearCohorte: vi.fn() }));
+vi.mock('../hooks/useDocentes', () => ({ useDocentes: vi.fn() }));
 vi.mock('@/shared/components/Aviso', () => ({
   useAviso: () => ({ mostrar: vi.fn() }),
 }));
@@ -35,6 +37,16 @@ function mostrarFormulario() {
 }
 
 describe('FormularioCohorte', () => {
+  beforeEach(() => {
+    // Los docentes ahora vienen de Identidad: se simula la lista para que haya uno elegido por defecto
+    vi.mocked(useDocentes).mockReturnValue({
+      data: [{ id: DOCENTE_A_ID, nombre: 'Docente A' }],
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useDocentes>);
+  });
+
   it('no envía si el nombre y el período están vacíos', async () => {
     const mutate = simular();
     mostrarFormulario();

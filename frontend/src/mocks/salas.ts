@@ -19,7 +19,7 @@ export const handlersSalas = [
   // 201 → { id, codigoPIN, fechaVencimiento, capacidadMaxima }.
   // Errores como el contrato: 400 (cuerpo inválido), 404 (evaluación inexistente o no publicada).
   http.post('*/api/v1/salas', async ({ request }) => {
-    const cuerpo = (await request.json()) as { evaluacionId?: string; capacidadMaxima?: number };
+    const cuerpo = (await request.json()) as { evaluacionId?: string; capacidadMaxima?: number; duracionMinutos?: number };
     if (!cuerpo.evaluacionId) return peticionInvalida('Falta la evaluación.');
 
     const capacidad = cuerpo.capacidadMaxima ?? CAPACIDAD_POR_DEFECTO;
@@ -36,7 +36,9 @@ export const handlersSalas = [
       {
         id: crypto.randomUUID(),
         codigoPIN: generarPin(),
-        fechaVencimiento: new Date(Date.now() + VIGENCIA_MS).toISOString(),
+        fechaVencimiento: new Date(
+          Date.now() + (cuerpo.duracionMinutos ? cuerpo.duracionMinutos * 60_000 : VIGENCIA_MS),
+        ).toISOString(),
         capacidadMaxima: capacidad,
       },
       { status: 201 },

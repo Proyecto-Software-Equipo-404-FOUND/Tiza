@@ -31,6 +31,14 @@ namespace PEI.SalaEnVivo.Application.UseCases.Salas.Handlers
                     "La capacidad máxima debe estar entre 1 y 100.");
             }
 
+            if (command.DuracionMinutos < CrearSalaCommand.DuracionMinima
+                || command.DuracionMinutos > CrearSalaCommand.DuracionMaxima)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(command.DuracionMinutos),
+                    $"La duración debe estar entre {CrearSalaCommand.DuracionMinima} y {CrearSalaCommand.DuracionMaxima} minutos.");
+            }
+
             if (_evaluacionesClient != null)
             {
                 var evaluacion = await _evaluacionesClient.ObtenerPreguntasAsync(
@@ -50,7 +58,7 @@ namespace PEI.SalaEnVivo.Application.UseCases.Salas.Handlers
                 InstitucionId = command.InstitucionId,
                 EvaluacionId = command.EvaluacionId,
                 CodigoPIN = await CrearPIN(cancellationToken),
-                FechaVencimiento = DateTime.UtcNow.AddHours(2),
+                FechaVencimiento = DateTime.UtcNow.AddMinutes(command.DuracionMinutos),
                 Estado = "Activa",
             };
             sala.SetCapacidadMaxima(command.CapacidadMaxima);

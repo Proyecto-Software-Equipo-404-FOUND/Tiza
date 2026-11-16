@@ -184,11 +184,16 @@ static string BuscarDirectorioReports()
 {
     var candidates = new[]
     {
-        Path.Combine(Directory.GetCurrentDirectory(), "services", "ia", "reports"),
-        Path.Combine(AppContext.BaseDirectory, "services", "ia", "reports"),
+        Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "reports")),
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "reports")),
+        Path.Combine(Directory.GetCurrentDirectory(), "services", "ia", "reports"),
         Path.Combine(Directory.GetCurrentDirectory(), "reports")
     };
+
+    foreach (var dir in candidates)
+    {
+        if (Directory.Exists(dir)) return dir;
+    }
 
     foreach (var dir in candidates)
     {

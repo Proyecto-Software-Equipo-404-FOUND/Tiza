@@ -1,5 +1,7 @@
 import { Check, DoorOpen, Pencil } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
+import { useEsDocente } from '@/features/auth/useEsDocente';
+import { PestanasEvaluacion } from '@/shared/components/PestanasEvaluacion';
 import { mensajeDeError } from '@/shared/api/errores';
 import { BannerError } from '@/shared/components/BannerError';
 import { EnlaceBoton } from '@/shared/components/EnlaceBoton';
@@ -66,6 +68,7 @@ function TarjetaPregunta({ pregunta, numero }: { pregunta: Pregunta; numero: num
 export function PaginaEvaluacion() {
   const { evaluacionId = '' } = useParams<{ evaluacionId: string }>();
   const { data: evaluacion, isPending, isError, error, refetch } = useEvaluacion(evaluacionId);
+  const esDocente = useEsDocente();
 
   return (
     <main className='mx-auto flex max-w-4xl flex-col gap-6 p-6'>
@@ -98,7 +101,7 @@ export function PaginaEvaluacion() {
                 Editar borrador
               </EnlaceBoton>
             )}
-            {evaluacion.estado === 'Publicada' && (
+            {evaluacion.estado === 'Publicada' && esDocente && (
               <EnlaceBoton
                 to={`/evaluaciones/${evaluacion.id}/sala`}
                 icono={<DoorOpen className='h-4 w-4' aria-hidden='true' />}
@@ -107,6 +110,9 @@ export function PaginaEvaluacion() {
                 Abrir sala
               </EnlaceBoton>
             )}
+            <div className='w-full'>
+              <PestanasEvaluacion evaluacionId={evaluacion.id} actual='detalle' />
+            </div>
           </header>
 
           <Tarjeta titulo='Resumen'>

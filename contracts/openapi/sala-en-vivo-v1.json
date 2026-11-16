@@ -23,7 +23,7 @@
           "Salas"
         ],
         "summary": "Abre una sala en vivo para una evaluación publicada y genera su PIN.",
-        "description": "Solo Docente o Administrador. La institución se toma del claim institucion_id del token, NUNCA del cuerpo. La evaluación tiene que existir, estar Publicada y ser de la misma institución (se consulta a Evaluaciones). Genera un PIN de 6 dígitos único entre las salas activas. La sala vence 2 horas después de creada (FechaVencimiento). Estado inicial: Activa (esperando alumnos); pasa a EnCurso con IniciarSala y a Finalizada con FinalizarSala por el hub.",
+        "description": "Solo Docente o Administrador. La institución se toma del claim institucion_id del token, NUNCA del cuerpo. La evaluación tiene que existir, estar Publicada y ser de la misma institución (se consulta a Evaluaciones). Genera un PIN de 6 dígitos único entre las salas activas. La sala vence duracionMinutos después de creada (por defecto 120; FechaVencimiento). Estado inicial: Activa (esperando alumnos); pasa a EnCurso con IniciarSala y a Finalizada con FinalizarSala por el hub.",
         "operationId": "CrearSala",
         "security": [
           {
@@ -156,11 +156,19 @@
             "maximum": 100,
             "default": 40,
             "description": "Cupo de alumnos. Máximo 100 (meta de rendimiento del proyecto)."
+          },
+          "duracionMinutos": {
+            "type": "integer",
+            "minimum": 5,
+            "maximum": 240,
+            "default": 120,
+            "description": "Minutos que la sala queda abierta desde que se crea. Pasado ese tiempo ya no se puede entrar con el PIN ni responder."
           }
         },
         "example": {
           "evaluacionId": "3c4d5e6f-7a8b-4c9d-8e0f-1a2b3c4d5e6f",
-          "capacidadMaxima": 30
+          "capacidadMaxima": 30,
+          "duracionMinutos": 45
         }
       },
       "SalaCreada": {

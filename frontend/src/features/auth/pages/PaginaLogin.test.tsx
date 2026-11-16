@@ -29,7 +29,7 @@ function mostrarPagina() {
         <Routes>
           <Route path='/login' element={<PaginaLogin />} />
           <Route path='/cursos' element={<p>Pantalla de cursos</p>} />
-          <Route path='/' element={<p>Inicio del alumno</p>} />
+          <Route path='/' element={<p>Pantalla de inicio</p>} />
         </Routes>
       </MemoryRouter>
     </SesionProvider>,
@@ -94,13 +94,13 @@ describe('PaginaLogin', () => {
     expect(await screen.findByRole('button', { name: 'Cargando…' })).toBeDisabled();
   });
 
-  it('lleva al docente a /cursos y permite enviar con Enter', async () => {
+  it('lleva al docente al inicio y permite enviar con Enter', async () => {
     vi.mocked(auth.iniciarSesion).mockResolvedValue({ accessToken: crearTokenFalso(docente) });
     mostrarPagina();
     await completar('docente@a.test', 'clave');
     await userEvent.type(screen.getByLabelText('Contraseña'), '{Enter}');
 
-    expect(await screen.findByText('Pantalla de cursos')).toBeInTheDocument();
+    expect(await screen.findByText('Pantalla de inicio')).toBeInTheDocument();
     expect(auth.iniciarSesion).toHaveBeenCalledWith('docente@a.test', 'clave');
   });
 
@@ -110,6 +110,6 @@ describe('PaginaLogin', () => {
     await completar('alumno1@a.test', 'clave');
     await ingresar();
 
-    expect(await screen.findByText('Inicio del alumno')).toBeInTheDocument();
+    expect(await screen.findByText('Pantalla de inicio')).toBeInTheDocument();
   });
 });
