@@ -55,6 +55,15 @@ export type AlumnoIngresoEvento = {
   ingresoUtc: string;
 };
 
+// Evento `alumnoSalio` (sección 6.9). Llega cuando se cierra la conexión activa de un alumno.
+export type AlumnoSalioEvento = {
+  salaId: string;
+  alumnoId: string;
+  alias: string;
+  totalConectados: number;
+  salidaUtc: string;
+};
+
 // Evento `respuestaRegistrada` (sección 6.4). `secuencia` y `estado` son opcionales:
 // el contrato los define pero no se verificó que el hub los mande.
 export type RespuestaRegistradaEvento = {
@@ -88,6 +97,8 @@ export type AlumnoPanel = {
   ingresoUtc: string | null;
   alertas: number;
   peorSeveridad: SeveridadFoco;
+  // Solo se completa cuando el alumno sale de la sala; al volver a entrar se quita
+  desconectado?: boolean;
 };
 
 export type FaseSalaDocente = 'sinSala' | 'espera' | 'enCurso' | 'finalizada';

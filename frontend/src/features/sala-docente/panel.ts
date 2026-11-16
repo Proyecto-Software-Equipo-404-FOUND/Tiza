@@ -1,4 +1,11 @@
-import type { AlertaFocoEvento, AlumnoIngresoEvento, AlumnoPanel, PreguntaActual, SeveridadFoco } from './tipos';
+import type {
+  AlertaFocoEvento,
+  AlumnoIngresoEvento,
+  AlumnoPanel,
+  AlumnoSalioEvento,
+  PreguntaActual,
+  SeveridadFoco,
+} from './tipos';
 
 export const ALIAS_SIN_IDENTIFICAR = 'Alumno sin identificar';
 
@@ -33,11 +40,17 @@ export function registrarIngreso(alumnos: AlumnoPanel[], evento: AlumnoIngresoEv
       },
     ];
   }
-  return alumnos.map((alumno) =>
-    alumno.alumnoId === evento.alumnoId
-      ? { ...alumno, alias: evento.alias, ingresoUtc: alumno.ingresoUtc ?? evento.ingresoUtc }
-      : alumno,
-  );
+  return alumnos.map((alumno) => {
+    if (alumno.alumnoId !== evento.alumnoId) return alumno;
+    // Si estaba marcado como desconectado, al reconectarse vuelve a figurar como conectado
+    return { ...alumno, desconectado: undefined, alias: evento.alias, ingresoUtc: alumno.ingresoUtc ?? evento.ingresoUtc };
+  });
+}
+
+// Un alumno que sale no se saca de la lista (se conservan sus alertas): se marca como desconectado.
+// Si no estaba en la lista (salió y nunca lo vimos entrar) no se agrega.
+export function registrarSalida(alumnos: AlumnoPanel[], evento: AlumnoSalioEvento): AlumnoPanel[] {
+  return alumnos.map((alumno) => (alumno.alumnoId === evento.alumnoId ? { ...alumno, desconectado: true } : alumno));
 }
 
 export type ResultadoAlerta = { alumnos: AlumnoPanel[]; idsVistos: ReadonlySet<string> };

@@ -7,9 +7,10 @@ import {
   normalizarSeveridad,
   registrarAlerta,
   registrarIngreso,
+  registrarSalida,
   segundosRestantes,
 } from './panel';
-import type { AlertaFocoEvento, AlumnoIngresoEvento, AlumnoPanel } from './tipos';
+import type { AlertaFocoEvento, AlumnoIngresoEvento, AlumnoPanel, AlumnoSalioEvento } from './tipos';
 
 const SALA = '11111111-1111-4111-8111-111111111111';
 const ALUMNO_1 = '22222222-2222-4222-8222-222222222221';
@@ -187,5 +188,39 @@ describe('cronómetro con el reloj del servidor', () => {
     expect(formatearTiempo(5)).toBe('00:05');
     expect(formatearTiempo(90)).toBe('01:30');
     expect(formatearTiempo(3600)).toBe('60:00');
+  });
+});
+
+describe('registrarSalida', () => {
+  const salida = (cambios: Partial<AlumnoSalioEvento> = {}): AlumnoSalioEvento => ({
+    salaId: SALA,
+    alumnoId: ALUMNO_1,
+    alias: 'Alumno 1',
+    totalConectados: 0,
+    salidaUtc: '2026-11-05T14:30:00.000Z',
+    ...cambios,
+  });
+
+  it('marca como desconectado al alumno y conserva sus alertas', () => {
+    const lista = [alumno({ alertas: 2, peorSeveridad: 'roja' })];
+    const resultado = registrarSalida(lista, salida());
+    expect(resultado[0]).toMatchObject({ desconectado: true, alertas: 2, peorSeveridad: 'roja' });
+  });
+
+  it('no agrega a un alumno que nunca estuvo en la lista', () => {
+    expect(registrarSalida([], salida())).toEqual([]);
+  });
+
+  it('solo toca al alumno que salió', () => {
+    const lista = [alumno(), alumno({ alumnoId: ALUMNO_2, alias: 'Alumno 2' })];
+    const resultado = registrarSalida(lista, salida());
+    expect(resultado[0].desconectado).toBe(true);
+    expect(resultado[1].desconectado).toBeUndefined();
+  });
+
+  it('al reconectarse con registrarIngreso deja de figurar como desconectado', () => {
+    const lista = registrarSalida([alumno()], salida());
+    const resultado = registrarIngreso(lista, ingreso());
+    expect(resultado[0].desconectado).toBeUndefined();
   });
 });

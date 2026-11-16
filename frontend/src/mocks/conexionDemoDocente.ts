@@ -28,7 +28,8 @@ const preguntaNumero = (salaId: string, indice: number): PreguntaActual => ({
 });
 
 // Sala de mentira para la demo del panel del docente.
-// Al unirse el docente, «entran» 4 alumnos de a uno (el 2 entra dos veces, como una reconexión).
+// Al unirse el docente, «entran» 4 alumnos de a uno (el 2 entra dos veces, como una reconexión)
+// y el 4 se desconecta a los pocos segundos (evento `alumnoSalio`).
 // Al iniciar, llegan respuestas y alertas de foco simuladas (una amarilla y una roja).
 // Errores del hub como el real: «CODIGO: mensaje».
 export function crearConexionDemoDocente(): ConexionSala {
@@ -55,11 +56,24 @@ export function crearConexionDemoDocente(): ConexionSala {
     });
   };
 
+  const salir = (posicion: number) => {
+    const alumno = ALUMNOS[posicion];
+    ingresaron.delete(alumno.alumnoId);
+    simular('alumnoSalio', {
+      salaId,
+      alumnoId: alumno.alumnoId,
+      alias: alumno.alias,
+      totalConectados: ingresaron.size,
+      salidaUtc: new Date().toISOString(),
+    });
+  };
+
   const simularAlumnos = () => {
     if (alumnosSimulados) return;
     alumnosSimulados = true;
     [0, 1, 2, 3].forEach((posicion, i) => setTimeout(() => sigueEn('Activa') && ingresar(posicion), 1500 * (i + 1)));
     setTimeout(() => sigueEn('Activa') && ingresar(1), 8000); // reconexión: mismo alumno, no suma
+    setTimeout(() => sigueEn('Activa') && salir(3), 11000); // un alumno se desconecta
   };
 
   const simularActividad = () => {

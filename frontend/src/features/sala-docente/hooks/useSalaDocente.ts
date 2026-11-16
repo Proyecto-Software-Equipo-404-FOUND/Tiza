@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ConexionSala } from '@/shared/realtime/tipos';
 import { codigoDeError, mensajeAccionSala } from '../errores';
-import { calcularDesfaseMs, registrarAlerta, registrarIngreso } from '../panel';
+import { calcularDesfaseMs, registrarAlerta, registrarIngreso, registrarSalida } from '../panel';
 import type {
   AlertaFocoEvento,
   AlumnoIngresoEvento,
   AlumnoPanel,
+  AlumnoSalioEvento,
   EstadoSalaEvento,
   FaseSalaDocente,
   PreguntaActual,
@@ -46,6 +47,13 @@ export function useSalaDocente(conexion: ConexionSala, salaId: string) {
       setLista((previa) => ({ ...previa, alumnos: registrarIngreso(previa.alumnos, evento) }));
       // El total lo calcula el servidor: manda sobre el conteo local
       setTotalConectados(evento.totalConectados);
+    });
+    conexion.escuchar('alumnoSalio', (carga) => {
+      if (!activo) return;
+      const evento = carga as AlumnoSalioEvento;
+      setLista((previa) => ({ ...previa, alumnos: registrarSalida(previa.alumnos, evento) }));
+      // El total lo calcula el servidor: manda sobre el conteo local
+      if (typeof evento.totalConectados === 'number') setTotalConectados(evento.totalConectados);
     });
     conexion.escuchar('alertaFoco', (carga) => {
       if (!activo) return;
