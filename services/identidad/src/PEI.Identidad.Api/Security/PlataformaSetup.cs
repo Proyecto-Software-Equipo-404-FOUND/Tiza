@@ -15,6 +15,22 @@ public static class PlataformaSetup
     {
         var options = configuration.GetSection("Platform").Get<PlataformaOptions>() ?? new();
         services.AddSingleton(options);
+
+        // El envío de invitaciones es una capacidad institucional y de plataforma;
+        // no depende de que las rutas globales estén habilitadas.
+        var dataProtection = services.AddDataProtection().SetApplicationName("Tiza.Identidad.Plataforma");
+        if (OperatingSystem.IsWindows()) dataProtection.ProtectKeysWithDpapi();
+        if (!string.IsNullOrWhiteSpace(options.KeyDirectory))
+        {
+            if (!Path.IsPathFullyQualified(options.KeyDirectory))
+                throw new InvalidOperationException("Configurar un directorio absoluto para las claves de Data Protection.");
+            dataProtection.PersistKeysToFileSystem(new DirectoryInfo(options.KeyDirectory));
+        }
+        services.AddScoped<InvitacionesOutbox>();
+        if (environment.IsDevelopment()) services.AddScoped<IEmailSender, DevelopmentEmailSender>();
+        services.AddHostedService<InvitationSenderRegistrationValidator>();
+        services.AddHostedService<InvitacionesWorker>();
+
         if (!options.Enabled)
         {
             services.AddAuthorization(o => o.AddPolicy(Policy, p => p.RequireAssertion(_ => false)));
@@ -28,18 +44,10 @@ public static class PlataformaSetup
             if (local.SecretKey == options.Jwt.SecretKey || local.Issuer == options.Jwt.Issuer || local.Audience == options.Jwt.Audience)
                 throw new InvalidOperationException("La confianza local y la de plataforma deben estar separadas.");
         }
-        var dataProtection = services.AddDataProtection().SetApplicationName("Tiza.Identidad.Plataforma")
-            .PersistKeysToFileSystem(new DirectoryInfo(options.KeyDirectory));
-        if (OperatingSystem.IsWindows()) dataProtection.ProtectKeysWithDpapi();
         services.AddScoped<IPlataformaDataAccess, PlataformaDataAccess>();
         services.AddScoped<IPlataformaTokenService, PlataformaTokenService>();
         services.AddScoped<PlataformaHandlers>();
         services.AddScoped<PlataformaBootstrap>();
-        services.AddScoped<InvitacionesOutbox>();
-        if (environment.IsDevelopment()) services.AddScoped<IEmailSender, DevelopmentEmailSender>();
-        else if (!services.Any(d => d.ServiceType == typeof(IEmailSender)))
-            throw new InvalidOperationException("Registrar un IEmailSender productivo antes de AddPlataforma para habilitar Platform fuera de Development.");
-        services.AddHostedService<InvitacionesWorker>();
         services.AddAuthentication().AddJwtBearer(Scheme, o =>
         {
             o.MapInboundClaims = false; o.IncludeErrorDetails = false;

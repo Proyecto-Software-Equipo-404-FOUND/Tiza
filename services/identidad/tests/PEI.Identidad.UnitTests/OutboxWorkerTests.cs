@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using PEI.Identidad.Application.Plataforma;
 using PEI.Identidad.Infrastructure.Plataforma;
 
 namespace PEI.Identidad.UnitTests;
@@ -22,6 +23,7 @@ public sealed class OutboxWorkerTests
     {
         const string secreto = "token-sintetico-confidencial-no-publicar";
         await using var services = new ServiceCollection()
+            .AddSingleton<IEmailSender, TestEmailSender>()
             .AddScoped<InvitacionesOutbox>(_ => throw new InvalidOperationException(secreto))
             .BuildServiceProvider();
         var logger = new Captura();
@@ -34,6 +36,25 @@ public sealed class OutboxWorkerTests
             Assert.Equal("No se pudo procesar el outbox de invitaciones; se reintentará.", result.Message);
             Assert.DoesNotContain(secreto, result.Message);
             Assert.Null(result.Error);
+        }
+        finally { await worker.StopAsync(timeout.Token); }
+    }
+
+    [Fact]
+    public async Task ValidadorYWorkerPermitenAcumularOutboxSinSenderConfigurado()
+    {
+        await using var services = new ServiceCollection().BuildServiceProvider();
+        var validator = new InvitationSenderRegistrationValidator(services);
+        await validator.StartAsync(default);
+
+        var logger = new Captura();
+        using var worker = new InvitacionesWorker(services.GetRequiredService<IServiceScopeFactory>(), logger);
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+        await worker.StartAsync(timeout.Token);
+        try
+        {
+            await Task.Delay(100, timeout.Token);
+            Assert.False(logger.Warning.Task.IsCompleted);
         }
         finally { await worker.StopAsync(timeout.Token); }
     }
