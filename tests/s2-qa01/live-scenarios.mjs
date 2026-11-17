@@ -37,7 +37,9 @@ export async function runScenarios({ root, env, password, container, command, la
       headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(tenant ? { 'X-Institucion-Id': tenant } : {}) },
       ...(body ? { body: JSON.stringify(body) } : {}), signal: AbortSignal.timeout(20000) });
     assert.equal(response.status, expected, `${method} ${route}: HTTP inesperado`);
-    return response.status === 204 ? null : response.json();
+    // Forbid() puede devolver 403 sin cuerpo; validar el estado no exige JSON.
+    const text = await response.text();
+    return text ? JSON.parse(text) : null;
   }
   async function login(email) {
     const session = await api('/api/v1/identidad/auth/login', { method: 'POST', body: { email, password } });
