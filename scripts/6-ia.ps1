@@ -1,5 +1,4 @@
 $Host.UI.RawUI.WindowTitle = "6 - IA OpenRouter (5105)"
-$env:PATH = "C:\Program Files (x86)\dotnet;$env:PATH"
 Set-Location "$PSScriptRoot\.."
 
 # Leer clave desde variable de entorno o desde archivo local .env.openrouter (ignorado en git)

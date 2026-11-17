@@ -38,7 +38,7 @@ if ($hasWt -and -not $SeparateWindows) {
             $wtList.Add("new-tab")
         }
         $wtList.Add("-d")
-        $wtList.Add($repoRoot)
+        $wtList.Add("`"$repoRoot`"")
         $wtList.Add("--title")
         $wtList.Add($s.Name)
         $wtList.Add("powershell.exe")
@@ -46,14 +46,14 @@ if ($hasWt -and -not $SeparateWindows) {
         $wtList.Add("-ExecutionPolicy")
         $wtList.Add("Bypass")
         $wtList.Add("-File")
-        $wtList.Add($s.File)
+        $wtList.Add("`"$($s.File)`"")
     }
     Start-Process wt.exe -ArgumentList $wtList.ToArray()
 } else {
     Write-Host "Abriendo en ventanas individuales de PowerShell..." -ForegroundColor Green
     foreach ($s in $scripts) {
         Write-Host " -> Iniciando $($s.Name)..."
-        Start-Process powershell.exe -ArgumentList "-NoExit", "-ExecutionPolicy", "Bypass", "-File", $s.File
+        Start-Process powershell.exe -ArgumentList "-NoExit", "-ExecutionPolicy", "Bypass", "-File", "`"$($s.File)`""
         Start-Sleep -Seconds 1
     }
 }
