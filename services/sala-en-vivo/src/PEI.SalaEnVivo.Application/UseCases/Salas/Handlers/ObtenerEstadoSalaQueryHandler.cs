@@ -105,9 +105,18 @@ namespace PEI.SalaEnVivo.Application.UseCases.Salas.Handlers
                     cancellationToken);
             }
 
-            var vencimientoCronometro = await _cronometroService.ObtenerVencimientoAsync(salaId, cancellationToken);
-            DateTime? fechaLimiteUtc = vencimientoCronometro
-                ?? (sala.FechaVencimiento != default ? DateTime.SpecifyKind(sala.FechaVencimiento, DateTimeKind.Utc) : null);
+            // S3-SA-02 (#239): antes de iniciar no hay reloj corriendo (fechaLimiteUtc = null);
+            // el front muestra la duración completa. Las salas iniciadas antes del Sprint 3
+            // (Estado EnCurso sin IniciadaUtc) conservan su vencimiento.
+            var relojCorriendo = sala.FueIniciada
+                || !string.Equals(sala.Estado, "Activa", StringComparison.OrdinalIgnoreCase);
+            DateTime? fechaLimiteUtc = null;
+            if (relojCorriendo)
+            {
+                var vencimientoCronometro = await _cronometroService.ObtenerVencimientoAsync(salaId, cancellationToken);
+                fechaLimiteUtc = vencimientoCronometro
+                    ?? (sala.FechaVencimiento != default ? DateTime.SpecifyKind(sala.FechaVencimiento, DateTimeKind.Utc) : null);
+            }
 
             PreguntaActualDto? preguntaActual = null;
             if (_evaluacionesClient != null &&
@@ -132,7 +141,9 @@ namespace PEI.SalaEnVivo.Application.UseCases.Salas.Handlers
                 UltimaSecuencia: ultimaSecuencia,
                 PreguntasRespondidas: preguntasRespondidas,
                 ServidorUtc: DateTime.UtcNow,
-                FechaLimiteUtc: fechaLimiteUtc);
+                FechaLimiteUtc: fechaLimiteUtc,
+                DuracionMinutos: sala.DuracionMinutos,
+                IniciadaUtc: sala.IniciadaUtc.HasValue ? DateTime.SpecifyKind(sala.IniciadaUtc.Value, DateTimeKind.Utc) : null);
         }
 
         private async Task<EvaluacionPreguntasDto?> ObtenerEvaluacionAsync(

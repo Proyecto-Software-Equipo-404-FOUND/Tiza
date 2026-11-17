@@ -81,7 +81,9 @@ namespace PEI.SalaEnVivo.Api.Controllers
                     {
                         Id = sala.Id,
                         CodigoPIN = sala.CodigoPIN,
-                        FechaVencimiento = sala.FechaVencimiento,
+                        // S3-SA-02 (#239): null hasta que el docente inicia la sala.
+                        FechaVencimiento = sala.FueIniciada ? sala.FechaVencimiento : (DateTime?)null,
+                        DuracionMinutos = sala.DuracionMinutos,
                         CapacidadMaxima = sala.CapacidadMaxima
                     });
             }

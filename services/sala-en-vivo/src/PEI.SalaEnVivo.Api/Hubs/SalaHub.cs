@@ -292,7 +292,8 @@ namespace PEI.SalaEnVivo.Api.Hubs
                     salaId = valor.SalaIniciada.SalaId,
                     iniciadaUtc = valor.SalaIniciada.IniciadaUtc,
                     totalPreguntas = valor.SalaIniciada.TotalPreguntas,
-                    fechaLimiteUtc = valor.SalaIniciada.FechaLimiteUtc
+                    fechaLimiteUtc = valor.SalaIniciada.FechaLimiteUtc,
+                    servidorUtc = DateTime.UtcNow
                 },
                 Context.ConnectionAborted);
 

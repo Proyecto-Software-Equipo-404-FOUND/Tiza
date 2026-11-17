@@ -129,6 +129,24 @@ namespace PEI.SalaEnVivo.UnitTests
         }
 
         [Fact]
+        public async Task Handle_SalaSinIniciar_NoTieneRelojYDevuelveLaDuracion()
+        {
+            // S3-SA-02 (#239): antes de iniciar, fechaLimiteUtc = null y se informa la duración.
+            var salaId = Guid.NewGuid();
+            var institucionId = Guid.NewGuid();
+            var sala = CrearSala(salaId, institucionId, "Activa");
+            sala.DuracionMinutos = 45;
+
+            var estado = await CrearHandler().Handle(
+                new ObtenerEstadoSalaQuery(Guid.NewGuid(), institucionId, "Docente", salaId),
+                CancellationToken.None);
+
+            Assert.Null(estado.FechaLimiteUtc);
+            Assert.Equal(45, estado.DuracionMinutos);
+            Assert.Null(estado.IniciadaUtc);
+        }
+
+        [Fact]
         public async Task Handle_SalaFinalizada_RetornaEstadoFinalizadaSinError()
         {
             var salaId = Guid.NewGuid();
