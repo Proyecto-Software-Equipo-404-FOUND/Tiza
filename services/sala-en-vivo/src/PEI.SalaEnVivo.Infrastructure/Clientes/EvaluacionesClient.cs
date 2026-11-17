@@ -77,7 +77,10 @@ namespace PEI.SalaEnVivo.Infrastructure.Clientes
                         p.Opciones?
                             .Select(o => new OpcionEvaluacionDto(o.Id, o.Texto ?? string.Empty))
                             .ToList()))
-                    .ToList());
+                    .ToList())
+            {
+                CohorteId = evaluacion.CohorteId
+            };
         }
 
         public async Task<ResultadoLoteEntregasDto?> EnviarLoteEntregasAsync(
@@ -180,7 +183,8 @@ namespace PEI.SalaEnVivo.Infrastructure.Clientes
         private sealed record EvaluacionApiDto(
             Guid Id,
             string? Estado,
-            PreguntasJsonApiDto? PreguntasJson);
+            PreguntasJsonApiDto? PreguntasJson,
+            Guid? CohorteId = null);
 
         private sealed record PreguntasJsonApiDto(
             List<PreguntaApiDto>? Preguntas);

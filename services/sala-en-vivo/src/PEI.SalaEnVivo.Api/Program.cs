@@ -55,6 +55,16 @@ builder.Services.AddHttpClient<IEvaluacionesClient, EvaluacionesClient>(client =
     client.Timeout = TimeSpan.FromSeconds(10);
 });
 
+// Cursos: verifica la matrícula del alumno al unirse por PIN
+var cursosBaseUrl = builder.Configuration["Cursos:BaseUrl"]
+                    ?? "http://localhost:5102";
+
+builder.Services.AddHttpClient<ICursosClient, CursosClient>(client =>
+{
+    client.BaseAddress = new Uri(cursosBaseUrl.TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromSeconds(5);
+});
+
 builder.Services.AddScoped<CrearSalaCommandHandler>();
 
 builder.Services.AddMediatR(cfg =>

@@ -9,6 +9,8 @@ const CODIGOS: CodigoSala[] = [
   'ALUMNO_YA_EN_SALA',
   'ALUMNO_NO_EN_SALA',
   'SALA_FINALIZADA',
+  'ALUMNO_NO_MATRICULADO',
+  'MATRICULA_NO_VERIFICADA',
 ];
 
 // Mensajes que el hub devuelve hoy sin código (sección 8.4 del contrato). Es un puente temporal.
@@ -45,6 +47,8 @@ const MENSAJES: Record<CodigoSala, string> = {
   ALUMNO_YA_EN_SALA: 'Ya estás en esta sala.',
   ALUMNO_NO_EN_SALA: 'No encontramos tu sala. Ingresá el PIN de nuevo.',
   SALA_FINALIZADA: 'Esta sala ya finalizó.',
+  ALUMNO_NO_MATRICULADO: 'No estás matriculado en la cohorte de esta evaluación. Consultá con tu docente.',
+  MATRICULA_NO_VERIFICADA: 'No pudimos verificar tu matrícula. Probá de nuevo en unos segundos.',
   ERROR_INTERNO: 'Algo salió mal. Probá de nuevo.',
 };
 

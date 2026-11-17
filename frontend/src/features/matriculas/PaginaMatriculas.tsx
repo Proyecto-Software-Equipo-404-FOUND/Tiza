@@ -8,7 +8,16 @@ import { Spinner } from '@/shared/components/Spinner';
 import { Tabla, type Columna } from '@/shared/components/Tabla';
 import { Tarjeta } from '@/shared/components/Tarjeta';
 import { useAviso } from '@/shared/components/Aviso';
-import { listarAlumnos, listarMatriculas, matricularAlumno, type Alumno, type Matricula } from './api/matriculas';
+import { ModalConfirmacion } from '@/shared/components/ModalConfirmacion';
+import {
+  darDeBajaMatricula,
+  listarAlumnos,
+  listarMatriculas,
+  matricularAlumno,
+  reactivarMatricula,
+  type Alumno,
+  type Matricula,
+} from './api/matriculas';
 import { estaDeBaja, fechaCorta, nombreDeAlumno } from './nombres';
 
 const crearColumnas = (alumnos: Alumno[]): Columna<Matricula>[] => [
@@ -38,6 +47,7 @@ export function PaginaMatriculas() {
   const [errorAlMatricular, setErrorAlMatricular] = useState<string | null>(null);
   // Un ref se actualiza al instante; el estado de la mutación recién llega en el próximo render
   const enviando = useRef(false);
+  const [aDarDeBaja, setADarDeBaja] = useState<Matricula | null>(null);
 
   const matriculas = useQuery({
     queryKey: ['matriculas', cohorteId],
@@ -57,6 +67,25 @@ export function PaginaMatriculas() {
     onSettled: () => {
       enviando.current = false;
     },
+  });
+
+  const darDeBaja = useMutation({
+    mutationFn: (matricula: Matricula) => darDeBajaMatricula(cohorteId, matricula.id),
+    onSuccess: () => {
+      mostrar('exito', 'Alumno dado de baja de la cohorte.');
+      void clienteQuery.invalidateQueries({ queryKey: ['matriculas', cohorteId] });
+    },
+    onError: (error) => mostrar('error', mensajeDeError(error)),
+    onSettled: () => setADarDeBaja(null),
+  });
+
+  const reactivar = useMutation({
+    mutationFn: (matricula: Matricula) => reactivarMatricula(cohorteId, matricula.id),
+    onSuccess: () => {
+      mostrar('exito', 'Matrícula reactivada.');
+      void clienteQuery.invalidateQueries({ queryKey: ['matriculas', cohorteId] });
+    },
+    onError: (error) => mostrar('error', mensajeDeError(error)),
   });
 
   const recargar = () => {
@@ -88,6 +117,41 @@ export function PaginaMatriculas() {
   const listaAlumnos = alumnos.data ?? [];
   const disponibles = listaAlumnos.filter((a) => !yaMatriculados.has(a.id));
   const columnas = crearColumnas(listaAlumnos);
+  const columnasActivas: Columna<Matricula>[] = [
+    ...columnas,
+    {
+      titulo: 'Acción',
+      celda: (m) => (
+        <Boton
+          type='button'
+          variante='secundario'
+          className='!px-3 !py-1 text-sm'
+          disabled={darDeBaja.isPending}
+          onClick={() => setADarDeBaja(m)}
+        >
+          Dar de baja
+        </Boton>
+      ),
+    },
+  ];
+  const columnasDeBaja: Columna<Matricula>[] = [
+    ...columnas,
+    {
+      titulo: 'Acción',
+      celda: (m) => (
+        <Boton
+          type='button'
+          variante='secundario'
+          className='!px-3 !py-1 text-sm'
+          cargando={reactivar.isPending && reactivar.variables?.id === m.id}
+          disabled={reactivar.isPending}
+          onClick={() => reactivar.mutate(m)}
+        >
+          Reactivar
+        </Boton>
+      ),
+    },
+  ];
   const activas = listaMatriculas.filter((m) => !estaDeBaja(m));
   const deBaja = listaMatriculas.filter(estaDeBaja);
 
@@ -144,7 +208,7 @@ export function PaginaMatriculas() {
 
       <Tarjeta titulo='Alumnos matriculados'>
         <Tabla
-          columnas={columnas}
+          columnas={columnasActivas}
           filas={activas}
           clave={(m) => m.id}
           textoVacio='Todavía no hay alumnos matriculados en esta cohorte.'
@@ -153,12 +217,25 @@ export function PaginaMatriculas() {
 
       <Tarjeta titulo='Matrículas inactivas' subtitulo='Alumnos dados de baja de esta cohorte.'>
         <Tabla
-          columnas={columnas}
+          columnas={columnasDeBaja}
           filas={deBaja}
           clave={(m) => m.id}
           textoVacio='No hay matrículas inactivas.'
         />
       </Tarjeta>
+
+      <ModalConfirmacion
+        abierto={aDarDeBaja !== null}
+        titulo='Dar de baja al alumno'
+        mensaje={
+          aDarDeBaja
+            ? `${nombreDeAlumno(aDarDeBaja, listaAlumnos)} deja de estar matriculado en esta cohorte y ya no va a poder entrar a sus salas en vivo.`
+            : ''
+        }
+        textoConfirmar='Sí, dar de baja'
+        onConfirmar={() => aDarDeBaja && !darDeBaja.isPending && darDeBaja.mutate(aDarDeBaja)}
+        onCancelar={() => setADarDeBaja(null)}
+      />
     </Marco>
   );
 }

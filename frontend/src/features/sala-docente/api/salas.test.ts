@@ -13,7 +13,7 @@ describe('abrirSala', () => {
     vi.unstubAllGlobals();
   });
 
-  it('hace POST a /api/v1/salas con evaluacionId y capacidadMaxima, sin institución', async () => {
+  it('hace POST a /api/v1/salas con evaluacionId, capacidadMaxima y duracionMinutos, sin institución', async () => {
     const creada = {
       id: '6a2b7c3d-8e9f-4a01-b2c3-d4e5f6a7b8c9',
       codigoPIN: 482913,
@@ -22,12 +22,12 @@ describe('abrirSala', () => {
     };
     pedido.mockResolvedValue({ ok: true, status: 201, json: async () => creada });
 
-    await expect(abrirSala({ evaluacionId: 'ev-1', capacidadMaxima: 30 })).resolves.toEqual(creada);
+    await expect(abrirSala({ evaluacionId: 'ev-1', capacidadMaxima: 30, duracionMinutos: 45 })).resolves.toEqual(creada);
 
     const [ruta, opciones] = pedido.mock.calls[0];
     expect(ruta).toContain('/api/v1/salas');
     expect(opciones.method).toBe('POST');
-    expect(JSON.parse(opciones.body)).toEqual({ evaluacionId: 'ev-1', capacidadMaxima: 30 });
+    expect(JSON.parse(opciones.body)).toEqual({ evaluacionId: 'ev-1', capacidadMaxima: 30, duracionMinutos: 45 });
     expect(opciones.headers).not.toHaveProperty('X-Institucion-Id');
   });
 
@@ -38,7 +38,7 @@ describe('abrirSala', () => {
       json: async () => ({ title: 'No existe una evaluación publicada con ese id.', status: 404 }),
     });
 
-    await expect(abrirSala({ evaluacionId: 'ev-x', capacidadMaxima: 40 })).rejects.toMatchObject({ estado: 404 });
+    await expect(abrirSala({ evaluacionId: 'ev-x', capacidadMaxima: 40, duracionMinutos: 60 })).rejects.toMatchObject({ estado: 404 });
   });
 });
 

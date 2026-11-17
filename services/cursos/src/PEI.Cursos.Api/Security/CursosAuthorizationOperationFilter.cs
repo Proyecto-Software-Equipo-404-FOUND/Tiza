@@ -14,6 +14,7 @@ public sealed class CursosAuthorizationOperationFilter : IOperationFilter
             {
                 CursosAuthorization.SoloAdministrador => "Administrador",
                 CursosAuthorization.AdministradorODocente => "Administrador o Docente",
+                CursosAuthorization.GestionOAlumnoPropio => "Administrador, Docente o el propio Alumno",
                 _ => null
             })
             .FirstOrDefault(value => value is not null);

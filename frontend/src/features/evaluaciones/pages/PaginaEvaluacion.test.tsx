@@ -3,10 +3,12 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
 import { PaginaEvaluacion } from './PaginaEvaluacion';
 import { useEvaluacion } from '../hooks/useEvaluacion';
+import { useEsDocente } from '@/features/auth/useEsDocente';
 import { ApiError } from '@/shared/api/cliente';
 import type { Evaluacion } from '../tipos';
 
 vi.mock('../hooks/useEvaluacion', () => ({ useEvaluacion: vi.fn() }));
+vi.mock('@/features/auth/useEsDocente', () => ({ useEsDocente: vi.fn(() => true) }));
 vi.mock('../components/PublicarEvaluacion', () => ({ PublicarEvaluacion: () => <p>PUBLICAR</p> }));
 vi.mock('../components/EliminarEvaluacion', () => ({ EliminarEvaluacion: () => <p>ELIMINAR</p> }));
 
@@ -156,5 +158,17 @@ describe('PaginaEvaluacion', () => {
     renderizar();
     expect(screen.queryByText('PUBLICAR')).not.toBeInTheDocument();
     expect(screen.queryByText('ELIMINAR')).not.toBeInTheDocument();
+  });
+
+  it('una evaluación publicada ofrece abrir la sala solo al docente', () => {
+    simular({ data: { ...evaluacion, estado: 'Publicada' } });
+    const { unmount } = renderizar();
+    expect(screen.getByRole('link', { name: 'Abrir sala' })).toHaveAttribute('href', '/evaluaciones/e1/sala');
+    unmount();
+
+    vi.mocked(useEsDocente).mockReturnValue(false);
+    renderizar();
+    expect(screen.queryByRole('link', { name: 'Abrir sala' })).not.toBeInTheDocument();
+    vi.mocked(useEsDocente).mockReturnValue(true);
   });
 });

@@ -144,7 +144,7 @@ namespace PEI.Identidad.Infrastructure.Persistence.MigrationsPlataforma
                     b.HasIndex("UsuarioId")
                         .IsUnique();
 
-                    b.ToTable("InvitacionAdministrador", (string)null);
+                    b.ToTable("InvitacionUsuario", (string)null);
                 });
 
             modelBuilder.Entity("PEI.Identidad.Domain.Entities.RegistroEmail", b =>

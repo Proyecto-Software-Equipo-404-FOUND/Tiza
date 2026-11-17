@@ -172,7 +172,7 @@ describe('useSalaDocente', () => {
     await act(() => vista.result.current.finalizar());
     expect(llamadas).toEqual([
       { metodo: 'IniciarSala', args: [] },
-      { metodo: 'AvanzarPregunta', args: [] },
+      { metodo: 'AvanzarPregunta', args: [null] },
       { metodo: 'FinalizarSala', args: ['Docente'] },
     ]);
     expect(vista.result.current.trabajando).toBe(false);
@@ -200,5 +200,23 @@ describe('useSalaDocente', () => {
     const { vista, emitir } = preparar();
     vista.unmount();
     expect(() => emitir('alumnoIngreso', ingreso())).not.toThrow();
+  });
+
+  it('cuenta quiénes respondieron la pregunta actual y vuelve a cero al avanzar', () => {
+    const { vista, emitir } = preparar();
+    emitir('preguntaActual', pregunta({ preguntaId: 'p1', indice: 1 }));
+    emitir('respuestaRegistrada', { salaId: SALA, alumnoId: 'a1', preguntaId: 'p1', recibidaUtc: 'x' });
+    emitir('respuestaRegistrada', { salaId: SALA, alumnoId: 'a1', preguntaId: 'p1', recibidaUtc: 'x' });
+    emitir('respuestaRegistrada', { salaId: SALA, alumnoId: 'a2', preguntaId: 'p1', recibidaUtc: 'x' });
+    expect(vista.result.current.respondieronPreguntaActual).toBe(2);
+
+    emitir('preguntaActual', pregunta({ preguntaId: 'p2', indice: 2 }));
+    expect(vista.result.current.respondieronPreguntaActual).toBe(0);
+  });
+
+  it('toma el total de conectados de la foto de presencia', () => {
+    const { vista, emitir } = preparar();
+    emitir('alumnosConectados', { salaId: SALA, totalConectados: 3, alumnos: [], actualizadoUtc: 'x' });
+    expect(vista.result.current.totalConectados).toBe(3);
   });
 });
