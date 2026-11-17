@@ -60,7 +60,7 @@ Las diferencias conocidas entre el contrato y el código actual están en `"x-br
 | Ingreso de invitado *(planificado, S3)* | `openapi/identidad-v1.json` → `POST /api/auth/invitado`; `openapi/sala-en-vivo-v1.json` → `permitirInvitados` y `/interno/salas/pin/{pin}`; `signalr/sala-hub-v1.md` § 13.1 | Identidad + Sala en vivo (#231) | Frontend (#235) |
 | Reloj desde que se inicia la sala *(planificado, S3)* | `openapi/sala-en-vivo-v1.json` → `SalaCreada.fechaVencimiento`; `signalr/sala-hub-v1.md` § 13.2 | Sala en vivo (#239) | Frontend (#234) |
 | Vista previa del texto del apunte *(planificado, S3)* | `openapi/cursos-v1.json` → `GET /api/v1/cursos/{cursoId}/materiales/{id}/texto` | Cursos (#229) | Frontend (#236) |
-| Importar apunte desde Drive *(planificado, S3)* | `openapi/cursos-v1.json` → `POST /api/v1/cursos/{cursoId}/materiales/drive` | Cursos (#242) | Frontend (#249) |
+| Importar apunte desde Drive *(S3, sin endpoint nuevo)* | `openapi/cursos-v1.json` → el mismo `POST /api/v1/cursos/{cursoId}/materiales`: el front lo elige con Google Picker y lo sube como archivo | Cursos (#242) | Frontend (#242, Nico) |
 | Sugerir preguntas con IA *(planificado, S3)* | `openapi/ia-v1.json` → `POST /api/v1/sugerencias-preguntas` | IA (#241) | Frontend (#248) |
 | Curso con alumnos y alumno en otra comisión *(planificado, S3)* | `openapi/cursos-v1.json` → 409 `CURSO_CON_ALUMNOS` y `ALUMNO_EN_OTRA_COMISION` | Cursos (#228, #230) | Frontend |
 

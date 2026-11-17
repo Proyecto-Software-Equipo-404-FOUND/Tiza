@@ -1039,7 +1039,7 @@
           "Materiales"
         ],
         "summary": "Sube un apunte PDF al curso y extrae su texto.",
-        "description": "El archivo se guarda en el almacenamiento de archivos (en local, una carpeta; en la nube, Supabase Storage o R2), nunca en PostgreSQL. El texto se extrae con PdfPig y se guarda junto a la ficha. Validaciones en orden: es PDF (415), tamaño hasta 10 MB (400, RN-MAT-03), hasta 30 páginas (400, RN-MAT-03), tiene texto seleccionable (400, RN-MAT-04). Permisos (RN-MAT-01/02): Administrador de la institución, o Docente asignado a alguna cohorte activa del curso. Alumno → 403.",
+        "description": "El archivo se guarda en el almacenamiento de archivos (en local, una carpeta; en la nube, Supabase Storage o R2), nunca en PostgreSQL. El texto se extrae con PdfPig y se guarda junto a la ficha. Validaciones en orden: es PDF (415), tamaño hasta 10 MB (400, RN-MAT-03), hasta 30 páginas (400, RN-MAT-03), tiene texto seleccionable (400, RN-MAT-04). Permisos (RN-MAT-01/02): Administrador de la institución, o Docente asignado a alguna cohorte activa del curso. Alumno → 403. S3-CU-05 (#242): la carga desde Google Drive usa este mismo endpoint. El frontend elige el PDF con Google Picker (scope drive.file), lo descarga en el navegador y lo manda acá como un archivo más. El backend no distingue el origen.",
         "operationId": "SubirMaterial",
         "parameters": [
           {
@@ -1546,143 +1546,6 @@
           }
         }
       }
-    },
-    "/api/v1/cursos/{cursoId}/materiales/drive": {
-      "post": {
-        "tags": [
-          "Materiales"
-        ],
-        "x-estado": "planificado",
-        "summary": "Importar un apunte PDF desde un link público de Google Drive.",
-        "description": "Proveedor: S3-CU-05 (#242, Nico). Consumidor: Frontend S3-FE-09 (#249, Melany). Mismos permisos y validaciones que SubirMaterial (PDF, 10 MB, 30 páginas): Cursos descarga el archivo desde https://drive.google.com/uc?export=download&id={id} y sigue el mismo flujo de extracción de texto. Sin login con Google: archivos privados → 400 DRIVE_ARCHIVO_NO_PUBLICO. El código de error va en type.",
-        "operationId": "ImportarMaterialDesdeDrive",
-        "security": [
-          {
-            "Bearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "cursoId",
-            "in": "path",
-            "required": true,
-            "description": "UUID del curso.",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ImportarMaterialDriveDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Material creado.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MaterialCursoDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Link inválido (DRIVE_LINK_INVALIDO), archivo privado (DRIVE_ARCHIVO_NO_PUBLICO), no es PDF (NO_ES_PDF) o supera 30 páginas.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "title": "El archivo de Drive no es público. Compartilo como \"Cualquier persona con el enlace\".",
-                  "status": 400,
-                  "type": "DRIVE_ARCHIVO_NO_PUBLICO"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "No autenticado.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "title": "No autenticado.",
-                  "status": 401
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Rol no autorizado.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "title": "Solo el docente del curso o un administrador pueden cargar apuntes.",
-                  "status": 403
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Curso inexistente o de otra institución.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "title": "Curso no encontrado.",
-                  "status": 404
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "El archivo supera 10 MB.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "title": "El archivo supera los 10 MB.",
-                  "status": 413,
-                  "type": "ARCHIVO_DEMASIADO_GRANDE"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Drive no respondió o devolvió un error.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "title": "No se pudo descargar el archivo de Drive. Probá de nuevo.",
-                  "status": 502,
-                  "type": "DRIVE_NO_DISPONIBLE"
-                }
-              }
-            }
-          }
-        }
-      }
     }
   },
   "components": {
@@ -2047,14 +1910,6 @@
           "fechaSubidaUtc": {
             "type": "string",
             "format": "date-time"
-          },
-          "origen": {
-            "type": "string",
-            "enum": [
-              "Archivo",
-              "Drive"
-            ],
-            "description": "S3-CU-05 (#242). Cómo se cargó el apunte."
           }
         },
         "example": {
@@ -2097,29 +1952,6 @@
             "type": "boolean",
             "description": "S3-CU-03 (#229). false si el PDF no tiene texto extraíble (por ejemplo, escaneado); en ese caso texto viene vacío."
           }
-        }
-      },
-      "ImportarMaterialDriveDto": {
-        "type": "object",
-        "required": [
-          "url"
-        ],
-        "properties": {
-          "url": {
-            "type": "string",
-            "format": "uri",
-            "description": "Link de Google Drive a un PDF compartido como \"Cualquier persona con el enlace\". Formatos: https://drive.google.com/file/d/{id}/view… y https://drive.google.com/open?id={id}."
-          },
-          "titulo": {
-            "type": "string",
-            "nullable": true,
-            "maxLength": 200,
-            "description": "Si no viene, se usa el nombre del archivo."
-          }
-        },
-        "example": {
-          "url": "https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz/view?usp=sharing",
-          "titulo": "Unidad 2 · Sismos"
         }
       }
     }
