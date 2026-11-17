@@ -35,3 +35,4 @@ jobs:
           path: |
             tests/tenant-isolation/results/summary.json
             tests/tenant-isolation/results/requests.md
+            tests/tenant-isolation/results/Identidad-IntegrationTests.trx

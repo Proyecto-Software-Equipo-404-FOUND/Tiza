@@ -1089,7 +1089,7 @@
           "desgloseJson": {
             "type": "string",
             "nullable": true,
-            "description": "Desglose por criterio de la rúbrica serializado como JSON: [{ criterio, puntaje, comentario }]. Opcional."
+            "description": "Desglose por criterio de la rúbrica serializado como JSON. Formato de la IA: [{ criterio, puntajeMaximo, puntajeOtorgado, comentario }]. También se acepta el formato anterior [{ criterio, puntaje, comentario }]. Opcional."
           }
         },
         "example": {
@@ -1308,7 +1308,13 @@
                   "type": "string"
                 },
                 "puntaje": {
-                  "type": "number"
+                  "type": "number",
+                  "description": "Puntaje que otorgó la IA en este criterio."
+                },
+                "puntajeMaximo": {
+                  "type": "number",
+                  "nullable": true,
+                  "description": "Puntaje máximo del criterio. Puede faltar en calificaciones guardadas antes del Sprint 3."
                 },
                 "comentario": {
                   "type": "string"
