@@ -4,6 +4,19 @@ Responsable: Candela Luna (`candela1805`). Revisor: Ariel (`aacarriego`). PR #20
 
 ## Estado actual
 
+Revisión del 17/11/2026: #162 (QA-02, PR #108), #163 (QA-06, PR #106) y #164 (QA-07, PR #109) están cerradas y sus merges pertenecen a `origin/main`. #150 está cerrada, pero su PR #207 sigue abierto y requiere revisión; el cierre de la issue por sí solo no acredita aceptación. #237 y #250 son Sprint 3 y quedan fuera de este cambio.
+
+### Correcciones de esta revisión
+
+- El login vigente redirige a `/` (decisión PO registrada en `rutaInicial.ts`), no a `/cursos`. Cypress comprueba Inicio y navega mediante el menú, sin esperas fijas.
+- La UI ya oculta los formularios de cursos/cohortes al docente. Ambos modos recorren Administrador crea → Docente matricula; el fixture real verifica por separado los dos POST con 403. No se modifican políticas de autorización.
+- El cambio de rol usa Salir y navegación SPA: limpia sesión/caché y evita reiniciar los datos MSW mediante `cy.visit`.
+- Sala debe apuntar al servicio Cursos descartable (`Cursos__BaseUrl`, puerto 18642) para su validación real de matrícula.
+- Se verifica recarga completa con sesión persistida en modo live, matrícula duplicada con 409 y listado sin cambios. MSW sólo acredita UI.
+- El runner imprime el error de Cypress al final para evitar que el recorte del log padre oculte la aserción fallida.
+
+El run original `44133452468` tenía 8 checks exitosos y 2 fallidos. UI falló en la aserción de `/cursos`; live pasó Newman (18 requests/28 aserciones) y falló en Cypress, con la causa detallada truncada por el runner. Las ejecuciones posteriores y su evidencia se registran en el informe de esta revisión.
+
 En la revisión inicial de `8439307`, #202, #205 y #206 estaban abiertos. Al retomar se verificó que los tres están integrados y #140 cerrada. La rama incorpora `origin/main` en `c87ff8c`. No se implementó funcionalidad de otro integrante; se habilitaron los casos reales sobre sus integraciones.
 
 ## Criterio pendiente de #150

@@ -12,6 +12,7 @@ export async function runScenarios({ root, env, password, container, command, la
     ConnectionStrings__Default: `Host=127.0.0.1;Port=5541;Database=pei_evaluaciones_s2live;Username=s2live;Password=${password}`,
     ConnectionStrings__DefaultConnection: `Host=127.0.0.1;Port=5541;Database=pei_sala_s2live;Username=s2live;Password=${password}`,
     ConnectionStrings__Redis: '', ServiciosInternos__ApiKey: key, Evaluaciones__BaseUrl: 'http://127.0.0.1:18643',
+    Cursos__BaseUrl: 'http://127.0.0.1:18642',
     CorreccionIa__Habilitada: 'false', QA_INTERNAL_API_KEY: key, QA_EVALUACIONES_URL: 'http://127.0.0.1:18643', QA_TEST_VISIBILITY: 'true',
   });
   for (const db of ['pei_evaluaciones_s2live', 'pei_sala_s2live']) {
@@ -48,6 +49,8 @@ export async function runScenarios({ root, env, password, container, command, la
   Object.assign(env, { QA_TOKEN_A: docenteA, QA_TOKEN_B: docenteB, QA_DOCENTE_PASSWORD: password, QA_DOCENTE_EMAIL: 'docente@a.test', QA_CYPRESS_FLOW: 'permisos' });
   console.log(await command('node', ['tests/s2-qa01/run-newman.mjs'], 'Newman con JWT emitidos por Identidad'));
   evidence.newman = { requests: 18, visibility: 'A/B y acceso cruzado con JWT reales' };
+  await api('/api/v1/cursos', { method: 'POST', token: docenteA,
+    expected: 403, body: { nombre: 'S2-QA-01 prohibido', area: 'Sistemas' } });
   console.log(await command('node', ['frontend/cypress/run-ui.mjs', '--live'], 'Cypress contra gateway y servicios reales', {}, 300000));
   evidence.cypress = { mode: 'live', flow: 'administrador crea; docente matricula', passed: true };
   // Prueba explícita del segundo permiso que bloquea el recorrido pedido en #150.
@@ -62,6 +65,11 @@ export async function runScenarios({ root, env, password, container, command, la
   const matriculas = await api(`/api/v1/cohortes/${cohorte.id}/matriculas`, { token: docenteA });
   assert.equal(matriculas.filter(x => x.alumnoId === '11111111-0000-0000-0000-000000000003').length, 1);
   evidence.matriculaPersistida = true;
+  await api(`/api/v1/cohortes/${cohorte.id}/matriculas`, { method: 'POST', token: docenteA,
+    expected: 409, body: { alumnoId: '11111111-0000-0000-0000-000000000003' } });
+  const trasDuplicado = await api(`/api/v1/cohortes/${cohorte.id}/matriculas`, { token: docenteA });
+  assert.deepEqual(trasDuplicado, matriculas);
+  evidence.permisos = { docenteCrearCurso: 403, docenteCrearCohorte: 403, matriculaDuplicada: 409 };
   const pregunta = randomUUID(); const opcion = randomUUID();
   const evaluacion = await api('/api/v1/evaluaciones', { method: 'POST', token: docenteA, tenant, expected: 201,
     body: { titulo: 'S2-QA-01 cierre real', tipo: 'Examen', preguntasJson: { version: 1, preguntas: [{ id: pregunta, enunciado: '1 + 1', tipo: 'OpcionMultiple', puntajeMaximo: 1,

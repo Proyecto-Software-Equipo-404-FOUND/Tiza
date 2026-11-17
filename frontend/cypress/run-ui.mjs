@@ -10,7 +10,7 @@ await new Promise((resolve, reject) => {
 });
 const live = process.argv.includes('--live');
 process.env.QA_CYPRESS_MODE = live ? 'live' : 'ui';
-if (live) process.env.QA_CYPRESS_FLOW ??= 'permisos';
+process.env.QA_CYPRESS_FLOW ??= 'permisos';
 if (!live) process.env.QA_DOCENTE_PASSWORD = randomBytes(24).toString('hex');
 const vite = spawn(process.execPath, ['node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--strictPort'], {
   cwd: root, windowsHide: true, env: { ...process.env, VITE_USE_MOCKS: live ? 'false' : 'true', VITE_API_URL: '' }, stdio: 'ignore',
@@ -25,6 +25,12 @@ try {
   }
   if (!ready) throw new Error('Vite no inició en 30 segundos');
   const result = await cypress.run({ project: root, browser: 'electron', headless: true });
+  // Al final del log: el runner padre conserva la cola, no toda la salida Cypress.
+  // Sólo mensaje de aserción, sin requests, tokens ni credenciales.
+  for (const run of result.runs || []) for (const test of run.tests || []) {
+    if (test.state === 'failed') console.error(`Cypress: ${test.displayError}`);
+  }
+  if (result.status === 'failed') console.error(result.message);
   if (result.status === 'failed' || result.totalFailed || result.totalTests !== 1) process.exitCode = 1;
 } finally {
   vite.kill();

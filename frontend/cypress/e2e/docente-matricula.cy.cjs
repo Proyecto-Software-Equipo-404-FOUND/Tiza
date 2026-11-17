@@ -5,7 +5,7 @@ const campo = (label) => cy.contains('label', label).invoke('attr', 'for')
 
 describe('S2-QA-01: curso → cohorte → matrícula', () => {
   const permisos = Cypress.env('flow') === 'permisos';
-  it(permisos ? 'respeta 403 del docente; administrador crea y docente matricula' : 'docente crea y matricula: muestra una matrícula activa', () => {
+  it(permisos ? 'administrador crea y docente matricula con permisos vigentes' : 'docente crea y matricula: criterio original pendiente del PO', () => {
     const mode = Cypress.env('mode');
     const alumnoNombre = mode === 'live' ? 'Alumno uno Prueba A' : 'Alumno 1 A';
     expect(['ui', 'live']).to.include(mode);
@@ -22,23 +22,25 @@ describe('S2-QA-01: curso → cohorte → matrícula', () => {
     campo('Correo').type(Cypress.env('email'));
     campo('Contraseña').type(password, { log: false });
     cy.contains('button', /^Ingresar$/).click();
+    cy.location('pathname').should('equal', '/');
+    cy.get('nav[aria-label="Principal"]').contains('a', /^Cursos$/).click();
     cy.location('pathname').should('equal', '/cursos');
     const cambiarSesion = (email) => {
-      cy.window().then(win => win.sessionStorage.clear());
-      cy.visit('/login');
+      // Logout real y navegación SPA: conserva los datos MSW en modo UI.
+      cy.contains('button', /^Salir$/).click();
+      cy.location('pathname').should('equal', '/login');
       campo('Correo').type(email);
       campo('Contraseña').type(password, { log: false });
       cy.contains('button', /^Ingresar$/).click();
+      cy.location('pathname').should('equal', '/');
+      cy.get('nav[aria-label="Principal"]').contains('a', /^Cursos$/).click();
       cy.location('pathname').should('equal', '/cursos');
     };
     if (permisos) {
-      // Observación de tráfico real, sin stub: la política vigente exige Administrador.
-      cy.intercept('POST', '**/api/v1/cursos').as('crearSinPermiso');
-      campo('Nombre del curso').type('S2-QA-01 no autorizado');
-      campo('Área').type('Sistemas');
-      cy.contains('button', /Crear curso/).click();
-      cy.wait('@crearSinPermiso').its('response.statusCode').should('equal', 403);
-      cy.get('table').should('not.contain.text', 'S2-QA-01 no autorizado');
+      cy.contains('button', /^Crear curso$/).should('not.exist');
+      cy.contains('tr', 'Programación I').contains('a', 'Ver cohortes').click();
+      cy.contains('button', /^Crear cohorte$/).should('not.exist');
+      // Los POST prohibidos se verifican contra las APIs reales en live-scenarios.
       cambiarSesion('admin@a.test');
     }
     // Nombres fijos: usar una instancia descartable/restablecida en cada ejecución.
@@ -58,14 +60,20 @@ describe('S2-QA-01: curso → cohorte → matrícula', () => {
     });
     cy.location('pathname').should('match', /^\/cohortes\/[\da-f-]+\/matriculas$/);
     if (permisos) {
-      cy.location('pathname').then(path => {
-        cambiarSesion(Cypress.env('email'));
-        cy.visit(path);
-      });
+      cambiarSesion(Cypress.env('email'));
+      cy.contains('tr', 'S2-QA-01 Curso reproducible').contains('a', 'Ver cohortes').click();
+      cy.contains('tr', 'S2-QA-01 Cohorte').contains('a', 'Ver matrícula').click();
     }
     cy.get('#alumno').select('11111111-0000-0000-0000-000000000003');
     cy.contains('button', /^Matricular$/).click();
     cy.contains('tr', alumnoNombre).should('contain.text', 'Activa');
+    if (mode === 'live') {
+      // Recarga completa: verifica sesión y datos persistidos fuera de React Query.
+      cy.reload();
+      cy.location('pathname').should('match', /^\/cohortes\/[\da-f-]+\/matriculas$/);
+      cy.contains('tr', alumnoNombre).should('contain.text', 'Activa');
+      cy.get('tbody tr').filter(`:contains("${alumnoNombre}")`).should('have.length', 1);
+    }
     cy.get('tbody tr').filter(`:contains("${alumnoNombre}")`).should('have.length', 1);
     cy.get('#alumno option[value="11111111-0000-0000-0000-000000000003"]').should('not.exist');
     // Volver por navegación conserva el servidor/MSW y fuerza otra consulta de matrícula.
