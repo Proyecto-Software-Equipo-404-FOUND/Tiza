@@ -1292,11 +1292,12 @@ Matriz de autorización (se suma a la 4.2):
 
 ### 13.2 El reloj arranca al iniciar (S3-SA-02, #239 · front S3-FE-03, #234)
 
-- Al crear la sala, `FechaVencimiento` queda en `null` (`SalaCreada.fechaVencimiento`).
+- Al crear la sala, la respuesta trae `fechaVencimiento = null` y `duracionMinutos` (`SalaCreada`).
 - `IniciarSala()` calcula `FechaVencimiento = iniciadaUtc + duracionMinutos`.
-- `salaIniciada` y `estadoSala` incluyen `iniciadaUtc`, `fechaVencimientoUtc` y
+- `salaIniciada` y `estadoSala` incluyen `iniciadaUtc`, `fechaLimiteUtc` (el nombre que ya usa el front) y
   `servidorUtc` (hora del servidor al emitir), para que el front calcule el tiempo restante
   sin depender del reloj del celular.
-- Antes de iniciar, `estadoSala` trae `fechaVencimientoUtc = null` y `duracionMinutos`;
+- Antes de iniciar, `estadoSala` trae `fechaLimiteUtc = null` y `duracionMinutos`;
   el front muestra la duración completa sin correr.
-- Una sala que no se inició nunca vence por tiempo; el docente la puede finalizar.
+- Una sala que no se inició no tiene reloj de examen. Si nunca se inicia, el PIN deja de valer
+  a las 24 horas de creada (plazo máximo para iniciar); el docente la puede finalizar antes.
