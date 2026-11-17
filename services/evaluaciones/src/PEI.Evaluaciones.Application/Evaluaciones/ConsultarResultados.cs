@@ -20,7 +20,8 @@ public record EntregaResumenDto(
     DateTimeOffset FechaEntregaUtc,
     AlertasFocoResumenDto AlertasFoco);
 
-public record DesgloseCriterioDto(string Criterio, decimal Puntaje, string Comentario);
+// S3-EV-01: Puntaje es lo que otorgó la IA; PuntajeMaximo, el máximo del criterio (puede faltar en calificaciones viejas).
+public record DesgloseCriterioDto(string Criterio, decimal Puntaje, decimal? PuntajeMaximo, string Comentario);
 
 public record RespuestaEntregaDto(
     Guid PreguntaId,
@@ -346,16 +347,7 @@ public class ConsultarResultadosHandler :
                         notaSugerida = calif.NotaSugerida;
                         justificacionIa = calif.Justificacion;
                         estadoCorreccion = "SugeridaIA";
-                        if (!string.IsNullOrWhiteSpace(calif.DesgloseJson))
-                        {
-                            try
-                            {
-                                desglose = JsonSerializer.Deserialize<List<DesgloseCriterioDto>>(
-                                    calif.DesgloseJson,
-                                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                            }
-                            catch { }
-                        }
+                        desglose = DesgloseCriterioLector.Leer(calif.DesgloseJson);
                     }
                     else
                     {
