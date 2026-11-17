@@ -41,11 +41,6 @@
         ],
         "summary": "Lista las evaluaciones de la institución.",
         "operationId": "ListarEvaluaciones",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/InstitucionId"
-          }
-        ],
         "responses": {
           "200": {
             "description": "Lista de evaluaciones de la institución (puede estar vacía).",
@@ -62,8 +57,44 @@
           },
           "400": {
             "$ref": "#/components/responses/PeticionInvalida"
+          },
+          "401": {
+            "description": "Sin token o token inválido.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "No autenticado.",
+                  "status": 401,
+                  "errores": []
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Solo docentes y administradores pueden ver los exámenes.",
+                  "status": 403,
+                  "errores": []
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "description": "S3-EV-02 (#223): la institución, el usuario y el rol salen del JWT (ya no se usa X-Institucion-Id). Docente o Administrador. El Docente ve solo sus exámenes y los anteriores al Sprint 3 (sin dueño); el Administrador, todos los de su institución."
       },
       "post": {
         "tags": [
@@ -71,11 +102,6 @@
         ],
         "summary": "Crea una evaluación en estado Borrador.",
         "operationId": "CrearEvaluacion",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/InstitucionId"
-          }
-        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -107,8 +133,44 @@
           },
           "400": {
             "$ref": "#/components/responses/PeticionInvalida"
+          },
+          "401": {
+            "description": "Sin token o token inválido.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "No autenticado.",
+                  "status": 401,
+                  "errores": []
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Solo los docentes pueden crear exámenes.",
+                  "status": 403,
+                  "errores": []
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "description": "S3-EV-02 (#223): la institución, el usuario y el rol salen del JWT (ya no se usa X-Institucion-Id). Solo Docente: queda guardado como dueño (docenteId = claim sub). Administrador o Alumno → 403."
       }
     },
     "/api/v1/evaluaciones/{id}": {
@@ -119,9 +181,6 @@
         "summary": "Obtiene una evaluación de la institución.",
         "operationId": "ObtenerEvaluacion",
         "parameters": [
-          {
-            "$ref": "#/components/parameters/InstitucionId"
-          },
           {
             "$ref": "#/components/parameters/EvaluacionId"
           }
@@ -142,8 +201,44 @@
           },
           "404": {
             "$ref": "#/components/responses/NoEncontrada"
+          },
+          "401": {
+            "description": "Sin token o token inválido.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "No autenticado.",
+                  "status": 401,
+                  "errores": []
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Solo docentes y administradores pueden ver los exámenes.",
+                  "status": 403,
+                  "errores": []
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "description": "S3-EV-02 (#223): la institución, el usuario y el rol salen del JWT (ya no se usa X-Institucion-Id). Docente dueño (o examen sin dueño) o Administrador de la institución. Examen de otro docente → 404."
       },
       "put": {
         "tags": [
@@ -152,9 +247,6 @@
         "summary": "Modifica título, tipo y preguntas de una evaluación en Borrador.",
         "operationId": "ActualizarEvaluacion",
         "parameters": [
-          {
-            "$ref": "#/components/parameters/InstitucionId"
-          },
           {
             "$ref": "#/components/parameters/EvaluacionId"
           }
@@ -188,8 +280,44 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflicto"
+          },
+          "401": {
+            "description": "Sin token o token inválido.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "No autenticado.",
+                  "status": 401,
+                  "errores": []
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Solo el docente que creó el examen puede editarlo.",
+                  "status": 403,
+                  "errores": []
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "description": "S3-EV-02 (#223): la institución, el usuario y el rol salen del JWT (ya no se usa X-Institucion-Id). Solo el Docente dueño (o examen sin dueño). Administrador o Alumno → 403; examen de otro docente → 404."
       },
       "delete": {
         "tags": [
@@ -198,9 +326,6 @@
         "summary": "Elimina una evaluación en estado Borrador. No lleva cuerpo.",
         "operationId": "EliminarEvaluacion",
         "parameters": [
-          {
-            "$ref": "#/components/parameters/InstitucionId"
-          },
           {
             "$ref": "#/components/parameters/EvaluacionId"
           }
@@ -217,8 +342,44 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflicto"
+          },
+          "401": {
+            "description": "Sin token o token inválido.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "No autenticado.",
+                  "status": 401,
+                  "errores": []
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Solo el docente que creó el examen puede eliminarlo.",
+                  "status": 403,
+                  "errores": []
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "description": "S3-EV-02 (#223): la institución, el usuario y el rol salen del JWT (ya no se usa X-Institucion-Id). Solo el Docente dueño (o examen sin dueño). Administrador o Alumno → 403; examen de otro docente → 404."
       }
     },
     "/api/v1/evaluaciones/{id}/publicar": {
@@ -227,12 +388,9 @@
           "Evaluaciones"
         ],
         "summary": "Publica una evaluación en Borrador y le asocia una cohorte.",
-        "description": "Control optimista: el cliente envía la versión que vio. Si no coincide con la versión actual, responde 409. Reglas en orden: cohorte obligatoria (400), evaluación inexistente (404), versión distinta (409), estado distinto de Borrador (409), sin preguntas (400), cohorte inexistente o de otra institución (400). Si todo es válido, la evaluación pasa a Publicada y su versión sube en 1.",
+        "description": "Control optimista: el cliente envía la versión que vio. Si no coincide con la versión actual, responde 409. Reglas en orden: cohorte obligatoria (400), evaluación inexistente (404), versión distinta (409), estado distinto de Borrador (409), sin preguntas (400), cohorte inexistente o de otra institución (400). Si todo es válido, la evaluación pasa a Publicada y su versión sube en 1. S3-EV-02 (#223): la institución, el usuario y el rol salen del JWT (ya no se usa X-Institucion-Id). Solo el Docente dueño (o examen sin dueño). Administrador o Alumno → 403; examen de otro docente → 404.",
         "operationId": "PublicarEvaluacion",
         "parameters": [
-          {
-            "$ref": "#/components/parameters/InstitucionId"
-          },
           {
             "$ref": "#/components/parameters/EvaluacionId"
           }
@@ -266,8 +424,43 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflicto"
+          },
+          "401": {
+            "description": "Sin token o token inválido.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "No autenticado.",
+                  "status": 401,
+                  "errores": []
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Solo el docente que creó el examen puede publicarlo.",
+                  "status": 403,
+                  "errores": []
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
       }
     },
     "/interno/entregas/{entregaId}/calificacion-sugerida": {
@@ -372,6 +565,86 @@
         ]
       }
     },
+    "/interno/evaluaciones/{id}": {
+      "get": {
+        "tags": [
+          "Interno"
+        ],
+        "summary": "[Interno] Evaluación con sus preguntas, para Sala en vivo.",
+        "description": "Proveedor: S3-EV-02 (#223). Consumidor: Sala en vivo (crear, unirse, iniciar, avanzar y estado de la sala). Reemplaza el uso de GET /api/v1/evaluaciones/{id} con X-Institucion-Id, que ahora exige el JWT del docente. Endpoint interno: no se publica en el gateway.",
+        "operationId": "ObtenerEvaluacionInterno",
+        "security": [
+          {
+            "ApiKeyInterna": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/InstitucionId"
+          },
+          {
+            "$ref": "#/components/parameters/EvaluacionId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Evaluación.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Evaluacion"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Falta X-Institucion-Id.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Falta el encabezado X-Institucion-Id.",
+                  "status": 400,
+                  "errores": []
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta la clave interna o es incorrecta.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Credencial interna inválida.",
+                  "status": 401,
+                  "errores": []
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Evaluación inexistente o de otra institución.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "La evaluacion no existe.",
+                  "status": 404,
+                  "errores": []
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/interno/salas/{salaId}/entregas": {
       "post": {
         "tags": [
@@ -466,7 +739,7 @@
           "Resultados"
         ],
         "summary": "Lista las entregas de una evaluación, una por alumno.",
-        "description": "Consumidor: Frontend, pantalla de resultados (S2-FE-05, #148). Proveedor: S2-EV-03 (#147). Solo lectura: aprobar la nota es S3-EV-01. Solo Docente o Administrador de la institución del token; Alumno → 403 (RN-CMP-01). Otra institución → 404.",
+        "description": "Consumidor: Frontend, pantalla de resultados (S2-FE-05, #148). Proveedor: S2-EV-03 (#147). Solo lectura: aprobar la nota es S3-EV-01. Solo Docente o Administrador de la institución del token; Alumno → 403 (RN-CMP-01). Otra institución → 404. S3-EV-02 (#223): la institución, el usuario y el rol salen del JWT (ya no se usa X-Institucion-Id). Además, el Docente solo ve resultados de sus exámenes (examen de otro docente → 404).",
         "operationId": "ListarEntregas",
         "security": [
           {
@@ -546,7 +819,7 @@
           "Resultados"
         ],
         "summary": "Detalle de una entrega: cada respuesta, la justificación de la IA y las alertas de foco.",
-        "description": "Consumidor: Frontend (S2-FE-05, #148). Proveedor: S2-EV-03 (#147). Solo Docente o Administrador de la institución del token; Alumno → 403 (RN-CMP-01). Otra institución → 404.",
+        "description": "Consumidor: Frontend (S2-FE-05, #148). Proveedor: S2-EV-03 (#147). Solo Docente o Administrador de la institución del token; Alumno → 403 (RN-CMP-01). Otra institución → 404. S3-EV-02 (#223): la institución, el usuario y el rol salen del JWT (ya no se usa X-Institucion-Id). Además, el Docente solo ve resultados de sus exámenes (examen de otro docente → 404).",
         "operationId": "ObtenerEntrega",
         "security": [
           {
@@ -627,7 +900,7 @@
         "name": "X-Institucion-Id",
         "in": "header",
         "required": true,
-        "description": "Identificador de la institución (tenant). Temporal hasta que la institución se lea del JWT. Si falta o es un UUID vacío, el servicio responde 400.",
+        "description": "Identificador de la institución (tenant). Solo en endpoints internos entre servicios (/interno/...). Los endpoints públicos la leen del JWT desde S3-EV-02 (#223).",
         "schema": {
           "type": "string",
           "format": "uuid"
@@ -1008,6 +1281,12 @@
             "format": "uuid",
             "nullable": true,
             "description": "Cohorte asociada. Vacía mientras está en Borrador."
+          },
+          "docenteId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "S3-EV-02 (#223): claim sub del docente que creó el examen. Null en los exámenes anteriores al Sprint 3."
           },
           "preguntasJson": {
             "$ref": "#/components/schemas/PreguntasJson"
