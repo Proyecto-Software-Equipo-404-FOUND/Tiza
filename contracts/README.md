@@ -54,6 +54,15 @@ Las diferencias conocidas entre el contrato y el código actual están en `"x-br
 | Corrección con IA | `openapi/ia-v1.json` → `/api/v1/Correcciones` | IA | Evaluaciones (#144) |
 | **Nota sugerida** *(planificado, interno)* | `openapi/evaluaciones-v1.json` → `/interno/entregas/{entregaId}/calificacion-sugerida` | Evaluaciones (#144) | IA, tool MCP `RegistrarCalificacionSugerida` (#146) |
 | Resultados de un examen *(planificado)* | `openapi/evaluaciones-v1.json` → `/api/v1/evaluaciones/{id}/entregas` | Evaluaciones (#147) | Frontend (#148) |
+| Nota final: editar y aprobar *(planificado, S3)* | `openapi/evaluaciones-v1.json` → `PUT …/entregas/{entregaId}/respuestas/{preguntaId}/nota` y `POST …/entregas/{entregaId}/aprobacion` | Evaluaciones (#224) | Frontend (#232) |
+| Mis exámenes *(planificado, S3)* | `openapi/evaluaciones-v1.json` → `GET /api/v1/alumnos/me/evaluaciones` | Evaluaciones (#225) | Frontend (#233) |
+| Métricas de un examen *(planificado, S3)* | `openapi/evaluaciones-v1.json` → `GET /api/v1/evaluaciones/{id}/metricas` | Evaluaciones (#240) | Frontend (#246) |
+| Ingreso de invitado *(planificado, S3)* | `openapi/identidad-v1.json` → `POST /api/auth/invitado`; `openapi/sala-en-vivo-v1.json` → `permitirInvitados` y `/interno/salas/pin/{pin}`; `signalr/sala-hub-v1.md` § 13.1 | Identidad + Sala en vivo (#231) | Frontend (#235) |
+| Reloj desde que se inicia la sala *(planificado, S3)* | `openapi/sala-en-vivo-v1.json` → `SalaCreada.fechaVencimiento`; `signalr/sala-hub-v1.md` § 13.2 | Sala en vivo (#239) | Frontend (#234) |
+| Vista previa del texto del apunte *(planificado, S3)* | `openapi/cursos-v1.json` → `GET /api/v1/cursos/{cursoId}/materiales/{id}/texto` | Cursos (#229) | Frontend (#236) |
+| Importar apunte desde Drive *(planificado, S3)* | `openapi/cursos-v1.json` → `POST /api/v1/cursos/{cursoId}/materiales/drive` | Cursos (#242) | Frontend (#249) |
+| Sugerir preguntas con IA *(planificado, S3)* | `openapi/ia-v1.json` → `POST /api/v1/sugerencias-preguntas` | IA (#241) | Frontend (#248) |
+| Curso con alumnos y alumno en otra comisión *(planificado, S3)* | `openapi/cursos-v1.json` → 409 `CURSO_CON_ALUMNOS` y `ALUMNO_EN_OTRA_COMISION` | Cursos (#228, #230) | Frontend |
 
 ## Cómo se conecta todo en la demo
 

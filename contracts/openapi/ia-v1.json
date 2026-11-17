@@ -88,6 +88,131 @@
           }
         }
       }
+    },
+    "/api/v1/sugerencias-preguntas": {
+      "post": {
+        "tags": [
+          "Sugerencias"
+        ],
+        "x-estado": "planificado",
+        "summary": "Sugerir preguntas a partir de un apunte del curso.",
+        "description": "Proveedor: S3-IA-02 (#241, Santiago). Consumidor: Frontend S3-FE-08 (#248, Melany). Solo Docente. IA lee el texto con el interno de Cursos GET /api/v1/materiales/{id}/texto (S3-CU-03, #229). El texto del apunte va delimitado como dato (barandas S3-IA-01, #226). Las preguntas son solo sugerencias: el docente elige cuáles agregar y se guardan con el PUT de evaluaciones de siempre. Se publica en el gateway con token.",
+        "operationId": "SugerirPreguntas",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SugerirPreguntasRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Preguntas sugeridas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SugerirPreguntasResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Cantidad o tipos inválidos.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "La cantidad tiene que estar entre 1 y 10.",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin token.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "No autenticado.",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no es Docente.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Solo los docentes pueden pedir sugerencias.",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Material inexistente o de otra institución.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Material no encontrado.",
+                  "status": 404,
+                  "type": "MATERIAL_NO_ENCONTRADO"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "El apunte no tiene texto extraíble.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "El apunte no tiene texto para generar preguntas.",
+                  "status": 422,
+                  "type": "MATERIAL_SIN_TEXTO"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Ningún proveedor de IA respondió o devolvió un formato válido.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "La IA no está disponible. Probá de nuevo en unos minutos.",
+                  "status": 503,
+                  "type": "IA_NO_DISPONIBLE"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -261,6 +386,160 @@
           }
         },
         "additionalProperties": {}
+      },
+      "SugerirPreguntasRequest": {
+        "type": "object",
+        "required": [
+          "materialId"
+        ],
+        "properties": {
+          "materialId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Apunte del curso (Cursos, MaterialCursoDto) en estado Listo."
+          },
+          "cantidad": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10,
+            "default": 5
+          },
+          "tipos": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "OpcionMultiple",
+                "Abierta"
+              ]
+            },
+            "description": "Por defecto, los dos."
+          },
+          "tema": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 200,
+            "description": "Opcional: enfocar las preguntas en un tema del apunte."
+          }
+        },
+        "example": {
+          "materialId": "7d1e2f3a-4b5c-4d6e-8f70-81a2b3c4d5e6",
+          "cantidad": 3,
+          "tipos": [
+            "OpcionMultiple",
+            "Abierta"
+          ]
+        }
+      },
+      "PreguntaSugerida": {
+        "type": "object",
+        "required": [
+          "enunciado",
+          "tipo",
+          "puntajeMaximo"
+        ],
+        "description": "Misma forma que Pregunta de evaluaciones-v1.json (schemas/preguntas-v1.schema.json) pero sin ids: los asigna Evaluaciones cuando el docente la agrega al examen.",
+        "properties": {
+          "enunciado": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "OpcionMultiple",
+              "Abierta"
+            ]
+          },
+          "puntajeMaximo": {
+            "type": "number",
+            "minimum": 0
+          },
+          "opciones": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "texto",
+                "esCorrecta"
+              ],
+              "properties": {
+                "texto": {
+                  "type": "string"
+                },
+                "esCorrecta": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "rubrica": {
+            "type": "object",
+            "properties": {
+              "criterios": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "descripcion",
+                    "puntaje"
+                  ],
+                  "properties": {
+                    "descripcion": {
+                      "type": "string"
+                    },
+                    "puntaje": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "fragmentoApunte": {
+            "type": "string",
+            "nullable": true,
+            "description": "Parte del apunte en la que se basa (para que el docente la verifique)."
+          }
+        }
+      },
+      "SugerirPreguntasResponse": {
+        "type": "object",
+        "required": [
+          "materialId",
+          "preguntas",
+          "proveedor",
+          "modelo"
+        ],
+        "properties": {
+          "materialId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "preguntas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PreguntaSugerida"
+            }
+          },
+          "revisadaPorAgenteRevisor": {
+            "type": "boolean",
+            "description": "true si el agente revisor validó las preguntas (S3-IA-02)."
+          },
+          "proveedor": {
+            "type": "string"
+          },
+          "modelo": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT institucional de Identidad (identidad-v1.json, JwtInstitucional)."
       }
     }
   }
