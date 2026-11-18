@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   ALIAS_SIN_IDENTIFICAR,
+  aplicarFotoDePresencia,
   calcularDesfaseMs,
   etiquetaPregunta,
   formatearTiempo,
@@ -10,7 +11,7 @@ import {
   registrarSalida,
   segundosRestantes,
 } from './panel';
-import type { AlertaFocoEvento, AlumnoIngresoEvento, AlumnoPanel, AlumnoSalioEvento } from './tipos';
+import type { AlertaFocoEvento, AlumnoIngresoEvento, AlumnoPanel, AlumnoSalioEvento, AlumnosConectadosEvento } from './tipos';
 
 const SALA = '11111111-1111-4111-8111-111111111111';
 const ALUMNO_1 = '22222222-2222-4222-8222-222222222221';
@@ -222,5 +223,35 @@ describe('registrarSalida', () => {
     const lista = registrarSalida([alumno()], salida());
     const resultado = registrarIngreso(lista, ingreso());
     expect(resultado[0].desconectado).toBeUndefined();
+  });
+});
+
+describe('aplicarFotoDePresencia', () => {
+  const foto = (alumnos: AlumnosConectadosEvento['alumnos']): AlumnosConectadosEvento => ({
+    salaId: SALA,
+    totalConectados: alumnos.length,
+    alumnos,
+    actualizadoUtc: '2026-11-05T14:30:00.000Z',
+  });
+
+  it('con la lista vacía (recarga del docente) agrega a todos los conectados', () => {
+    const resultado = aplicarFotoDePresencia([], foto([{ alumnoId: ALUMNO_1, alias: 'Alumno 1', ingresoUtc: 'x' }]));
+    expect(resultado).toEqual([
+      { alumnoId: ALUMNO_1, alias: 'Alumno 1', ingresoUtc: 'x', alertas: 0, peorSeveridad: 'ninguna' },
+    ]);
+  });
+
+  it('conserva las alertas, corrige el alias y reconecta al que figuraba como desconectado', () => {
+    const lista = [alumno({ alias: 'Alumno sin identificar', alertas: 2, peorSeveridad: 'roja', desconectado: true })];
+    const resultado = aplicarFotoDePresencia(lista, foto([{ alumnoId: ALUMNO_1, alias: 'Alumno 1', ingresoUtc: 'x' }]));
+    expect(resultado[0]).toMatchObject({ alias: 'Alumno 1', alertas: 2, peorSeveridad: 'roja' });
+    expect(resultado[0].desconectado).toBeUndefined();
+  });
+
+  it('marca como desconectado al que ya no figura, sin sacarlo de la lista', () => {
+    const lista = [alumno({ alertas: 1 })];
+    const resultado = aplicarFotoDePresencia(lista, foto([]));
+    expect(resultado).toHaveLength(1);
+    expect(resultado[0]).toMatchObject({ desconectado: true, alertas: 1 });
   });
 });

@@ -27,10 +27,39 @@ const preguntaNumero = (salaId: string, indice: number): PreguntaActual => ({
   fechaLimiteUtc: enSegundos(SEGUNDOS_POR_PREGUNTA),
 });
 
+// El estado de la sala de demo se guarda en sessionStorage por sala: al recargar (F5) el docente vuelve a la
+// misma sala, en el mismo estado y con los mismos alumnos conectados, como pasa con el backend real.
+type EstadoGuardado = {
+  estado: EstadoDeSala;
+  indice: number;
+  fechaLimiteSala: string | null;
+  conectados: string[];
+};
+const claveDe = (salaId: string) => `tiza-demo-sala-${salaId}`;
+
+function leerGuardado(salaId: string): EstadoGuardado | null {
+  try {
+    const crudo = sessionStorage.getItem(claveDe(salaId));
+    return crudo ? (JSON.parse(crudo) as EstadoGuardado) : null;
+  } catch {
+    return null; // sin storage (modo privado, etc.): la demo arranca de cero
+  }
+}
+
+function guardar(salaId: string, datos: EstadoGuardado) {
+  try {
+    sessionStorage.setItem(claveDe(salaId), JSON.stringify(datos));
+  } catch {
+    // sin storage: se pierde al recargar, pero la demo sigue andando
+  }
+}
+
 // Sala de mentira para la demo del panel del docente.
 // Al unirse el docente, «entran» 4 alumnos de a uno (el 2 entra dos veces, como una reconexión)
 // y el 4 se desconecta a los pocos segundos (evento `alumnoSalio`).
 // Al iniciar, llegan respuestas y alertas de foco simuladas (una amarilla y una roja).
+// Si se recarga la página no se repite nada: se restaura la sala y se manda la foto de presencia
+// (`alumnosConectados`), como hace el hub real cuando el docente se reconecta.
 // Errores del hub como el real: «CODIGO: mensaje».
 export function crearConexionDemoDocente(): ConexionSala {
   const { conexion, simular } = crearConexionFalsa();
@@ -44,9 +73,14 @@ export function crearConexionDemoDocente(): ConexionSala {
 
   const sigueEn = (esperado: EstadoDeSala) => estado === esperado;
 
+  const persistir = () => {
+    if (salaId) guardar(salaId, { estado, indice, fechaLimiteSala, conectados: [...ingresaron] });
+  };
+
   const ingresar = (posicion: number) => {
     const alumno = ALUMNOS[posicion];
     ingresaron.add(alumno.alumnoId);
+    persistir();
     simular('alumnoIngreso', {
       salaId,
       alumnoId: alumno.alumnoId,
@@ -59,6 +93,7 @@ export function crearConexionDemoDocente(): ConexionSala {
   const salir = (posicion: number) => {
     const alumno = ALUMNOS[posicion];
     ingresaron.delete(alumno.alumnoId);
+    persistir();
     simular('alumnoSalio', {
       salaId,
       alumnoId: alumno.alumnoId,
@@ -123,6 +158,26 @@ export function crearConexionDemoDocente(): ConexionSala {
 
       if (metodo === 'UnirseASalaDocente') {
         salaId = String(argumentos[0]);
+        const guardado = leerGuardado(salaId);
+        if (guardado) {
+          // Recarga de la página: se restaura todo y no se vuelve a simular la entrada de alumnos
+          estado = guardado.estado;
+          indice = guardado.indice;
+          fechaLimiteSala = guardado.fechaLimiteSala;
+          alumnosSimulados = true;
+          guardado.conectados.forEach((id) => ingresaron.add(id));
+          simular('alumnosConectados', {
+            salaId,
+            totalConectados: ingresaron.size,
+            alumnos: ALUMNOS.filter((a) => ingresaron.has(a.alumnoId)).map((a) => ({
+              ...a,
+              ingresoUtc: new Date().toISOString(),
+            })),
+            actualizadoUtc: new Date().toISOString(),
+          });
+          return undefined;
+        }
+        persistir();
         simularAlumnos();
         return undefined;
       }
@@ -140,6 +195,7 @@ export function crearConexionDemoDocente(): ConexionSala {
         estado = 'EnCurso';
         indice = 1;
         fechaLimiteSala = enSegundos(SEGUNDOS_DE_SALA);
+        persistir();
         simular('salaIniciada', {
           salaId,
           iniciadaUtc: new Date().toISOString(),
@@ -156,6 +212,7 @@ export function crearConexionDemoDocente(): ConexionSala {
         if (sigueEn('Activa')) throw sinIniciar();
         if (indice >= TOTAL_PREGUNTAS) throw new Error('PREGUNTA_INEXISTENTE: no hay más preguntas.');
         indice += 1;
+        persistir();
         simular('preguntaActual', preguntaNumero(salaId, indice));
         return undefined;
       }
@@ -163,6 +220,7 @@ export function crearConexionDemoDocente(): ConexionSala {
       if (metodo === 'FinalizarSala') {
         if (sigueEn('Finalizada')) return undefined; // idempotente
         estado = 'Finalizada';
+        persistir();
         simular('salaFinalizada', {
           salaId,
           finalizadaUtc: new Date().toISOString(),

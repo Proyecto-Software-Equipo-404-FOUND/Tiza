@@ -55,6 +55,15 @@ export type AlumnoIngresoEvento = {
   ingresoUtc: string;
 };
 
+// Evento `alumnosConectados` (sección 6.8): foto completa de la presencia. El hub la manda cuando el docente
+// se une o se reconecta, y cada vez que un alumno entra o sale.
+export type AlumnosConectadosEvento = {
+  salaId: string;
+  totalConectados: number;
+  alumnos: { alumnoId: string; alias: string; ingresoUtc: string }[];
+  actualizadoUtc: string;
+};
+
 // Evento `alumnoSalio` (sección 6.9). Llega cuando se cierra la conexión activa de un alumno.
 export type AlumnoSalioEvento = {
   salaId: string;

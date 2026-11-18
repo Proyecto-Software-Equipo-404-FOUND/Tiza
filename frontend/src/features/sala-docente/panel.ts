@@ -3,6 +3,7 @@ import type {
   AlumnoIngresoEvento,
   AlumnoPanel,
   AlumnoSalioEvento,
+  AlumnosConectadosEvento,
   PreguntaActual,
   SeveridadFoco,
 } from './tipos';
@@ -51,6 +52,32 @@ export function registrarIngreso(alumnos: AlumnoPanel[], evento: AlumnoIngresoEv
 // Si no estaba en la lista (salió y nunca lo vimos entrar) no se agrega.
 export function registrarSalida(alumnos: AlumnoPanel[], evento: AlumnoSalioEvento): AlumnoPanel[] {
   return alumnos.map((alumno) => (alumno.alumnoId === evento.alumnoId ? { ...alumno, desconectado: true } : alumno));
+}
+
+// La foto de presencia manda sobre la lista: los que figuran en ella quedan conectados (se agregan si faltaban,
+// por ejemplo cuando el docente recargó la página) y los que ya no figuran quedan como desconectados.
+// Siempre se conservan las alertas que ya tenía cada alumno.
+export function aplicarFotoDePresencia(alumnos: AlumnoPanel[], foto: AlumnosConectadosEvento): AlumnoPanel[] {
+  const conectados = new Map(foto.alumnos.map((alumno) => [alumno.alumnoId, alumno]));
+  const conocidos = new Set(alumnos.map((alumno) => alumno.alumnoId));
+
+  const actualizados = alumnos.map((alumno): AlumnoPanel => {
+    const conectado = conectados.get(alumno.alumnoId);
+    if (!conectado) return { ...alumno, desconectado: true };
+    return { ...alumno, desconectado: undefined, alias: conectado.alias, ingresoUtc: alumno.ingresoUtc ?? conectado.ingresoUtc };
+  });
+  const nuevos = foto.alumnos
+    .filter((alumno) => !conocidos.has(alumno.alumnoId))
+    .map(
+      (alumno): AlumnoPanel => ({
+        alumnoId: alumno.alumnoId,
+        alias: alumno.alias,
+        ingresoUtc: alumno.ingresoUtc,
+        alertas: 0,
+        peorSeveridad: 'ninguna',
+      }),
+    );
+  return [...actualizados, ...nuevos];
 }
 
 export type ResultadoAlerta = { alumnos: AlumnoPanel[]; idsVistos: ReadonlySet<string> };
