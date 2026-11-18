@@ -173,7 +173,7 @@ function PanelSala({ sala, conexion: conexionInyectada, onAbrirOtra }: PropsPane
           </ul>
         )}
         <p className='mt-3 text-xs text-tiza-bosque/70'>
-          Si recargás la página, la lista se recupera a medida que los alumnos vuelven a entrar. Los que se desconectan quedan en la lista con su aviso.
+          Si recargás la página, la lista de conectados se recupera sola. Las alertas de foco anteriores no vuelven a mostrarse acá: quedan guardadas y las ves en el detalle de cada entrega. Los que se desconectan quedan en la lista con su aviso.
         </p>
       </Tarjeta>
 
