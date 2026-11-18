@@ -16,7 +16,7 @@ export function InsigniaEstadoEntrega({ estado, aprobada = false }: { estado: Es
         aprobada ? 'bg-tiza-lima text-tiza-bosque' : estilosEstado[estado]
       }`}
     >
-      {aprobada ? 'Aprobada' : etiquetaEstadoEntrega[estado]}
+      {aprobada ? 'Corregida' : etiquetaEstadoEntrega[estado]}
     </span>
   );
 }

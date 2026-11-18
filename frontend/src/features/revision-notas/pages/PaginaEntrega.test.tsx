@@ -99,7 +99,7 @@ describe('PaginaEntrega', () => {
     simular({ data: entrega });
     renderizar();
     expect(screen.getByRole('heading', { level: 1, name: 'Pérez, Ana' })).toBeInTheDocument();
-    expect(screen.getByText('Corregida')).toBeInTheDocument();
+    expect(screen.getByText('Nota sugerida')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '← Volver a resultados' })).toHaveAttribute(
       'href',
       '/evaluaciones/e1/resultados',
@@ -266,9 +266,9 @@ describe('PaginaEntrega', () => {
         },
       });
       renderizar();
-      // El estado de corrección deja paso a «Aprobada»
-      expect(screen.getAllByText('Aprobada').length).toBeGreaterThan(0);
-      expect(screen.queryByText('Corregida')).not.toBeInTheDocument();
+      // El estado de corrección deja paso a «Corregida»
+      expect(screen.getAllByText('Corregida').length).toBeGreaterThan(0);
+      expect(screen.queryByText('Nota sugerida')).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Aprobar nota final' })).not.toBeInTheDocument();
       expect(screen.getByLabelText(/Nota final de la pregunta 2/)).toBeDisabled();
     });

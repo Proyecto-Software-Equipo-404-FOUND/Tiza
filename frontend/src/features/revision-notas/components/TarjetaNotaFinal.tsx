@@ -25,9 +25,9 @@ export function TarjetaNotaFinal({ resumen, aprobada, soloLectura, notaAprobada,
       titulo='Nota final'
       subtitulo={
         aprobada
-          ? 'Nota aprobada. El alumno ya puede verla.'
+          ? 'Nota corregida. El alumno ya puede verla.'
           : soloLectura
-            ? 'Todavía no está aprobada. Solo el docente que creó el examen puede aprobarla.'
+            ? 'Todavía no está corregida. Solo el docente que creó el examen puede aprobarla.'
             : 'Revisá la nota que sugirió la IA, corregila si hace falta y aprobala. Hasta entonces el alumno no la ve.'
       }
     >
@@ -36,7 +36,7 @@ export function TarjetaNotaFinal({ resumen, aprobada, soloLectura, notaAprobada,
           {total == null ? 'Faltan puntajes' : formatearNota(total, resumen.maximo)}
         </p>
         {aprobada ? (
-          <span className='rounded-full bg-tiza-menta px-4 py-2 text-sm font-bold text-tiza-bosque'>Aprobada</span>
+          <span className='rounded-full bg-tiza-menta px-4 py-2 text-sm font-bold text-tiza-bosque'>Corregida</span>
         ) : soloLectura ? null : (
           <Boton type='button' onClick={onAprobar} disabled={resumen.total == null} cargando={cargando}>
             Aprobar nota final

@@ -67,7 +67,7 @@ export function PaginaResultados() {
     {
       titulo: 'Nota final',
       celda: (entrega) => {
-        if (entrega.estadoNota !== 'Aprobada') return <span className='text-tiza-bosque/70'>Sin aprobar</span>;
+        if (entrega.estadoNota !== 'Aprobada') return <span className='text-tiza-bosque/70'>Sin corregir</span>;
         const maximo = (entrega.puntajeMaximoMultipleChoice ?? 0) + (entrega.puntajeMaximoAbiertas ?? 0);
         return <span className='font-bold'>{formatearNota(entrega.notaFinal, maximo) ?? '—'}</span>;
       },
