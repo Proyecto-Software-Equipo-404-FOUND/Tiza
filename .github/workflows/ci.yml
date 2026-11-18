@@ -29,7 +29,7 @@ jobs:
         run: dotnet test PEI.sln --no-build --configuration Release --verbosity normal
 
   frontend-check:
-    name: Frontend Lint & Check (React + Vite)
+    name: Frontend Build & Test (Node 22)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -38,15 +38,19 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
-      - name: Check Frontend (if package.json exists)
-        run: |
-          if [ -f "frontend/package.json" ]; then
-            cd frontend
-            npm ci || npm install
-            npm run build --if-present
-          fi
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Run frontend tests
+        working-directory: frontend
+        run: npm test -- --run
 
   qa07-concurrencia:
     name: QA-07 PostgreSQL y concurrencia 200/409
