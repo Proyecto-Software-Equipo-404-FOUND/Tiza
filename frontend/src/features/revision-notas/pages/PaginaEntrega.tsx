@@ -1,16 +1,21 @@
 import { Check, X } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useSesion } from '@/features/auth/SesionContext';
 import { mensajeDeError } from '@/shared/api/errores';
 import { BannerError } from '@/shared/components/BannerError';
+import { ModalConfirmacion } from '@/shared/components/ModalConfirmacion';
 import { Spinner } from '@/shared/components/Spinner';
 import { Tabla, type Columna } from '@/shared/components/Tabla';
 import { Tarjeta } from '@/shared/components/Tarjeta';
+import { CampoPuntajeFinal } from '../components/CampoPuntajeFinal';
 import {
   AlertasFoco,
   EtiquetaSugerida,
   InsigniaEstadoEntrega,
   InsigniaGravedad,
 } from '../components/InsigniasResultados';
+import { TarjetaNotaFinal } from '../components/TarjetaNotaFinal';
 import {
   alertasDePregunta,
   esRoja,
@@ -21,9 +26,12 @@ import {
   formatearNumero,
   resumenSalidas,
 } from '../formato';
+import { useAprobarNota } from '../hooks/useAprobarNota';
 import { useEntrega } from '../hooks/useEntregas';
 import { useNombresAlumnos } from '../hooks/useNombresAlumnos';
-import type { AlertaFocoDetalle, DesgloseCriterio, RespuestaEntrega } from '../tipos';
+import { mensajeNotaFinal } from '../errores';
+import { armarCambios, esEditable, leerPuntaje, puntajesIniciales, resumirNota } from '../notaFinal';
+import type { AlertaFocoDetalle, DesgloseCriterio, EntregaDetalle, RespuestaEntrega } from '../tipos';
 
 const columnasDesglose: Columna<DesgloseCriterio>[] = [
   { titulo: 'Criterio', celda: (fila) => fila.criterio ?? '—' },
@@ -90,10 +98,13 @@ function TarjetaRespuesta({
   respuesta,
   numero,
   alertas,
+  campoNota,
 }: {
   respuesta: RespuestaEntrega;
   numero: number;
   alertas: AlertaFocoDetalle[];
+  /** Campo para que el docente confirme o corrija la nota (solo preguntas abiertas) */
+  campoNota?: ReactNode;
 }) {
   return (
     <li className='rounded-2xl border border-tiza-borde bg-white p-5'>
@@ -105,6 +116,7 @@ function TarjetaRespuesta({
       ) : (
         <RespuestaAbierta respuesta={respuesta} />
       )}
+      {campoNota}
       {alertas.length > 0 && (
         <p className='mt-3 flex flex-wrap items-center gap-2 text-sm text-tiza-bosque/80'>
           <InsigniaGravedad roja={alertas.some(esRoja)}>{alertas.some(esRoja) ? 'Roja' : 'Amarilla'}</InsigniaGravedad>
@@ -130,6 +142,136 @@ const columnasAlertas = (preguntaIds: string[]): Columna<AlertaFocoDetalle>[] =>
   { titulo: 'Cuándo', celda: (alerta) => formatearFechaHora(alerta.registradoUtc) },
 ];
 
+function DetalleEntrega({ entrega, evaluacionId, nombre }: { entrega: EntregaDetalle; evaluacionId: string; nombre: string }) {
+  // El componente se vuelve a montar (key) cuando cambia la entrega o se aprueba, así los campos arrancan limpios
+  const [valores, setValores] = useState(() => puntajesIniciales(entrega.respuestas));
+  const [confirmando, setConfirmando] = useState(false);
+  const aprobar = useAprobarNota(evaluacionId, entrega.entregaId);
+  const { usuario } = useSesion();
+  const aprobada = entrega.estadoNota === 'Aprobada';
+  // Editar y aprobar es solo del docente dueño del examen (el administrador recibe 403 por contrato)
+  const soloLectura = usuario?.rol !== 'docente';
+  const resumen = resumirNota(entrega.respuestas, valores);
+  const hayQueEditar = entrega.respuestas.some(esEditable);
+
+  // Un campo vacío no marca error: ya lo avisa la tarjeta de nota final
+  const errorDe = (respuesta: RespuestaEntrega) => {
+    const texto = valores[respuesta.preguntaId] ?? '';
+    return texto.trim() === '' ? null : leerPuntaje(texto, respuesta.puntajeMaximo).error;
+  };
+
+  const confirmar = () => {
+    setConfirmando(false);
+    const cambios = armarCambios(entrega, valores);
+    if (cambios) aprobar.mutate(cambios);
+  };
+
+  return (
+    <>
+      <header>
+        <h1 className='font-heading text-4xl font-extrabold text-tiza-bosque'>{nombre}</h1>
+        <p className='mt-3 flex flex-wrap items-center gap-3 text-sm text-tiza-bosque/80'>
+          <InsigniaEstadoEntrega estado={entrega.estado} aprobada={aprobada} />
+          <span>Entregó el {formatearFechaHora(entrega.fechaEntregaUtc)}</span>
+          {entrega.respondioAlgo === false && <span>No respondió nada</span>}
+        </p>
+      </header>
+
+      <Tarjeta
+        titulo='Notas'
+        subtitulo='La nota de la IA es solo una sugerencia. La nota final es la que aprobás más abajo.'
+      >
+        <dl className='grid gap-4 sm:grid-cols-3'>
+          <div>
+            <dt className='text-sm font-bold text-tiza-bosque/70'>Múltiple choice</dt>
+            <dd>{formatearNota(entrega.notaMultipleChoice, entrega.puntajeMaximoMultipleChoice) ?? '—'}</dd>
+          </div>
+          <div>
+            <dt className='text-sm font-bold text-tiza-bosque/70'>Abiertas (IA)</dt>
+            <dd className='flex flex-wrap items-center gap-2'>
+              {entrega.puntajeMaximoAbiertas == null
+                ? '—'
+                : entrega.respondioAlgo === false
+                  ? 'Sin respuestas'
+                  : (formatearNota(entrega.notaSugeridaAbiertas, entrega.puntajeMaximoAbiertas) ?? 'Pendiente')}
+              {entrega.respondioAlgo !== false && entrega.notaSugeridaAbiertas != null && <EtiquetaSugerida />}
+            </dd>
+          </div>
+          <div>
+            <dt className='text-sm font-bold text-tiza-bosque/70'>Alertas de foco</dt>
+            <dd>
+              <AlertasFoco alertas={entrega.alertasFoco} />
+            </dd>
+          </div>
+        </dl>
+      </Tarjeta>
+
+      <TarjetaNotaFinal
+        resumen={resumen}
+        aprobada={aprobada}
+        soloLectura={soloLectura}
+        notaAprobada={entrega.notaFinal}
+        hayQueEditar={hayQueEditar}
+        cargando={aprobar.isPending}
+        error={aprobar.isError ? mensajeNotaFinal(aprobar.error) : null}
+        onAprobar={() => setConfirmando(true)}
+      />
+
+      <section aria-labelledby='titulo-respuestas' className='flex flex-col gap-3'>
+        <h2 id='titulo-respuestas' className='font-heading text-2xl font-extrabold text-tiza-bosque'>
+          Respuestas
+        </h2>
+        {entrega.respuestas.length === 0 ? (
+          <p className='text-tiza-bosque/70'>No hay respuestas para mostrar.</p>
+        ) : (
+          <ol className='flex flex-col gap-4'>
+            {entrega.respuestas.map((respuesta, indice) => (
+              <TarjetaRespuesta
+                key={respuesta.preguntaId}
+                respuesta={respuesta}
+                numero={indice + 1}
+                alertas={alertasDePregunta(entrega.alertas, respuesta.preguntaId)}
+                campoNota={
+                  esEditable(respuesta) ? (
+                    <CampoPuntajeFinal
+                      numero={indice + 1}
+                      maximo={respuesta.puntajeMaximo}
+                      sugerida={respuesta.notaSugerida}
+                      valor={valores[respuesta.preguntaId] ?? ''}
+                      error={errorDe(respuesta)}
+                      deshabilitado={aprobada || soloLectura}
+                      onCambiar={(texto) => setValores((previos) => ({ ...previos, [respuesta.preguntaId]: texto }))}
+                    />
+                  ) : undefined
+                }
+              />
+            ))}
+          </ol>
+        )}
+      </section>
+
+      {entrega.alertas.length > 0 && (
+        <Tarjeta
+          titulo='Salidas de la pantalla'
+          subtitulo='Es un aviso: no modifica la nota. Amarilla: menos de 3 s. Roja: 3 s o más.'
+        >
+          <Tabla columnas={columnasAlertas(entrega.respuestas.map((r) => r.preguntaId))} filas={entrega.alertas} clave={(alerta) => `${alerta.registradoUtc}-${alerta.tipoEvento}-${alerta.duracionMs}`} />
+        </Tarjeta>
+      )}
+
+      <ModalConfirmacion
+        abierto={confirmando}
+        titulo='¿Aprobar la nota final?'
+        mensaje={`La nota final va a ser ${formatearNota(resumen.total, resumen.maximo) ?? ''}. Después de aprobarla, el alumno la puede ver.`}
+        textoConfirmar='Sí, aprobar'
+        variante='principal'
+        onConfirmar={confirmar}
+        onCancelar={() => setConfirmando(false)}
+      />
+    </>
+  );
+}
+
 export function PaginaEntrega() {
   const { evaluacionId = '', entregaId = '' } = useParams<{ evaluacionId: string; entregaId: string }>();
   const { data: entrega, isPending, isError, error, refetch } = useEntrega(evaluacionId, entregaId);
@@ -148,74 +290,12 @@ export function PaginaEntrega() {
       {isError && <BannerError mensaje={mensajeDeError(error)} onReintentar={() => refetch()} />}
 
       {entrega && (
-        <>
-          <header>
-            <h1 className='font-heading text-4xl font-extrabold text-tiza-bosque'>{nombreDe(entrega.alumnoId)}</h1>
-            <p className='mt-3 flex flex-wrap items-center gap-3 text-sm text-tiza-bosque/80'>
-              <InsigniaEstadoEntrega estado={entrega.estado} />
-              <span>Entregó el {formatearFechaHora(entrega.fechaEntregaUtc)}</span>
-              {entrega.respondioAlgo === false && <span>No respondió nada</span>}
-            </p>
-          </header>
-
-          <Tarjeta
-            titulo='Notas'
-            subtitulo='La nota de la IA es solo una sugerencia, todavía no es la nota final.'
-          >
-            <dl className='grid gap-4 sm:grid-cols-3'>
-              <div>
-                <dt className='text-sm font-bold text-tiza-bosque/70'>Múltiple choice</dt>
-                <dd>{formatearNota(entrega.notaMultipleChoice, entrega.puntajeMaximoMultipleChoice) ?? '—'}</dd>
-              </div>
-              <div>
-                <dt className='text-sm font-bold text-tiza-bosque/70'>Abiertas (IA)</dt>
-                <dd className='flex flex-wrap items-center gap-2'>
-                  {entrega.puntajeMaximoAbiertas == null
-                    ? '—'
-                    : entrega.respondioAlgo === false
-                      ? 'Sin respuestas'
-                      : (formatearNota(entrega.notaSugeridaAbiertas, entrega.puntajeMaximoAbiertas) ?? 'Pendiente')}
-                  {entrega.respondioAlgo !== false && entrega.notaSugeridaAbiertas != null && <EtiquetaSugerida />}
-                </dd>
-              </div>
-              <div>
-                <dt className='text-sm font-bold text-tiza-bosque/70'>Alertas de foco</dt>
-                <dd>
-                  <AlertasFoco alertas={entrega.alertasFoco} />
-                </dd>
-              </div>
-            </dl>
-          </Tarjeta>
-
-          <section aria-labelledby='titulo-respuestas' className='flex flex-col gap-3'>
-            <h2 id='titulo-respuestas' className='font-heading text-2xl font-extrabold text-tiza-bosque'>
-              Respuestas
-            </h2>
-            {entrega.respuestas.length === 0 ? (
-              <p className='text-tiza-bosque/70'>No hay respuestas para mostrar.</p>
-            ) : (
-              <ol className='flex flex-col gap-4'>
-                {entrega.respuestas.map((respuesta, indice) => (
-                  <TarjetaRespuesta
-                    key={respuesta.preguntaId}
-                    respuesta={respuesta}
-                    numero={indice + 1}
-                    alertas={alertasDePregunta(entrega.alertas, respuesta.preguntaId)}
-                  />
-                ))}
-              </ol>
-            )}
-          </section>
-
-          {entrega.alertas.length > 0 && (
-            <Tarjeta
-              titulo='Salidas de la pantalla'
-              subtitulo='Es un aviso: no modifica la nota. Amarilla: menos de 3 s. Roja: 3 s o más.'
-            >
-              <Tabla columnas={columnasAlertas(entrega.respuestas.map((r) => r.preguntaId))} filas={entrega.alertas} clave={(alerta) => `${alerta.registradoUtc}-${alerta.tipoEvento}-${alerta.duracionMs}`} />
-            </Tarjeta>
-          )}
-        </>
+        <DetalleEntrega
+          key={`${entrega.entregaId}-${entrega.estadoNota ?? 'Sugerida'}`}
+          entrega={entrega}
+          evaluacionId={evaluacionId}
+          nombre={nombreDe(entrega.alumnoId)}
+        />
       )}
     </main>
   );

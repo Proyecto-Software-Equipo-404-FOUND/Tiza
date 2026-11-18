@@ -34,7 +34,7 @@ export function PaginaResultados() {
       titulo: 'Estado',
       celda: (entrega) => (
         <span className='flex flex-col items-start gap-1'>
-          <InsigniaEstadoEntrega estado={entrega.estado} />
+          <InsigniaEstadoEntrega estado={entrega.estado} aprobada={entrega.estadoNota === 'Aprobada'} />
           {entrega.respondioAlgo === false && <span className='text-xs text-tiza-bosque/70'>No respondió</span>}
         </span>
       ),
@@ -62,6 +62,14 @@ export function PaginaResultados() {
         ) : (
           <span className='text-tiza-bosque/70'>Pendiente</span>
         );
+      },
+    },
+    {
+      titulo: 'Nota final',
+      celda: (entrega) => {
+        if (entrega.estadoNota !== 'Aprobada') return <span className='text-tiza-bosque/70'>Sin aprobar</span>;
+        const maximo = (entrega.puntajeMaximoMultipleChoice ?? 0) + (entrega.puntajeMaximoAbiertas ?? 0);
+        return <span className='font-bold'>{formatearNota(entrega.notaFinal, maximo) ?? '—'}</span>;
       },
     },
     { titulo: 'Alertas de foco', celda: (entrega) => <AlertasFoco alertas={entrega.alertasFoco} /> },

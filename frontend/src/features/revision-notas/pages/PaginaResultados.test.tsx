@@ -148,6 +148,22 @@ describe('PaginaResultados', () => {
     expect(screen.getByText(/no es la nota final/)).toBeInTheDocument();
   });
 
+  it('con la nota aprobada muestra «Aprobada» y la nota final, aunque el estado siga pendiente', () => {
+    simular({
+      data: [{ ...base, estado: 'PendienteCorreccion', notaFinal: 4.5, estadoNota: 'Aprobada' }],
+    });
+    renderizar();
+    expect(screen.getByText('Aprobada')).toBeInTheDocument();
+    expect(screen.queryByText('Pendiente de corrección')).not.toBeInTheDocument();
+    expect(screen.getByText('4,5 / 6')).toBeInTheDocument();
+  });
+
+  it('sin aprobar, la columna de nota final dice «Sin aprobar»', () => {
+    simular({ data: [base] });
+    renderizar();
+    expect(screen.getByText('Sin aprobar')).toBeInTheDocument();
+  });
+
   it('muestra el spinner mientras carga', () => {
     simular({ isPending: true });
     renderizar();

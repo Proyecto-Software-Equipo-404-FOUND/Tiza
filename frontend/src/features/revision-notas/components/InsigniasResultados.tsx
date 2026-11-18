@@ -8,10 +8,15 @@ const estilosEstado: Record<EstadoEntrega, string> = {
   CorreccionManual: 'bg-tiza-pizarra/10 text-tiza-pizarra',
 };
 
-export function InsigniaEstadoEntrega({ estado }: { estado: EstadoEntrega }) {
+/** Con la nota aprobada manda eso: el estado de corrección de la IA deja de importarle al docente. */
+export function InsigniaEstadoEntrega({ estado, aprobada = false }: { estado: EstadoEntrega; aprobada?: boolean }) {
   return (
-    <span className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${estilosEstado[estado]}`}>
-      {etiquetaEstadoEntrega[estado]}
+    <span
+      className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${
+        aprobada ? 'bg-tiza-lima text-tiza-bosque' : estilosEstado[estado]
+      }`}
+    >
+      {aprobada ? 'Aprobada' : etiquetaEstadoEntrega[estado]}
     </span>
   );
 }
