@@ -50,12 +50,14 @@ public class ProblemDetailsMiddleware
         var problem = new ProblemDetails
         {
             Status = statusCode,
+            Type = (exception as CodedConflictException)?.Code,
             Title = exception switch
             {
                 KeyNotFoundException => "Recurso no encontrado",
                 UnauthorizedAccessException => "Acceso no autorizado",
                 ForbiddenException => "Acceso prohibido",
                 UnsupportedMediaTypeException => "Tipo de medio no soportado",
+                CodedConflictException conflict => conflict.Message,
                 InvalidOperationException => "Conflicto en la operación",
                 ArgumentException => "Petición inválida",
                 _ => "Ocurrió un error inesperado"

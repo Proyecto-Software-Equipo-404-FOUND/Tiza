@@ -11,6 +11,7 @@ de estado mediante métodos de negocio explícitos. */
 public class Matriculacion : BaseEntity
 {
     // Clave foránea física hacia la cohorte correspondiente en pei_cursos_db.
+    public Guid CursoId { get; private set; }
     public Guid CohorteId { get; private set; }
 
     // Referencia lógica al usuario alumno en Identidad_DB (sin FK física por Database-per-Service).
@@ -27,7 +28,7 @@ public class Matriculacion : BaseEntity
 
     /* Constructor de negocio. Exige las referencias obligatorias e inicializa
     la matrícula en estado Activa con fecha de alta UTC. */
-    public Matriculacion(Guid institucionId, Guid cohorteId, Guid alumnoId)
+    public Matriculacion(Guid institucionId, Guid cohorteId, Guid alumnoId, Guid cursoId)
     {
         if (institucionId == Guid.Empty)
             throw new DomainException("La institución es obligatoria para la matriculación.");
@@ -38,6 +39,10 @@ public class Matriculacion : BaseEntity
         if (alumnoId == Guid.Empty)
             throw new DomainException("El alumno es obligatorio para la matriculación.");
 
+        if (cursoId == Guid.Empty)
+            throw new DomainException("El curso es obligatorio para la matriculación.");
+
+        CursoId = cursoId;
         InstitucionId = institucionId;
         CohorteId = cohorteId;
         AlumnoId = alumnoId;

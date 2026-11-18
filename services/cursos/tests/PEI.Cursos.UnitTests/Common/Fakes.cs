@@ -155,6 +155,10 @@ public class FakeMatriculacionRepository : IMatriculacionRepository
         return Task.FromResult(matriculacion);
     }
 
+    public Task<bool> ExisteActivaEnOtraCohorteAsync(Guid cursoId, Guid alumnoId, Guid cohorteId, CancellationToken cancellationToken = default) =>
+        Task.FromResult(Items.Any(m => m.CursoId == cursoId && m.AlumnoId == alumnoId
+            && m.CohorteId != cohorteId && m.Estado == PEI.Cursos.Domain.Enums.EstadoMatriculacion.Activa));
+
     public Task<bool> ExisteMatriculacionAsync(Guid cohorteId, Guid alumnoId, CancellationToken cancellationToken = default)
     {
         var existe = Items.Any(m => m.CohorteId == cohorteId && m.AlumnoId == alumnoId);

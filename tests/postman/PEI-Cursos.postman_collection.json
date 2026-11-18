@@ -636,6 +636,62 @@
           }
         }
       ]
+    },
+    {
+      "name": "S3-CU-04 — Conflicto entre comisiones (ejecución manual en QA)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"alumnoId\": \"{{alumnoId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cohortes/{{cu04CohorteDestinoId}}/matriculas",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "cohortes",
+            "{{cu04CohorteDestinoId}}",
+            "matriculas"
+          ]
+        },
+        "description": "Ejecutar solo en QA descartable. Definir cu04CohorteDestinoId y alumnoId: el alumno debe estar activo en otra cohorte del mismo curso y tenant, sin matrícula previa en destino. Usar un token de Administrador o Docente."
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (!pm.variables.get(\"cu04CohorteDestinoId\")) {",
+              "  pm.execution.skipRequest();",
+              "}"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Devuelve 409 ProblemDetails con el código de negocio\", () => {",
+              "  pm.response.to.have.status(409);",
+              "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/problem+json\");",
+              "  pm.expect(pm.response.json().type).to.eql(\"ALUMNO_EN_OTRA_COMISION\");",
+              "});"
+            ]
+          }
+        }
+      ]
     }
   ]
 }

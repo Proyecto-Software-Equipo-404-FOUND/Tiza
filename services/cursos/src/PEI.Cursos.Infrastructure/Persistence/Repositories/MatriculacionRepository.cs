@@ -28,6 +28,10 @@ public class MatriculacionRepository : IMatriculacionRepository
             .FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
     }
 
+    public Task<bool> ExisteActivaEnOtraCohorteAsync(Guid cursoId, Guid alumnoId, Guid cohorteId, CancellationToken cancellationToken = default) =>
+        _context.Matriculaciones.AnyAsync(m => m.CursoId == cursoId && m.AlumnoId == alumnoId
+            && m.CohorteId != cohorteId && m.Estado == EstadoMatriculacion.Activa, cancellationToken);
+
     public async Task<bool> ExisteMatriculacionAsync(
         Guid cohorteId,
         Guid alumnoId,
