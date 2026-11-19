@@ -151,6 +151,20 @@ public class CorreccionIaTests
         Assert.Equal(EstadoEntregaExamen.Corregida, entrega.Estado);
     }
 
+        [Fact]
+    public async Task Registrar_EntregaYaAprobadaPorDocente_DevuelveConflicto409YNoModifica()
+    {
+        var (repo, entrega) = Escenario(AbiertaUnoId);
+        entrega.EstadoNota = EstadoNotaEntrega.Aprobada;
+        entrega.FechaAprobacionUtc = DateTimeOffset.UtcNow;
+
+        var handler = new RegistrarCalificacionSugeridaHandler(repo);
+        var r = await handler.Handle(Comando(entrega.Id, AbiertaUnoId, 3m), default);
+
+        Assert.Equal(TipoResultado.Conflicto, r.Tipo);
+        Assert.Empty(repo.Calificaciones);
+    }
+
     // ---------- Apoyo ----------
 
     private static Task Procesar(RepositorioFalso repo, IaFalsa ia) =>
