@@ -42,7 +42,7 @@
 
 ### 1. Prerrequisitos
 * [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) (verificar con `dotnet --list-sdks`).
-* [Node.js 20 LTS](https://nodejs.org/) (verificar con `node -v`).
+* [Node.js 22](https://nodejs.org/) para el frontend (verificar con `node -v`; `.nvmrc` fija la versión mayor).
 * [Docker Desktop](https://www.docker.com/products/docker-desktop/) (con WSL2 en Windows).
 
 ### 2. Infraestructura Local (Bases de Datos con Docker)
@@ -94,6 +94,31 @@ Para evitar sobrecargar tu IDE, **abrí únicamente la solución individual de t
 * IA: `services/ia/PEI.IA.sln`
 
 ---
+
+## Pruebas del frontend y CI
+
+Usá Node 22 tanto localmente como en CI. Con nvm, ejecutá `nvm install` y
+`nvm use` desde la raíz; en Windows seleccioná una versión 22 con tu gestor
+de Node. Node 24 presenta una incompatibilidad entre `AbortSignal` de jsdom
+y `Request` de undici en los tests de rutas.
+
+```bash
+cd frontend
+npm ci
+npm run build
+npm test -- --run
+```
+
+`--run` ejecuta toda la suite Vitest una vez y termina sin modo interactivo.
+El job `frontend-check` de `.github/workflows/ci.yml` usa Node 22 y ejecuta
+estos tres pasos en orden. Si falla instalación, build o cualquier test,
+el job falla: no hay fallback a `npm install`, `--if-present` ni
+`continue-on-error`.
+
+Los workflows QA-02, QA-04, QA-05 y QA-06 conservan Node 20 para sus runners
+independientes de Newman, contratos y APIs .NET. No instalan ni prueban el
+frontend en `main`; migrarlos no es necesario para S3-QA-01. No se agrega
+Cypress ni se incorpora el trabajo pendiente del PR #207.
 
 ## 🌿 Convenciones de Trabajo en Git
 
