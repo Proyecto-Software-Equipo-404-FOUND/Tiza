@@ -42,6 +42,27 @@ namespace PEI.SalaEnVivo.UnitTests
         }
 
         [Fact]
+        public async Task S2QA01_DosEnviosConMismaClave_PersistenUnaSolaRespuesta()
+        {
+            var salaId = Guid.NewGuid();
+            var institucionId = Guid.NewGuid();
+            CrearSalaActiva(salaId, institucionId);
+            var handler = CrearHandler();
+            var command = new EnviarRespuestaCommand(salaId, Guid.NewGuid(), institucionId,
+                Guid.NewGuid(), "Respuesta QA reproducible", Guid.NewGuid(), 1);
+
+            var primero = await handler.Handle(command, CancellationToken.None);
+            var reintento = await handler.Handle(command, CancellationToken.None);
+
+            Assert.Equal("Aceptada", primero.Estado);
+            Assert.Equal("Duplicada", reintento.Estado);
+            Assert.Equal(primero.RecibidaUtc, reintento.RecibidaUtc);
+            var guardada = Assert.Single(_respuestaRepository.Respuestas);
+            Assert.Equal(command.IdempotencyKey, guardada.IdempotencyKey);
+            Assert.Equal(command.Respuesta, guardada.Respuesta);
+        }
+
+        [Fact]
         public async Task Handle_PrimerEnvioValido_RetornaAceptada()
         {
             var salaId = Guid.NewGuid();

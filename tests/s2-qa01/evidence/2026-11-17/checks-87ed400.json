@@ -1,0 +1,52 @@
+[
+  {
+    "name": "Frontend Lint & Check (React + Vite)",
+    "conclusion": "success",
+    "details_url": "https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/actions/runs/44182610424/job/134390621274"
+  },
+  {
+    "name": "QA-07 PostgreSQL y concurrencia 200/409",
+    "conclusion": "success",
+    "details_url": "https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/actions/runs/44182610424/job/134390621265"
+  },
+  {
+    "name": "Backend Build & Test (.NET 8)",
+    "conclusion": "success",
+    "details_url": "https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/actions/runs/44182610424/job/134390620682"
+  },
+  {
+    "name": "contracts",
+    "conclusion": "success",
+    "details_url": "https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/actions/runs/44182610391/job/134390620149"
+  },
+  {
+    "name": "S2-QA-01 Cypress y SignalR contra servicios reales",
+    "conclusion": "success",
+    "details_url": "https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/actions/runs/44182609929/job/134390619753"
+  },
+  {
+    "name": "S2-QA-01 Cypress UI (MSW; no aceptación E2E backend)",
+    "conclusion": "success",
+    "details_url": "https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/actions/runs/44182609929/job/134390619619"
+  },
+  {
+    "name": "QA-05 Newman y smoke QA-01",
+    "conclusion": "success",
+    "details_url": "https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/actions/runs/44182609929/job/134390619538"
+  },
+  {
+    "name": "identity-negative",
+    "conclusion": "success",
+    "details_url": "https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/actions/runs/44182609944/job/134390619233"
+  },
+  {
+    "name": "tenant-isolation",
+    "conclusion": "success",
+    "details_url": "https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/actions/runs/44182609938/job/134390619023"
+  },
+  {
+    "name": "S2-QA-01 Evaluaciones reales y PostgreSQL",
+    "conclusion": "success",
+    "details_url": "https://github.com/Proyecto-Software-Equipo-404-FOUND/Tiza/actions/runs/44182609929/job/134390618979"
+  }
+]
