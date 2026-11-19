@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
@@ -36,11 +36,14 @@ namespace PEI.SalaEnVivo.Infrastructure.Clientes
             Guid institucionId,
             CancellationToken cancellationToken = default)
         {
+            // S3-EV-02 (#223): el endpoint público de Evaluaciones ahora exige el JWT del docente dueño,
+            // así que Sala usa el interno, con la misma clave que el lote de entregas.
             using var request = new HttpRequestMessage(
                 HttpMethod.Get,
-                $"api/v1/evaluaciones/{evaluacionId}");
+                $"interno/evaluaciones/{evaluacionId}");
 
             request.Headers.Add(EncabezadoInstitucion, institucionId.ToString());
+            request.Headers.Add(EncabezadoApiKeyInterna, LeerApiKeyInterna());
 
             using var response = await _httpClient.SendAsync(request, cancellationToken);
 
@@ -91,9 +94,7 @@ namespace PEI.SalaEnVivo.Infrastructure.Clientes
             const int maxIntentos = 3;
             var ruta = $"interno/salas/{salaId}/entregas";
 
-            var apiKey = _configuration?["ServiciosInternos:ApiKey"]
-                ?? Environment.GetEnvironmentVariable("ServiciosInternos__ApiKey")
-                ?? string.Empty;
+            var apiKey = LeerApiKeyInterna();
 
             for (int intento = 1; intento <= maxIntentos; intento++)
             {
@@ -179,6 +180,11 @@ namespace PEI.SalaEnVivo.Infrastructure.Clientes
 
             return null;
         }
+
+        private string LeerApiKeyInterna() =>
+            _configuration?["ServiciosInternos:ApiKey"]
+            ?? Environment.GetEnvironmentVariable("ServiciosInternos__ApiKey")
+            ?? string.Empty;
 
         private sealed record EvaluacionApiDto(
             Guid Id,
