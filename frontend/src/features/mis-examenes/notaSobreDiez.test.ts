@@ -25,7 +25,7 @@ describe('textoNotaAlumno', () => {
   });
 
   it('si el examen es sobre otro máximo muestra la nota sobre 10 y el puntaje original', () => {
-    expect(textoNotaAlumno(4, 5)).toEqual({ principal: '8 / 10', detalle: '4 / 5 puntos' });
+    expect(textoNotaAlumno(4, 5)).toEqual({ principal: '8 / 10', detalle: '4 de 5 puntos obtenidos' });
   });
 
   it('sin nota no muestra nada', () => {

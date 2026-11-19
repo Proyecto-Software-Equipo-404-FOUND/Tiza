@@ -198,8 +198,8 @@ describe('rutas de la aplicación', () => {
     expect(screen.getByRole('link', { name: 'Mis exámenes' })).toBeInTheDocument();
   });
 
-  it('un docente no entra a Mis exámenes ni ve el enlace', () => {
-    iniciarComo('docente');
+  it.each(['docente', 'administrador'] as const)('un %s no entra a Mis exámenes ni ve el enlace', (rol) => {
+    iniciarComo(rol);
     mostrar('/mis-examenes');
     expect(screen.getByText('No tenés permiso para ver esta página.')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Mis exámenes' })).not.toBeInTheDocument();

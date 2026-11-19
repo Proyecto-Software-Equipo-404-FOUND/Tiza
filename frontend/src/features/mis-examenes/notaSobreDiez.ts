@@ -9,12 +9,12 @@ export function notaSobreDiez(nota: number | null | undefined, maximo: number | 
 /**
  * Cómo se muestra la nota al alumno. Si el examen ya es sobre 10 se muestra tal cual («8,5 / 10»).
  * Si no, la nota va primero en escala 10 y el puntaje original queda como detalle:
- * principal «8 / 10», detalle «4 / 5 puntos».
+ * principal «8 / 10», detalle «4 de 5 puntos obtenidos».
  */
 export function textoNotaAlumno(nota: number | null | undefined, maximo: number | null | undefined) {
   const original = formatearNota(nota, maximo);
   if (original == null) return null;
   const sobreDiez = notaSobreDiez(nota, maximo);
   if (sobreDiez == null || maximo === 10) return { principal: original, detalle: null };
-  return { principal: `${formatearNumero(sobreDiez)} / 10`, detalle: `${original} puntos` };
+  return { principal: `${formatearNumero(sobreDiez)} / 10`, detalle: `${formatearNumero(nota as number)} de ${formatearNumero(maximo as number)} puntos obtenidos` };
 }

@@ -1,7 +1,6 @@
 import { mensajeDeError } from '@/shared/api/errores';
 import { BannerError } from '@/shared/components/BannerError';
 import { Spinner } from '@/shared/components/Spinner';
-import { Tabla, type Columna } from '@/shared/components/Tabla';
 import { Tarjeta } from '@/shared/components/Tarjeta';
 import { formatearFechaHora } from '@/features/revision-notas/formato';
 import { useMisExamenes } from './hooks/useMisExamenes';
@@ -29,12 +28,6 @@ function Resultado({ examen }: { examen: MiExamen }) {
   );
 }
 
-const columnas: Columna<MiExamen>[] = [
-  { titulo: 'Examen', celda: (examen) => <span className='font-semibold'>{examen.titulo}</span> },
-  { titulo: 'Entregaste', celda: (examen) => formatearFechaHora(examen.fechaEntregaUtc) },
-  { titulo: 'Resultado', celda: (examen) => <Resultado examen={examen} /> },
-];
-
 export function PaginaMisExamenes() {
   const { data: examenes, isPending, isError, error, refetch } = useMisExamenes();
 
@@ -50,12 +43,27 @@ export function PaginaMisExamenes() {
           titulo='Exámenes que rendiste'
           subtitulo='La nota aparece cuando tu docente la aprueba.'
         >
-          <Tabla
-            columnas={columnas}
-            filas={examenes}
-            clave={(examen) => examen.entregaId}
-            textoVacio='Todavía no rendiste ningún examen.'
-          />
+          {examenes.length === 0 ? (
+            <p className='text-tiza-bosque/70'>Todavía no rendiste ningún examen.</p>
+          ) : (
+            // Lista en vez de tabla: en el celular el resultado queda debajo del título y se ve sin deslizar
+            <ul className='flex flex-col divide-y divide-tiza-bosque/10'>
+              {examenes.map((examen) => (
+                <li
+                  key={examen.entregaId}
+                  className='flex flex-col gap-2 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-6'
+                >
+                  <div className='min-w-0'>
+                    <p className='font-semibold'>{examen.titulo}</p>
+                    <p className='text-sm text-tiza-bosque/70'>
+                      Entregaste el {formatearFechaHora(examen.fechaEntregaUtc)}
+                    </p>
+                  </div>
+                  <Resultado examen={examen} />
+                </li>
+              ))}
+            </ul>
+          )}
         </Tarjeta>
       )}
     </main>

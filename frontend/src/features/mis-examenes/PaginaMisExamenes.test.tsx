@@ -37,7 +37,7 @@ function simular(estado: Record<string, unknown>) {
   } as unknown as ReturnType<typeof useMisExamenes>);
 }
 
-const fila = (titulo: string) => screen.getByText(titulo).closest('tr') as HTMLElement;
+const fila = (titulo: string) => screen.getByText(titulo).closest('li') as HTMLElement;
 
 describe('PaginaMisExamenes', () => {
   beforeEach(() => {
@@ -75,7 +75,7 @@ describe('PaginaMisExamenes', () => {
     render(<PaginaMisExamenes />);
     const celdas = within(fila('Parcial 1'));
     expect(celdas.getByText('8 / 10')).toBeInTheDocument();
-    expect(celdas.getByText('(4 / 5 puntos)')).toBeInTheDocument();
+    expect(celdas.getByText('(4 de 5 puntos obtenidos)')).toBeInTheDocument();
   });
 
   it('un examen pendiente no muestra ninguna nota', () => {
@@ -89,7 +89,7 @@ describe('PaginaMisExamenes', () => {
   it('mantiene el orden que manda el backend (del más nuevo al más viejo)', () => {
     simular({ data: [pendiente, aprobado] });
     render(<PaginaMisExamenes />);
-    const filas = screen.getAllByRole('row').slice(1);
+    const filas = screen.getAllByRole('listitem');
     expect(filas[0]).toHaveTextContent('Parcial 2');
     expect(filas[1]).toHaveTextContent('Parcial 1');
   });
