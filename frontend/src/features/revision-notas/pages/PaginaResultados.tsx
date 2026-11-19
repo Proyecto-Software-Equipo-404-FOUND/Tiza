@@ -73,7 +73,14 @@ export function PaginaResultados() {
       celda: (entrega) => {
         if (entrega.estadoNota !== 'Aprobada') return <span className='text-tiza-bosque/70'>Sin corregir</span>;
         const maximo = (entrega.puntajeMaximoMultipleChoice ?? 0) + (entrega.puntajeMaximoAbiertas ?? 0);
-        return <span className='font-bold'>{formatearNota(entrega.notaFinal, maximo) ?? '—'}</span>;
+        return (
+          <span className='flex flex-col items-start'>
+            <span className='font-bold'>{formatearNota(entrega.notaFinal, maximo) ?? '—'}</span>
+            {entrega.fechaAprobacionUtc && (
+              <span className='text-xs text-tiza-bosque/70'>Corregida el {formatearFechaHora(entrega.fechaAprobacionUtc)}</span>
+            )}
+          </span>
+        );
       },
     },
     { titulo: 'Alertas de foco', celda: (entrega) => <AlertasFoco alertas={entrega.alertasFoco} /> },

@@ -202,12 +202,13 @@ export const handlersEntregas = [
     }
     entrega.estadoNota = 'Aprobada';
     entrega.notaFinal = Math.round(notaFinal * 100) / 100;
+    entrega.fechaAprobacionUtc = new Date().toISOString();
     return HttpResponse.json({
       entregaId: entrega.entregaId,
       notaFinal: entrega.notaFinal,
       puntajeMaximo,
       aprobadaPorId: DOCENTE_A_ID,
-      fechaAprobacionUtc: new Date().toISOString(),
+      fechaAprobacionUtc: entrega.fechaAprobacionUtc,
     });
   }),
 

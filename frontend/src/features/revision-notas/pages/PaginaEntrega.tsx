@@ -220,6 +220,7 @@ function DetalleEntrega({ entrega, evaluacionId, nombre }: { entrega: EntregaDet
         aprobada={aprobada}
         soloLectura={soloLectura}
         notaAprobada={entrega.notaFinal}
+        fechaAprobacionUtc={entrega.fechaAprobacionUtc}
         hayQueEditar={hayQueEditar}
         cargando={aprobar.isPending}
         error={aprobar.isError ? mensajeNotaFinal(aprobar.error) : null}

@@ -168,6 +168,18 @@ describe('PaginaEntrega', () => {
     expect(screen.getByText(/ya está corregida/)).toBeInTheDocument();
   });
 
+  it('con la nota aprobada muestra cuándo se corrigió, y sin fecha no inventa una', () => {
+    simular({
+      data: { ...entrega, estadoNota: 'Aprobada', notaFinal: 5, fechaAprobacionUtc: '2026-11-20T15:30:00Z' },
+    });
+    const vista = renderizar();
+    expect(screen.getByText(/Nota corregida el .*20\/11\/26/)).toBeInTheDocument();
+    vista.unmount();
+    simular({ data: { ...entrega, estadoNota: 'Aprobada', notaFinal: 5 } });
+    renderizar();
+    expect(screen.getByText('Nota corregida. El alumno ya puede verla.')).toBeInTheDocument();
+  });
+
   it('avisa si la IA todavía no corrigió una respuesta', () => {
     const pendiente: EntregaDetalle = {
       ...entrega,

@@ -1,6 +1,6 @@
 import { Boton } from '@/shared/components/Boton';
 import { Tarjeta } from '@/shared/components/Tarjeta';
-import { formatearNota } from '../formato';
+import { formatearFechaHora, formatearNota } from '../formato';
 import type { ResumenNota } from '../notaFinal';
 
 type Props = {
@@ -10,6 +10,8 @@ type Props = {
   soloLectura: boolean;
   /** Nota final ya guardada (cuando está aprobada) */
   notaAprobada: number | null | undefined;
+  /** Cuándo se aprobó; si no viene, no se muestra */
+  fechaAprobacionUtc?: string | null;
   hayQueEditar: boolean;
   cargando: boolean;
   error: string | null;
@@ -17,7 +19,7 @@ type Props = {
 };
 
 // Resumen de la nota final de una entrega y botón para aprobarla
-export function TarjetaNotaFinal({ resumen, aprobada, soloLectura, notaAprobada, hayQueEditar, cargando, error, onAprobar }: Props) {
+export function TarjetaNotaFinal({ resumen, aprobada, soloLectura, notaAprobada, fechaAprobacionUtc, hayQueEditar, cargando, error, onAprobar }: Props) {
   const total = aprobada ? (notaAprobada ?? resumen.total) : resumen.total;
 
   return (
@@ -25,7 +27,7 @@ export function TarjetaNotaFinal({ resumen, aprobada, soloLectura, notaAprobada,
       titulo='Nota final'
       subtitulo={
         aprobada
-          ? 'Nota corregida. El alumno ya puede verla.'
+          ? `Nota corregida${fechaAprobacionUtc ? ` el ${formatearFechaHora(fechaAprobacionUtc)}` : ''}. El alumno ya puede verla.`
           : soloLectura
             ? 'Todavía no está corregida. Solo el docente que creó el examen puede aprobarla.'
             : 'Revisá la nota que sugirió la IA, corregila si hace falta y aprobala. Hasta entonces el alumno no la ve.'

@@ -160,6 +160,14 @@ describe('PaginaResultados', () => {
     expect(screen.getByText('4,5 / 6')).toBeInTheDocument();
   });
 
+  it('con la nota aprobada muestra debajo cuándo se corrigió', () => {
+    simular({
+      data: [{ ...base, notaFinal: 4.5, estadoNota: 'Aprobada', fechaAprobacionUtc: '2026-11-20T15:30:00Z' }],
+    });
+    renderizar();
+    expect(screen.getByText(/Corregida el .*20\/11\/26/)).toBeInTheDocument();
+  });
+
   it('sin corregir, la columna de nota final dice «Sin corregir»', () => {
     simular({ data: [base] });
     renderizar();

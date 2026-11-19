@@ -22,6 +22,8 @@ export type EntregaResumen = {
   estadoNota?: EstadoNota;
   /** Solo cuando estadoNota = Aprobada */
   notaFinal?: number | null;
+  /** Cuándo se aprobó; solo cuando estadoNota = Aprobada */
+  fechaAprobacionUtc?: string | null;
 };
 
 export type EstadoCorreccion = 'Automatica' | 'SugeridaIA' | 'PendienteIA' | 'Manual' | 'SinRespuesta' | 'Editada';
