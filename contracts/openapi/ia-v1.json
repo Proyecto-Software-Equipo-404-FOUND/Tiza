@@ -96,7 +96,7 @@
         ],
         "x-estado": "planificado",
         "summary": "Sugerir preguntas a partir de un apunte del curso.",
-        "description": "Proveedor: S3-IA-02 (#241, Santiago). Consumidor: Frontend S3-FE-08 (#248, Melany). Solo Docente. IA lee el texto con el interno de Cursos GET /api/v1/materiales/{id}/texto (S3-CU-03, #229). El texto del apunte va delimitado como dato (barandas S3-IA-01, #226). Las preguntas son solo sugerencias: el docente elige cuáles agregar y se guardan con el PUT de evaluaciones de siempre. Se publica en el gateway con token.",
+        "description": "Proveedor: S3-IA-02 (#241, Santiago). Consumidor: Frontend S3-FE-08 (#248, Melany). Solo Docente. IA lee el texto con el interno de Cursos GET /api/v1/materiales/{id}/texto (S3-CU-03, #229). El texto del apunte va delimitado como dato (barandas S3-IA-01, #226). Las preguntas son solo sugerencias: el docente elige cuáles agregar y se guardan con el PUT de evaluaciones de siempre. Se publica en el gateway con token. Tiempo máximo: IA responde en 60 s como mucho (generador + revisor, incluidos los cambios de proveedor); si no llega, corta y devuelve 503 IA_NO_DISPONIBLE. El front usa un timeout de 75 s y muestra que puede tardar hasta un minuto.",
         "operationId": "SugerirPreguntas",
         "security": [
           {
