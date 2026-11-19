@@ -25,7 +25,7 @@ export type LecturaPuntaje = { valor: number | null; error: string | null };
 export function leerPuntaje(texto: string, maximo: number): LecturaPuntaje {
   const limpio = texto.trim().replace(',', '.');
   if (limpio === '') return { valor: null, error: 'Poné un puntaje.' };
-  if (!/^\d+(\.\d{1,2})?$/.test(limpio)) return { valor: null, error: 'Escribí un número positivo, con hasta 2 decimales.' };
+  if (!/^\d+(\.\d{1,2})?$/.test(limpio)) return { valor: null, error: 'Escribí un número mayor o igual a 0, con hasta 2 decimales.' };
   const valor = Number(limpio);
   if (valor > maximo) return { valor: null, error: `No puede superar ${formatearNumero(maximo)}.` };
   return { valor, error: null };

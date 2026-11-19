@@ -8,15 +8,27 @@ const estilosEstado: Record<EstadoEntrega, string> = {
   CorreccionManual: 'bg-tiza-pizarra/10 text-tiza-pizarra',
 };
 
-/** Con la nota aprobada manda eso: el estado de corrección de la IA deja de importarle al docente. */
-export function InsigniaEstadoEntrega({ estado, aprobada = false }: { estado: EstadoEntrega; aprobada?: boolean }) {
+/**
+ * Con la nota aprobada manda eso: el estado de corrección de la IA deja de importarle al docente.
+ * Si el alumno no respondió nada la IA no sugiere nota, así que no se muestra «Nota sugerida».
+ */
+export function InsigniaEstadoEntrega({
+  estado,
+  aprobada = false,
+  sinRespuestas = false,
+}: {
+  estado: EstadoEntrega;
+  aprobada?: boolean;
+  sinRespuestas?: boolean;
+}) {
+  const sinSugerencia = sinRespuestas && !aprobada;
   return (
     <span
       className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${
-        aprobada ? 'bg-tiza-lima text-tiza-bosque' : estilosEstado[estado]
+        aprobada ? 'bg-tiza-lima text-tiza-bosque' : sinSugerencia ? 'bg-tiza-pizarra/10 text-tiza-pizarra' : estilosEstado[estado]
       }`}
     >
-      {aprobada ? 'Corregida' : etiquetaEstadoEntrega[estado]}
+      {aprobada ? 'Corregida' : sinSugerencia ? 'Sin nota sugerida' : etiquetaEstadoEntrega[estado]}
     </span>
   );
 }

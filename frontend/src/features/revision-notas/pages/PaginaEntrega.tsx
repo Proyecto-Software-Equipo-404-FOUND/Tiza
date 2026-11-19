@@ -143,14 +143,17 @@ const columnasAlertas = (preguntaIds: string[]): Columna<AlertaFocoDetalle>[] =>
 ];
 
 function DetalleEntrega({ entrega, evaluacionId, nombre }: { entrega: EntregaDetalle; evaluacionId: string; nombre: string }) {
-  // El componente se vuelve a montar (key) cuando cambia la entrega o se aprueba, así los campos arrancan limpios
-  const [valores, setValores] = useState(() => puntajesIniciales(entrega.respuestas));
+  // El componente se vuelve a montar (key) solo cuando cambia de entrega. Si al aprobar falla un paso y la pantalla se
+  // refresca, lo escrito y el mensaje de error siguen ahí.
+  const [escritos, setEscritos] = useState(() => puntajesIniciales(entrega.respuestas));
   const [confirmando, setConfirmando] = useState(false);
   const aprobar = useAprobarNota(evaluacionId, entrega.entregaId);
   const { usuario } = useSesion();
   const aprobada = entrega.estadoNota === 'Aprobada';
   // Editar y aprobar es solo del docente dueño del examen (el administrador recibe 403 por contrato)
   const soloLectura = usuario?.rol !== 'docente';
+  // Con la nota aprobada se muestra lo guardado, no lo que quedó escrito en los campos
+  const valores = aprobada ? puntajesIniciales(entrega.respuestas) : escritos;
   const resumen = resumirNota(entrega.respuestas, valores);
   const hayQueEditar = entrega.respuestas.some(esEditable);
 
@@ -171,7 +174,7 @@ function DetalleEntrega({ entrega, evaluacionId, nombre }: { entrega: EntregaDet
       <header>
         <h1 className='font-heading text-4xl font-extrabold text-tiza-bosque'>{nombre}</h1>
         <p className='mt-3 flex flex-wrap items-center gap-3 text-sm text-tiza-bosque/80'>
-          <InsigniaEstadoEntrega estado={entrega.estado} aprobada={aprobada} />
+          <InsigniaEstadoEntrega estado={entrega.estado} aprobada={aprobada} sinRespuestas={entrega.respondioAlgo === false} />
           <span>Entregó el {formatearFechaHora(entrega.fechaEntregaUtc)}</span>
           {entrega.respondioAlgo === false && <span>No respondió nada</span>}
         </p>
@@ -179,7 +182,13 @@ function DetalleEntrega({ entrega, evaluacionId, nombre }: { entrega: EntregaDet
 
       <Tarjeta
         titulo='Notas'
-        subtitulo='La nota de la IA es solo una sugerencia. La nota final es la que aprobás más abajo.'
+        subtitulo={
+          aprobada
+            ? 'La nota de la IA fue solo una sugerencia. La nota final ya está corregida.'
+            : soloLectura
+              ? 'La nota de la IA es solo una sugerencia. La nota final la define el docente.'
+              : 'La nota de la IA es solo una sugerencia. La nota final es la que aprobás más abajo.'
+        }
       >
         <dl className='grid gap-4 sm:grid-cols-3'>
           <div>
@@ -240,7 +249,7 @@ function DetalleEntrega({ entrega, evaluacionId, nombre }: { entrega: EntregaDet
                       valor={valores[respuesta.preguntaId] ?? ''}
                       error={errorDe(respuesta)}
                       deshabilitado={aprobada || soloLectura}
-                      onCambiar={(texto) => setValores((previos) => ({ ...previos, [respuesta.preguntaId]: texto }))}
+                      onCambiar={(texto) => setEscritos((previos) => ({ ...previos, [respuesta.preguntaId]: texto }))}
                     />
                   ) : undefined
                 }
@@ -291,7 +300,7 @@ export function PaginaEntrega() {
 
       {entrega && (
         <DetalleEntrega
-          key={`${entrega.entregaId}-${entrega.estadoNota ?? 'Sugerida'}`}
+          key={entrega.entregaId}
           entrega={entrega}
           evaluacionId={evaluacionId}
           nombre={nombreDe(entrega.alumnoId)}

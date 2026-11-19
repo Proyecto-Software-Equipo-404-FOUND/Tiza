@@ -80,14 +80,16 @@ function simular(estado: Record<string, unknown>, rol: 'docente' | 'administrado
   vi.mocked(useNombresAlumnos).mockReturnValue({ nombreDe: () => 'Pérez, Ana', cargando: false, fallo: false });
 }
 
+const arbol = () => (
+  <MemoryRouter initialEntries={['/evaluaciones/e1/resultados/en1']}>
+    <Routes>
+      <Route path='/evaluaciones/:evaluacionId/resultados/:entregaId' element={<PaginaEntrega />} />
+    </Routes>
+  </MemoryRouter>
+);
+
 function renderizar() {
-  return render(
-    <MemoryRouter initialEntries={['/evaluaciones/e1/resultados/en1']}>
-      <Routes>
-        <Route path='/evaluaciones/:evaluacionId/resultados/:entregaId' element={<PaginaEntrega />} />
-      </Routes>
-    </MemoryRouter>,
-  );
+  return render(arbol());
 }
 
 describe('PaginaEntrega', () => {
@@ -137,6 +139,33 @@ describe('PaginaEntrega', () => {
     simular({ data: { ...entrega, respondioAlgo: false, notaSugeridaAbiertas: 0 } });
     renderizar();
     expect(screen.getByText('Sin respuestas')).toBeInTheDocument();
+    expect(screen.getByText('Sin nota sugerida')).toBeInTheDocument();
+    expect(screen.queryByText('Nota sugerida')).not.toBeInTheDocument();
+  });
+
+  it('si la pantalla se refresca después de guardar un puntaje, no se pierde lo escrito', async () => {
+    simular({ data: entrega });
+    const vista = renderizar();
+    await userEvent.clear(screen.getByLabelText(/Nota final de la pregunta 2/));
+    await userEvent.type(screen.getByLabelText(/Nota final de la pregunta 2/), '4');
+    // Un guardado salió bien y el refresco trae la nota como «Editada»
+    simular({ data: { ...entrega, estadoNota: 'Editada' } });
+    vista.rerender(arbol());
+    expect(screen.getByLabelText(/Nota final de la pregunta 2/)).toHaveValue('4');
+  });
+
+  it('el texto de «Notas» cambia según quién mira y si ya está corregida', () => {
+    simular({ data: entrega });
+    const vista = renderizar();
+    expect(screen.getByText(/es la que aprobás más abajo/)).toBeInTheDocument();
+    vista.unmount();
+    simular({ data: entrega }, 'administrador');
+    const admin = renderizar();
+    expect(screen.getByText(/la define el docente/)).toBeInTheDocument();
+    admin.unmount();
+    simular({ data: { ...entrega, estadoNota: 'Aprobada', notaFinal: 5 } });
+    renderizar();
+    expect(screen.getByText(/ya está corregida/)).toBeInTheDocument();
   });
 
   it('avisa si la IA todavía no corrigió una respuesta', () => {

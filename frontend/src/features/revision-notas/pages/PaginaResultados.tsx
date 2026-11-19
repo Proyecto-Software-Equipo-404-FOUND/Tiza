@@ -34,7 +34,11 @@ export function PaginaResultados() {
       titulo: 'Estado',
       celda: (entrega) => (
         <span className='flex flex-col items-start gap-1'>
-          <InsigniaEstadoEntrega estado={entrega.estado} aprobada={entrega.estadoNota === 'Aprobada'} />
+          <InsigniaEstadoEntrega
+            estado={entrega.estado}
+            aprobada={entrega.estadoNota === 'Aprobada'}
+            sinRespuestas={entrega.respondioAlgo === false}
+          />
           {entrega.respondioAlgo === false && <span className='text-xs text-tiza-bosque/70'>No respondió</span>}
         </span>
       ),
