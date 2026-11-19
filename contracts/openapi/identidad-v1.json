@@ -729,6 +729,100 @@
           }
         }
       }
+    },
+    "/api/auth/invitado": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "x-estado": "planificado",
+        "summary": "Ingreso de un alumno invitado (sin cuenta) con PIN + nombre.",
+        "description": "Proveedor: S3-SA-01 (#231, Ariel; revisa Rubén). Consumidor: Frontend S3-FE-04 (#235, Melany). Identidad consulta a Sala en vivo GET /interno/salas/pin/{pin} y, si la sala admite invitados y no está finalizada, emite un JWT de rol Invitado con sala_id. Público (sin token). Los errores de negocio llevan su código en `type` (por ejemplo `SALA_SIN_INVITADOS`), para que el front muestre el mensaje correcto.",
+        "operationId": "IngresoInvitado",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngresoInvitadoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sesión de invitado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SesionInvitado"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Nombre vacío o demasiado largo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "El nombre tiene que tener entre 2 y 60 caracteres.",
+                  "status": 400,
+                  "type": "NOMBRE_INVALIDO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "La sala no admite invitados.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Esta sala no admite invitados. Pedile al docente que te habilite.",
+                  "status": 403,
+                  "type": "SALA_SIN_INVITADOS"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No hay una sala activa con ese PIN.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Sala no encontrada.",
+                  "status": 404,
+                  "type": "SALA_NO_ENCONTRADA"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "La sala ya finalizó.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "La sala ya finalizó.",
+                  "status": 409,
+                  "type": "SALA_FINALIZADA"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1060,7 +1154,7 @@
       },
       "JwtInstitucional": {
         "type": "object",
-        "description": "Claims del access token institucional (HS256, 15 minutos). Es el contrato que leen TODOS los servicios: configurar MapInboundClaims=false, NameClaimType=sub y RoleClaimType=role. Issuer PEI.Identidad, Audience PEI.",
+        "description": "Claims del access token institucional (HS256, 15 minutos). Es el contrato que leen TODOS los servicios: configurar MapInboundClaims=false, NameClaimType=sub y RoleClaimType=role. Issuer PEI.Identidad, Audience PEI. S3-SA-01 (#231): el rol Invitado no trae email y sí sala_id y name; sub es un id nuevo por ingreso. Ningún servicio fuera de Sala en vivo debe aceptar ese rol.",
         "required": [
           "sub",
           "institucion_id",
@@ -1088,7 +1182,8 @@
             "enum": [
               "Administrador",
               "Docente",
-              "Alumno"
+              "Alumno",
+              "Invitado"
             ]
           },
           "email": {
@@ -1115,6 +1210,15 @@
             "enum": [
               "PEI"
             ]
+          },
+          "sala_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Solo en tokens de rol Invitado (S3-SA-01, #231): la única sala donde vale el token."
+          },
+          "name": {
+            "type": "string",
+            "description": "Solo en tokens de rol Invitado: el nombre que escribió."
           }
         }
       },
@@ -1145,6 +1249,57 @@
               }
             },
             "description": "Solo en 400 de validación (ValidationProblemDetails)."
+          }
+        }
+      },
+      "IngresoInvitadoRequest": {
+        "type": "object",
+        "required": [
+          "pin",
+          "nombre"
+        ],
+        "properties": {
+          "pin": {
+            "type": "integer",
+            "minimum": 100000,
+            "maximum": 999999
+          },
+          "nombre": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 60,
+            "description": "Nombre y apellido que va a ver el docente."
+          }
+        },
+        "example": {
+          "pin": 482913,
+          "nombre": "Lucía Fernández"
+        }
+      },
+      "SesionInvitado": {
+        "type": "object",
+        "required": [
+          "accessToken",
+          "expiraEnUtc",
+          "salaId",
+          "nombre"
+        ],
+        "description": "Token de rol Invitado, válido solo para la sala del PIN. No tiene refresh token.",
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "expiraEnUtc": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Hasta el fin de la sala, como máximo 4 horas."
+          },
+          "salaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
           }
         }
       }
