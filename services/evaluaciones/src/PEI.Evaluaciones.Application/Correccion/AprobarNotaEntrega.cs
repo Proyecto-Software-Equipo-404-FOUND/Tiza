@@ -35,7 +35,7 @@ public class AprobarNotaEntregaHandler
         CancellationToken ct)
     {
         // 1. Permisos: Solo Docente
-        if (request.Rol != "Docente")
+        if (!string.Equals(request.Rol, "Docente", StringComparison.OrdinalIgnoreCase))
         {
             return ResultadoOperacion<NotaAprobadaDto>.Invalido("Solo el docente que creó el examen puede aprobar la nota.");
         }

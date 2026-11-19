@@ -34,7 +34,7 @@ public class EditarNotaRespuestaHandler
         CancellationToken ct)
     {
         // 1. Permisos (403): Solo Docente
-        if (request.Rol != "Docente")
+        if (!string.Equals(request.Rol, "Docente", StringComparison.OrdinalIgnoreCase))
         {
             return ResultadoOperacion<RespuestaEntregaDto>.Invalido("Solo docentes pueden editar la nota.");
         }
