@@ -68,8 +68,9 @@ public class MatricularAlumnoCommandHandler : IRequestHandler<MatricularAlumnoCo
             throw new InvalidOperationException($"El alumno ya se encuentra matriculado en la cohorte '{cohorte.Nombre}'.");
         }
 
-        if (await _matriculacionRepository.ExisteActivaEnOtraCohorteAsync(cohorte.CursoId, request.AlumnoId, cohorte.Id, cancellationToken))
-            throw new AlumnoEnOtraComisionException();
+        var cohorteActual = await _matriculacionRepository.ObtenerCohorteActivaEnOtraAsync(cohorte.CursoId, request.AlumnoId, cohorte.Id, cancellationToken);
+        if (cohorteActual is { } actual)
+            throw new AlumnoEnOtraComisionException(actual.Id, actual.Nombre);
 
         // 6. Instanciacion de la entidad pura de dominio
         var matriculacion = new Matriculacion(institucionId.Value, cohorte.Id, request.AlumnoId, cohorte.CursoId);

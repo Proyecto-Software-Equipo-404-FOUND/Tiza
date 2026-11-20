@@ -32,6 +32,19 @@ public class MatriculacionRepository : IMatriculacionRepository
         _context.Matriculaciones.AnyAsync(m => m.CursoId == cursoId && m.AlumnoId == alumnoId
             && m.CohorteId != cohorteId && m.Estado == EstadoMatriculacion.Activa, cancellationToken);
 
+    public async Task<(Guid Id, string Nombre)?> ObtenerCohorteActivaEnOtraAsync(Guid cursoId, Guid alumnoId, Guid cohorteId, CancellationToken cancellationToken = default)
+    {
+        var actual = await (
+            from m in _context.Matriculaciones
+            join c in _context.Cohortes on m.CohorteId equals c.Id
+            where m.CursoId == cursoId && m.AlumnoId == alumnoId
+                && m.CohorteId != cohorteId && m.Estado == EstadoMatriculacion.Activa
+            select new { c.Id, c.Nombre })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return actual is null ? null : (actual.Id, actual.Nombre);
+    }
+
     public async Task<bool> ExisteMatriculacionAsync(
         Guid cohorteId,
         Guid alumnoId,

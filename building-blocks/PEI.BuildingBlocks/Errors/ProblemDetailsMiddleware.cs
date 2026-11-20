@@ -68,6 +68,17 @@ public class ProblemDetailsMiddleware
 
         problem.Extensions["correlationId"] = correlationId;
 
+        if (exception is CodedConflictException codificada)
+        {
+            foreach (var (clave, valor) in codificada.Extensions)
+            {
+                if (valor is not null)
+                {
+                    problem.Extensions[clave] = valor;
+                }
+            }
+        }
+
         context.Response.ContentType = "application/problem+json";
         context.Response.StatusCode = statusCode;
 

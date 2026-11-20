@@ -30,8 +30,8 @@ public class ReactivarMatriculacionCommandHandler : IRequestHandler<ReactivarMat
         }
 
         if (matriculacion.Estado == EstadoMatriculacion.Baja &&
-            await _matriculacionRepository.ExisteActivaEnOtraCohorteAsync(matriculacion.CursoId, matriculacion.AlumnoId, matriculacion.CohorteId, cancellationToken))
-            throw new AlumnoEnOtraComisionException();
+            await _matriculacionRepository.ObtenerCohorteActivaEnOtraAsync(matriculacion.CursoId, matriculacion.AlumnoId, matriculacion.CohorteId, cancellationToken) is { } actual)
+            throw new AlumnoEnOtraComisionException(actual.Id, actual.Nombre);
 
         // 2. Ejecutar la reactivacion de la matriculacion en el dominio
         matriculacion.Reactivar();

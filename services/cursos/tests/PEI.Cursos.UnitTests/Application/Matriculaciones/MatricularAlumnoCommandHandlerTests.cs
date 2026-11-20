@@ -166,4 +166,28 @@ public class MatricularAlumnoCommandHandlerTests
             Assert.Contains(_matriculacionRepo.Items, m => m.Id == resultado.Id && m.CursoId == curso);
         }
     }
+
+    [Fact]
+    public async Task AlumnoEnOtraComision_InformaLaComisionActual()
+    {
+        // Contrato (#253): el 409 ALUMNO_EN_OTRA_COMISION suma cohorteActualId y cohorteActualNombre.
+        var institucion = Guid.NewGuid();
+        var curso = Guid.NewGuid();
+        var alumno = Guid.NewGuid();
+        _tenant.InstitucionId = institucion;
+        var destino = new Cohorte(institucion, curso, Guid.NewGuid(), "Destino", "2026");
+        await _cohorteRepo.AddAsync(destino);
+        var actual = new Matriculacion(institucion, Guid.NewGuid(), alumno, curso);
+        await _matriculacionRepo.AddAsync(actual);
+        _matriculacionRepo.NombresCohorte[actual.CohorteId] = "Comisión 2 · Turno noche";
+
+        var handler = new MatricularAlumnoCommandHandler(_cohorteRepo, _matriculacionRepo, _uow, _tenant);
+
+        var ex = await Assert.ThrowsAsync<PEI.Cursos.Application.UseCases.Matriculaciones.AlumnoEnOtraComisionException>(
+            () => handler.HandleAsync(new MatricularAlumnoCommand(destino.Id, alumno)));
+
+        Assert.Equal("ALUMNO_EN_OTRA_COMISION", ex.Code);
+        Assert.Equal(actual.CohorteId, ex.Extensions["cohorteActualId"]);
+        Assert.Equal("Comisión 2 · Turno noche", ex.Extensions["cohorteActualNombre"]);
+    }
 }
