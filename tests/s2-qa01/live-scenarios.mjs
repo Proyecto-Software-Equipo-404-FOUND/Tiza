@@ -6,6 +6,11 @@ import path from 'node:path';
 const require = createRequire(new URL('../../frontend/package.json', import.meta.url));
 const { HubConnectionBuilder, LogLevel } = require('@microsoft/signalr');
 
+// La misma fecha puede llegar como .518800Z o .5188Z según la lectura (pasa ~1 de cada 10 corridas):
+// en las comparaciones de listas se comparan instantes, no texto.
+const fechasNormalizadas = valor => JSON.parse(JSON.stringify(valor), (_, v) =>
+  typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T[\d:.]+(Z|[+-]\d{2}:\d{2})$/.test(v) ? new Date(v).toISOString() : v);
+
 export async function runScenarios({ root, env, password, container, command, launch, processes, secrets, evidence, waitFor }) {
   const key = randomBytes(32).toString('hex'); secrets.push(key);
   Object.assign(env, {
@@ -70,9 +75,6 @@ export async function runScenarios({ root, env, password, container, command, la
   await api(`/api/v1/cohortes/${cohorte.id}/matriculas`, { method: 'POST', token: docenteA,
     expected: 409, body: { alumnoId: '11111111-0000-0000-0000-000000000003' } });
   const trasDuplicado = await api(`/api/v1/cohortes/${cohorte.id}/matriculas`, { token: docenteA });
-  // La misma fecha puede llegar como .518800Z o .5188Z según la lectura: se comparan instantes, no texto.
-  const fechasNormalizadas = valor => JSON.parse(JSON.stringify(valor), (_, v) =>
-    typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T[\d:.]+(Z|[+-]\d{2}:\d{2})$/.test(v) ? new Date(v).toISOString() : v);
   assert.deepEqual(fechasNormalizadas(trasDuplicado), fechasNormalizadas(matriculas));
   evidence.permisos = { docenteCrearCurso: 403, docenteCrearCohorte: 403, matriculaDuplicada: 409 };
   const pregunta = randomUUID(); const opcion = randomUUID();
@@ -111,7 +113,7 @@ export async function runScenarios({ root, env, password, container, command, la
     assert.equal(entregas.length, 1); assert.equal(entregas[0].alumnoId, '11111111-0000-0000-0000-000000000003');
     await teacher.invoke('FinalizarSala', null);
     const again = await api(`/api/v1/evaluaciones/${evaluacion.id}/entregas`, { token: docenteA });
-    assert.deepEqual(again, entregas);
+    assert.deepEqual(fechasNormalizadas(again), fechasNormalizadas(entregas));
     assert.equal(await sql('pei_evaluaciones_s2live', `SELECT count(*) FROM "EntregaExamen" WHERE "SalaId"='${sala.id}'`), '1');
     const rejected = await student.invoke('EnviarRespuesta', { ...payload, idempotencyKey: randomUUID(), secuencia: 2 });
     assert.equal(rejected.estado, 'Rechazada'); assert.equal(rejected.error.codigo, 'SALA_FINALIZADA');
