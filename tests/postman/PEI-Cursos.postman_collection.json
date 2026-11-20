@@ -653,6 +653,10 @@
                 "value": "application/json"
               },
               {
+                "key": "Authorization",
+                "value": "Bearer {{tokenA}}"
+              },
+              {
                 "key": "X-Institucion-Id",
                 "value": "{{tenantA}}"
               }
@@ -689,6 +693,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenA}}"
               },
               {
                 "key": "X-Institucion-Id",
@@ -870,6 +878,10 @@
                 "value": "application/json"
               },
               {
+                "key": "Authorization",
+                "value": "Bearer {{tokenB}}"
+              },
+              {
                 "key": "X-Institucion-Id",
                 "value": "{{tenantB}}"
               }
@@ -906,6 +918,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenB}}"
               },
               {
                 "key": "X-Institucion-Id",
