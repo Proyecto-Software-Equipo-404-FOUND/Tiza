@@ -48,7 +48,7 @@ const entrega: EntregaDetalle = {
     },
   ],
   alertas: [
-    { tipoEvento: 'visibilitychange', duracionMs: 65000, severidad: 'Roja', registradoUtc: '2026-11-05T14:25:00Z' },
+    { preguntaId: 'p2', tipoEvento: 'visibilitychange', duracionMs: 65000, severidad: 'Roja', registradoUtc: '2026-11-05T14:25:00Z' },
     { tipoEvento: 'blur', duracionMs: 900, severidad: 'Amarillo', registradoUtc: '2026-11-05T14:12:00Z' },
   ],
 };
@@ -154,6 +154,15 @@ describe('PaginaEntrega', () => {
     expect(within(tarjeta).getByText('Amarilla')).toBeInTheDocument();
     expect(within(tarjeta).getByText('menos de 1 s')).toBeInTheDocument();
     expect(within(tarjeta).getByText(/no modifica la nota/)).toBeInTheDocument();
+  });
+
+  it('indica en qué pregunta se salió: columna en la tabla y aviso dentro de la respuesta', () => {
+    simular({ data: entrega });
+    renderizar();
+    const tarjeta = screen.getByRole('heading', { name: 'Salidas de la pantalla' }).closest('section') as HTMLElement;
+    expect(within(tarjeta).getByText('Pregunta 2')).toBeInTheDocument();
+    expect(within(tarjeta).getByText('Fuera de una pregunta')).toBeInTheDocument();
+    expect(screen.getByText('Salió 1 vez de la pantalla · 1 min 5 s en total')).toBeInTheDocument();
   });
 
   it('sin alertas no muestra la tarjeta de salidas de la pantalla', () => {

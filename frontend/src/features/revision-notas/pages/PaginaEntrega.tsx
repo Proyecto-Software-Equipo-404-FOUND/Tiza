@@ -11,7 +11,16 @@ import {
   InsigniaEstadoEntrega,
   InsigniaGravedad,
 } from '../components/InsigniasResultados';
-import { esRoja, formatearDuracion, formatearFechaHora, formatearNota, formatearNumero } from '../formato';
+import {
+  alertasDePregunta,
+  esRoja,
+  etiquetaPreguntaDeAlerta,
+  formatearDuracion,
+  formatearFechaHora,
+  formatearNota,
+  formatearNumero,
+  resumenSalidas,
+} from '../formato';
 import { useEntrega } from '../hooks/useEntregas';
 import { useNombresAlumnos } from '../hooks/useNombresAlumnos';
 import type { AlertaFocoDetalle, DesgloseCriterio, RespuestaEntrega } from '../tipos';
@@ -77,7 +86,15 @@ function RespuestaAbierta({ respuesta }: { respuesta: RespuestaEntrega }) {
   );
 }
 
-function TarjetaRespuesta({ respuesta, numero }: { respuesta: RespuestaEntrega; numero: number }) {
+function TarjetaRespuesta({
+  respuesta,
+  numero,
+  alertas,
+}: {
+  respuesta: RespuestaEntrega;
+  numero: number;
+  alertas: AlertaFocoDetalle[];
+}) {
   return (
     <li className='rounded-2xl border border-tiza-borde bg-white p-5'>
       <h3 className='mb-3 font-heading text-lg font-extrabold text-tiza-bosque'>
@@ -88,11 +105,18 @@ function TarjetaRespuesta({ respuesta, numero }: { respuesta: RespuestaEntrega; 
       ) : (
         <RespuestaAbierta respuesta={respuesta} />
       )}
+      {alertas.length > 0 && (
+        <p className='mt-3 flex flex-wrap items-center gap-2 text-sm text-tiza-bosque/80'>
+          <InsigniaGravedad roja={alertas.some(esRoja)}>{alertas.some(esRoja) ? 'Roja' : 'Amarilla'}</InsigniaGravedad>
+          {resumenSalidas(alertas)}
+        </p>
+      )}
     </li>
   );
 }
 
-const columnasAlertas: Columna<AlertaFocoDetalle>[] = [
+const columnasAlertas = (preguntaIds: string[]): Columna<AlertaFocoDetalle>[] => [
+  { titulo: 'Pregunta', celda: (alerta) => etiquetaPreguntaDeAlerta(alerta, preguntaIds) },
   {
     titulo: 'Gravedad',
     celda: (alerta) =>
@@ -172,7 +196,12 @@ export function PaginaEntrega() {
             ) : (
               <ol className='flex flex-col gap-4'>
                 {entrega.respuestas.map((respuesta, indice) => (
-                  <TarjetaRespuesta key={respuesta.preguntaId} respuesta={respuesta} numero={indice + 1} />
+                  <TarjetaRespuesta
+                    key={respuesta.preguntaId}
+                    respuesta={respuesta}
+                    numero={indice + 1}
+                    alertas={alertasDePregunta(entrega.alertas, respuesta.preguntaId)}
+                  />
                 ))}
               </ol>
             )}
@@ -183,7 +212,7 @@ export function PaginaEntrega() {
               titulo='Salidas de la pantalla'
               subtitulo='Es un aviso: no modifica la nota. Amarilla: menos de 3 s. Roja: 3 s o más.'
             >
-              <Tabla columnas={columnasAlertas} filas={entrega.alertas} clave={(alerta) => `${alerta.registradoUtc}-${alerta.tipoEvento}-${alerta.duracionMs}`} />
+              <Tabla columnas={columnasAlertas(entrega.respuestas.map((r) => r.preguntaId))} filas={entrega.alertas} clave={(alerta) => `${alerta.registradoUtc}-${alerta.tipoEvento}-${alerta.duracionMs}`} />
             </Tarjeta>
           )}
         </>

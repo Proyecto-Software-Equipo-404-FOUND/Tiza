@@ -12,10 +12,12 @@ public record PublicarEvaluacionRequest(int VersionEsperada, Guid CohorteId);
 
 [ApiController]
 [Route("api/v1/evaluaciones")]
+[Authorize]
+// S3-EV-02 (#223, cierra #134): la institución, el usuario y el rol salen SIEMPRE del JWT.
+// Ya no se lee X-Institucion-Id (si el front lo sigue mandando, se ignora).
+// Sala en vivo lee las preguntas por /interno/evaluaciones/{id} (EvaluacionesInternoController).
 public class EvaluacionesController : ControllerBase
 {
-    private const string EncabezadoInstitucion = "X-Institucion-Id";
-
     private readonly IMediator _mediador;
 
     public EvaluacionesController(IMediator mediador)
@@ -24,18 +26,16 @@ public class EvaluacionesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Crear(
-        [FromHeader(Name = EncabezadoInstitucion)] Guid institucionId,
-        [FromBody] EvaluacionRequest peticion,
-        CancellationToken ct)
+    public async Task<IActionResult> Crear([FromBody] EvaluacionRequest peticion, CancellationToken ct)
     {
-        if (institucionId == Guid.Empty)
+        if (!LeerSesion(out var sesion, out var error)) return error!;
+        if (!AccesoEvaluaciones.PuedeCrear(sesion.Rol))
         {
-            return FaltaInstitucion();
+            return Problema(403, "Solo los docentes pueden crear exámenes.", Array.Empty<string>());
         }
 
         var resultado = await _mediador.Send(
-            new CrearEvaluacionCommand(institucionId, peticion.Titulo, peticion.Tipo, peticion.PreguntasJson), ct);
+            new CrearEvaluacionCommand(sesion.InstitucionId, peticion.Titulo, peticion.Tipo, peticion.PreguntasJson, sesion.UsuarioId), ct);
 
         if (resultado.Tipo != TipoResultado.Ok)
         {
@@ -47,31 +47,32 @@ public class EvaluacionesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Listar(
-        [FromHeader(Name = EncabezadoInstitucion)] Guid institucionId,
-        CancellationToken ct)
+    public async Task<IActionResult> Listar(CancellationToken ct)
     {
-        if (institucionId == Guid.Empty)
+        if (!LeerSesion(out var sesion, out var error)) return error!;
+        if (!AccesoEvaluaciones.PuedeLeer(sesion.Rol))
         {
-            return FaltaInstitucion();
+            return Problema(403, "Solo docentes y administradores pueden ver los exámenes.", Array.Empty<string>());
         }
 
-        var evaluaciones = await _mediador.Send(new ListarEvaluacionesQuery(institucionId), ct);
+        var evaluaciones = await _mediador.Send(
+            new ListarEvaluacionesQuery(sesion.InstitucionId, AccesoEvaluaciones.FiltroDocente(sesion.Rol, sesion.UsuarioId)), ct);
         return Ok(evaluaciones);
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<IActionResult> ObtenerPorId(
-        Guid id,
-        [FromHeader(Name = EncabezadoInstitucion)] Guid institucionId,
-        CancellationToken ct)
+    public async Task<IActionResult> ObtenerPorId(Guid id, CancellationToken ct)
     {
-        if (institucionId == Guid.Empty)
+        if (!LeerSesion(out var sesion, out var error)) return error!;
+        if (!AccesoEvaluaciones.PuedeLeer(sesion.Rol))
         {
-            return FaltaInstitucion();
+            return Problema(403, "Solo docentes y administradores pueden ver los exámenes.", Array.Empty<string>());
         }
 
-        var resultado = await _mediador.Send(new ObtenerEvaluacionQuery(id, institucionId), ct);
+        var acceso = await ComprobarAcceso(id, sesion, ct);
+        if (acceso is not null) return acceso;
+
+        var resultado = await _mediador.Send(new ObtenerEvaluacionQuery(id, sesion.InstitucionId), ct);
 
         if (resultado.Tipo != TipoResultado.Ok)
         {
@@ -82,19 +83,19 @@ public class EvaluacionesController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Actualizar(
-        Guid id,
-        [FromHeader(Name = EncabezadoInstitucion)] Guid institucionId,
-        [FromBody] EvaluacionRequest peticion,
-        CancellationToken ct)
+    public async Task<IActionResult> Actualizar(Guid id, [FromBody] EvaluacionRequest peticion, CancellationToken ct)
     {
-        if (institucionId == Guid.Empty)
+        if (!LeerSesion(out var sesion, out var error)) return error!;
+        if (!AccesoEvaluaciones.PuedeModificar(sesion.Rol))
         {
-            return FaltaInstitucion();
+            return Problema(403, "Solo el docente que creó el examen puede editarlo.", Array.Empty<string>());
         }
 
+        var acceso = await ComprobarAcceso(id, sesion, ct);
+        if (acceso is not null) return acceso;
+
         var resultado = await _mediador.Send(
-            new ActualizarEvaluacionCommand(id, institucionId, peticion.Titulo, peticion.Tipo, peticion.PreguntasJson), ct);
+            new ActualizarEvaluacionCommand(id, sesion.InstitucionId, peticion.Titulo, peticion.Tipo, peticion.PreguntasJson), ct);
 
         if (resultado.Tipo != TipoResultado.Ok)
         {
@@ -105,17 +106,18 @@ public class EvaluacionesController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> Eliminar(
-        Guid id,
-        [FromHeader(Name = EncabezadoInstitucion)] Guid institucionId,
-        CancellationToken ct)
+    public async Task<IActionResult> Eliminar(Guid id, CancellationToken ct)
     {
-        if (institucionId == Guid.Empty)
+        if (!LeerSesion(out var sesion, out var error)) return error!;
+        if (!AccesoEvaluaciones.PuedeModificar(sesion.Rol))
         {
-            return FaltaInstitucion();
+            return Problema(403, "Solo el docente que creó el examen puede eliminarlo.", Array.Empty<string>());
         }
 
-        var resultado = await _mediador.Send(new EliminarEvaluacionCommand(id, institucionId), ct);
+        var acceso = await ComprobarAcceso(id, sesion, ct);
+        if (acceso is not null) return acceso;
+
+        var resultado = await _mediador.Send(new EliminarEvaluacionCommand(id, sesion.InstitucionId), ct);
 
         if (resultado.Tipo != TipoResultado.Ok)
         {
@@ -126,19 +128,19 @@ public class EvaluacionesController : ControllerBase
     }
 
     [HttpPost("{id:guid}/publicar")]
-    public async Task<IActionResult> Publicar(
-        Guid id,
-        [FromHeader(Name = EncabezadoInstitucion)] Guid institucionId,
-        [FromBody] PublicarEvaluacionRequest peticion,
-        CancellationToken ct)
+    public async Task<IActionResult> Publicar(Guid id, [FromBody] PublicarEvaluacionRequest peticion, CancellationToken ct)
     {
-        if (institucionId == Guid.Empty)
+        if (!LeerSesion(out var sesion, out var error)) return error!;
+        if (!AccesoEvaluaciones.PuedeModificar(sesion.Rol))
         {
-            return FaltaInstitucion();
+            return Problema(403, "Solo el docente que creó el examen puede publicarlo.", Array.Empty<string>());
         }
 
+        var acceso = await ComprobarAcceso(id, sesion, ct);
+        if (acceso is not null) return acceso;
+
         var resultado = await _mediador.Send(
-            new PublicarEvaluacionCommand(id, institucionId, peticion.VersionEsperada, peticion.CohorteId), ct);
+            new PublicarEvaluacionCommand(id, sesion.InstitucionId, peticion.VersionEsperada, peticion.CohorteId), ct);
 
         if (resultado.Tipo != TipoResultado.Ok)
         {
@@ -148,23 +150,19 @@ public class EvaluacionesController : ControllerBase
         return Ok(resultado.Valor);
     }
 
-        [HttpGet("{id:guid}/entregas")]
-    [Authorize]
+    [HttpGet("{id:guid}/entregas")]
     public async Task<IActionResult> ListarEntregas(Guid id, CancellationToken ct)
     {
-        var rol = User.FindFirst("role")?.Value ?? User.FindFirst(ClaimTypes.Role)?.Value;
-        if (rol != "Docente" && rol != "Administrador")
+        if (!LeerSesion(out var sesion, out var error)) return error!;
+        if (!AccesoEvaluaciones.PuedeLeer(sesion.Rol))
         {
             return Problema(403, "Solo docentes y administradores pueden ver los resultados.", Array.Empty<string>());
         }
 
-        var institucionClaim = User.FindFirst("institucion_id")?.Value;
-        if (!Guid.TryParse(institucionClaim, out var institucionId))
-        {
-            return Problema(401, "No autenticado.", Array.Empty<string>());
-        }
+        var acceso = await ComprobarAcceso(id, sesion, ct);
+        if (acceso is not null) return acceso;
 
-        var resultado = await _mediador.Send(new ListarEntregasEvaluacionQuery(id, institucionId), ct);
+        var resultado = await _mediador.Send(new ListarEntregasEvaluacionQuery(id, sesion.InstitucionId), ct);
         if (resultado.Tipo != TipoResultado.Ok)
         {
             return RespuestaError(resultado);
@@ -174,22 +172,18 @@ public class EvaluacionesController : ControllerBase
     }
 
     [HttpGet("{id:guid}/entregas/{entregaId:guid}")]
-    [Authorize]
     public async Task<IActionResult> ObtenerEntrega(Guid id, Guid entregaId, CancellationToken ct)
     {
-        var rol = User.FindFirst("role")?.Value ?? User.FindFirst(ClaimTypes.Role)?.Value;
-        if (rol != "Docente" && rol != "Administrador")
+        if (!LeerSesion(out var sesion, out var error)) return error!;
+        if (!AccesoEvaluaciones.PuedeLeer(sesion.Rol))
         {
             return Problema(403, "Solo docentes y administradores pueden ver los resultados.", Array.Empty<string>());
         }
 
-        var institucionClaim = User.FindFirst("institucion_id")?.Value;
-        if (!Guid.TryParse(institucionClaim, out var institucionId))
-        {
-            return Problema(401, "No autenticado.", Array.Empty<string>());
-        }
+        var acceso = await ComprobarAcceso(id, sesion, ct);
+        if (acceso is not null) return acceso;
 
-        var resultado = await _mediador.Send(new ObtenerEntregaDetalleQuery(id, entregaId, institucionId), ct);
+        var resultado = await _mediador.Send(new ObtenerEntregaDetalleQuery(id, entregaId, sesion.InstitucionId), ct);
         if (resultado.Tipo != TipoResultado.Ok)
         {
             return RespuestaError(resultado);
@@ -198,9 +192,36 @@ public class EvaluacionesController : ControllerBase
         return Ok(resultado.Valor);
     }
 
-    private IActionResult FaltaInstitucion()
+    private sealed record Sesion(Guid InstitucionId, Guid UsuarioId, string? Rol);
+
+    // Claims del contrato JwtInstitucional (identidad-v1.json): sub, institucion_id, role.
+    private bool LeerSesion(out Sesion sesion, out IActionResult? error)
     {
-        return Problema(400, "Falta el encabezado X-Institucion-Id con un identificador valido.", Array.Empty<string>());
+        var institucionClaim = User.FindFirst("institucion_id")?.Value;
+        var usuarioClaim = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var rol = User.FindFirst("role")?.Value ?? User.FindFirst(ClaimTypes.Role)?.Value;
+
+        if (!Guid.TryParse(institucionClaim, out var institucionId) || !Guid.TryParse(usuarioClaim, out var usuarioId))
+        {
+            sesion = new Sesion(Guid.Empty, Guid.Empty, null);
+            error = Problema(401, "No autenticado.", Array.Empty<string>());
+            return false;
+        }
+
+        sesion = new Sesion(institucionId, usuarioId, rol);
+        error = null;
+        return true;
+    }
+
+    // Examen inexistente, de otra institución o de otro docente → 404 (no se revela que existe).
+    private async Task<IActionResult?> ComprobarAcceso(Guid id, Sesion sesion, CancellationToken ct)
+    {
+        var acceso = await _mediador.Send(
+            new ComprobarAccesoEvaluacionQuery(id, sesion.InstitucionId, AccesoEvaluaciones.FiltroDocente(sesion.Rol, sesion.UsuarioId)), ct);
+
+        return acceso.Tipo == TipoResultado.Ok
+            ? null
+            : Problema(404, "La evaluacion no existe.", Array.Empty<string>());
     }
 
     private IActionResult RespuestaError<T>(ResultadoOperacion<T> resultado)
