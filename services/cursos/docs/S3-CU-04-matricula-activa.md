@@ -6,10 +6,37 @@ la reactivación; se conserva la unicidad histórica por cohorte y alumno.
 La segunda matrícula activa entre cohortes se rechaza con 409 ProblemDetails
 y type ALUMNO_EN_OTRA_COMISION, tanto en el alta como en la reactivación.
 
-El PR #253 seguía abierto al preparar este cambio. No se modifica el OpenAPI
-compartido: al integrarlo, revisar que el mismo código de negocio quede
-documentado también en el 409 de reactivación. La colección de Cursos agrega
-un escenario optativo, ejecutable al definir cu04CohorteDestinoId en QA.
+Cuando se conoce la comisión donde el alumno ya está activo, el 409 suma
+`cohorteActualId` y `cohorteActualNombre` (contrato `cursos-v1.json`, acordado
+en la PR #253), para que el administrador sepa dónde darlo de baja. En un choque
+simultáneo detectado por el índice de la base, el 409 sale sin esos dos campos.
+La colección de Cursos agrega un escenario optativo, ejecutable al definir
+cu04CohorteDestinoId en QA.
+
+## Cambio estructural en las tablas
+
+Migración `20261118023453_UnaMatriculaActivaPorCurso`:
+
+- **Columna nueva `CursoId` en `Matriculaciones`** (obligatoria). La migración la
+  completa con el curso de la cohorte de cada matrícula existente. En `Domain`,
+  `Matriculacion` se construye ahora con
+  `new Matriculacion(institucionId, cohorteId, alumnoId, cursoId)`.
+- **Clave alternativa en `Cohortes`**: `AK_Cohortes_InstitucionId_CursoId_Id`
+  sobre `(InstitucionId, CursoId, Id)`, necesaria para la FK compuesta.
+- **FK compuesta** `FK_Matriculaciones_Cohortes_InstitucionId_CursoId_CohorteId`:
+  `(InstitucionId, CursoId, CohorteId)` de `Matriculaciones` apunta a `Cohortes`.
+  Reemplaza la FK simple por `CohorteId` y garantiza que la matrícula tenga la
+  misma institución y el mismo curso que su cohorte.
+- **Índice único parcial** `UX_Matriculaciones_Activa_Institucion_Curso_Alumno`
+  sobre `(InstitucionId, CursoId, AlumnoId)` con filtro `"Estado" = 'Activa'`:
+  la base no deja dos matrículas activas del mismo alumno en el mismo curso, aunque
+  lleguen dos altas al mismo tiempo. Las bajas no cuentan.
+- Se conserva la unicidad histórica por cohorte y alumno (una fila por par).
+
+**Antes de migrar una base con datos:** la migración se detiene con error si
+encuentra matrículas con institución, curso o cohorte inconsistentes, o un alumno
+con más de una matrícula activa en el mismo curso. En ese caso hay que dar de baja
+las matrículas sobrantes y volver a correr la migración.
 
 ## Verificación en PostgreSQL
 
