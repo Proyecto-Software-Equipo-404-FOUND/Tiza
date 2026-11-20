@@ -110,6 +110,20 @@ public class DesgloseCriterioTests
         public Task<List<CalificacionSugerida>> ListarCalificacionesPorEntregaAsync(Guid entregaId, CancellationToken ct) =>
             Task.FromResult(new List<CalificacionSugerida> { CrearCalificacion() });
 
+        public Task<CalificacionDocente?> ObtenerCalificacionDocenteAsync(Guid entregaId, Guid preguntaId, CancellationToken ct) =>
+            Task.FromResult<CalificacionDocente?>(null);
+
+        public Task<List<CalificacionDocente>> ListarCalificacionesDocentePorEntregaAsync(Guid entregaId, CancellationToken ct) =>
+            Task.FromResult(new List<CalificacionDocente>());
+
+        public Task<List<CalificacionDocente>> ListarCalificacionesDocentePorEntregasAsync(List<Guid> entregaIds, CancellationToken ct) =>
+            Task.FromResult(new List<CalificacionDocente>());
+
+        public Task GuardarCalificacionDocenteAsync(CalificacionDocente calificacion, CancellationToken ct) =>
+            Task.CompletedTask;
+
+        public Task GuardarCambiosAsync(CancellationToken ct) => Task.CompletedTask;    
+
         private EntregaExamen CrearEntrega() => new()
         {
             Id = EntregaId,
