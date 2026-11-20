@@ -1888,6 +1888,12 @@
             "type": "number",
             "nullable": true,
             "description": "Solo cuando estadoNota = Aprobada (S3-EV-03, #224)."
+          },
+          "fechaAprobacionUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "S3-EV-03 (#224): cuándo el docente aprobó la nota. Solo cuando estadoNota = Aprobada; sirve para mostrarla al recargar."
           }
         },
         "example": {
@@ -2303,7 +2309,7 @@
           "fechaEntregaUtc",
           "estado"
         ],
-        "description": "S3-EV-04 (#225). Un examen rendido por el alumno de la sesión.",
+        "description": "S3-EV-04 (#225). Un examen rendido por el alumno de la sesión. En el Sprint 3 el alumno ve solo la nota final: los comentarios del docente (comentarioDocente) no se exponen al alumno.",
         "properties": {
           "evaluacionId": {
             "type": "string",
@@ -2365,7 +2371,7 @@
           "preguntas",
           "alumnos"
         ],
-        "description": "S3-EV-05 (#240). Solo cuenta entregas con la nota aprobada. Con 0 aprobadas, promedio y preguntaMasDificilId son null y las listas vienen vacías.",
+        "description": "S3-EV-05 (#240). Solo cuenta entregas con la nota aprobada. Con 0 aprobadas, promedio y preguntaMasDificilId son null y las listas vienen vacías. El \"promedio del curso\" del plan es el promedio de este examen entre los alumnos que lo rindieron y tienen la nota aprobada.",
         "properties": {
           "evaluacionId": {
             "type": "string",
@@ -2382,7 +2388,8 @@
           },
           "promedio": {
             "type": "number",
-            "nullable": true
+            "nullable": true,
+            "description": "Promedio de notaFinal de las entregas aprobadas de este examen."
           },
           "preguntaMasDificilId": {
             "type": "string",

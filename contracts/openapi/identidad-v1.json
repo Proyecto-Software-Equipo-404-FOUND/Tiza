@@ -1292,7 +1292,7 @@
           "expiraEnUtc": {
             "type": "string",
             "format": "date-time",
-            "description": "Hasta el fin de la sala, como máximo 4 horas."
+            "description": "4 horas desde la emisión del token (el ingreso). No tiene refresh: ante un 401, el front vuelve a la pantalla de ingreso de invitado y el alumno entra de nuevo con PIN + nombre."
           },
           "salaId": {
             "type": "string",

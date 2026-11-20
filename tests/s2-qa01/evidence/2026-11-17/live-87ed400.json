@@ -1,0 +1,39 @@
+{
+  "runId": "78c40c9f-59f7-4d7b-9a25-05c1a7e91ec2",
+  "timestamp": "2026-11-17T21:43:02.587Z",
+  "baseCommit": "9ee256484eda421737e8b1b42335d5b396d77578",
+  "environment": ".NET 8; Node 20; PostgreSQL 16; APIs loopback; datos CU06/ID08",
+  "requests": [],
+  "regression": [],
+  "collections": [],
+  "completed": true,
+  "newman": {
+    "requests": 18,
+    "visibility": "A/B y acceso cruzado con JWT reales"
+  },
+  "cypress": {
+    "mode": "live",
+    "flow": "administrador crea; docente matricula",
+    "passed": true
+  },
+  "blockedAcceptance": [
+    "#150 pide que Docente cree curso/cohorte; las políticas actuales devuelven 403 (SoloAdministrador)."
+  ],
+  "matriculaPersistida": true,
+  "permisos": {
+    "docenteCrearCurso": 403,
+    "docenteCrearCohorte": 403,
+    "matriculaDuplicada": 409
+  },
+  "signalr": {
+    "acceptedThenDuplicate": true,
+    "persistedResponses": 1
+  },
+  "cierre": {
+    "event": true,
+    "persistedDeliveries": 1,
+    "repeatedCloseNoDuplicates": true,
+    "rejectsNewAnswers": true
+  },
+  "cleanedUp": true
+}

@@ -833,7 +833,7 @@
             }
           },
           "409": {
-            "description": "Matrícula duplicada en la cohorte (existente) o, desde S3-CU-04 (#230, planificado), el alumno ya tiene matrícula activa en otra cohorte del mismo curso (ALUMNO_EN_OTRA_COMISION).",
+            "description": "Matrícula duplicada en la cohorte (existente) o, desde S3-CU-04 (#230, planificado), el alumno ya tiene matrícula activa en otra cohorte del mismo curso (ALUMNO_EN_OTRA_COMISION). Con ALUMNO_EN_OTRA_COMISION el problema suma cohorteActualId y cohorteActualNombre (la comisión donde el alumno ya está activo), para que el administrador sepa dónde darlo de baja.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -842,7 +842,9 @@
                 "example": {
                   "title": "El alumno ya está en otra comisión de este curso.",
                   "status": 409,
-                  "type": "ALUMNO_EN_OTRA_COMISION"
+                  "type": "ALUMNO_EN_OTRA_COMISION",
+                  "cohorteActualId": "c0a80101-0000-4000-8000-000000000002",
+                  "cohorteActualNombre": "Comisión 2 · Turno noche"
                 }
               }
             }

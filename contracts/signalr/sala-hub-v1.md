@@ -1279,7 +1279,9 @@ resolución de carreras deben implementarse en S2-SA-01, no copiarse sin esos co
   - **no** se valida la matrícula contra Cursos (no hay `ALUMNO_NO_MATRICULADO`);
   - si la sala dejó de admitir invitados → `SALA_SIN_INVITADOS`.
 - Para el docente, `alumnoIngreso` y `alumnosConectados` traen `esInvitado: true` y
-  `nombre` (del claim `name`) en los invitados.
+  `nombre` (del claim `name`) en los invitados. El `alias` sigue viniendo siempre, igual que
+  para los alumnos (§6.1); para los alumnos con cuenta `esInvitado` es `false` y `nombre` no viene.
+  El panel del docente muestra `nombre` cuando `esInvitado` es `true` y `alias` en los demás casos.
 - Las respuestas del invitado viajan a Evaluaciones en el lote de entregas con su `sub` como
   `alumnoId` y `nombreInvitado` con el nombre. "Mis exámenes" no aplica a invitados.
 
