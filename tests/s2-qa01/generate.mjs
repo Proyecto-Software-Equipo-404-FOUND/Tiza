@@ -12,6 +12,9 @@ function request(name, method, path, status, body, assertions = '', headers = {}
     event: [event('test', `pm.test('HTTP ${status}', () => pm.response.to.have.status(${status}));\n${assertions}`)] };
 }
 const institutional = tenant => ({ 'X-Institucion-Id': `{{tenant${tenant}}}` });
+// S3-EV-02 (#223, #134): Evaluaciones toma institución, usuario y rol del JWT. Se manda el token del
+// docente de cada institución y se mantiene X-Institucion-Id para que siga andando con versiones anteriores.
+const docente = tenant => ({ Authorization: `Bearer {{token${tenant}}}`, ...institutional(tenant) });
 const internal = { 'X-Api-Key-Interna': '{{internalApiKey}}' };
 const items = [];
 for (const tenant of ['A', 'B']) {
@@ -24,10 +27,10 @@ for (const tenant of ['A', 'B']) {
   items.push(request(`Crear evaluación ${tenant}`, 'POST', '/api/v1/evaluaciones', 201, evaluation,
     `const j = pm.response.json();
 pm.test('Borrador de la institución correcta', () => { pm.expect(j.estado).eq('Borrador'); pm.expect(j.institucionId).eq(pm.environment.get('tenant${tenant}')); });
-pm.environment.set('evaluacion${suffix}', j.id); pm.environment.set('version${suffix}', j.version);`, institutional(tenant)));
+pm.environment.set('evaluacion${suffix}', j.id); pm.environment.set('version${suffix}', j.version);`, docente(tenant)));
   items.push(request(`Publicar evaluación ${tenant}`, 'POST', `/api/v1/evaluaciones/{{evaluacion${suffix}}}/publicar`, 200,
     `{"versionEsperada":{{version${suffix}}},"cohorteId":"{{cohorte${tenant}}}"}`,
-    `pm.test('Publicada', () => pm.expect(pm.response.json().estado).eq('Publicada'));`, institutional(tenant)));
+    `pm.test('Publicada', () => pm.expect(pm.response.json().estado).eq('Publicada'));`, docente(tenant)));
   const lote = { version: 1, loteId: `{{lote${tenant}}}`, salaId: `{{sala${tenant}}}`, evaluacionId: `{{evaluacion${tenant}}}`,
     institucionId: `{{tenant${tenant}}}`, finalizadaUtc: '2026-11-11T12:00:00Z', motivoCierre: 'Docente',
     entregas: [{ alumnoId: `{{alumno${tenant}}}`, respuestas: [{ preguntaId: '{{preguntaId}}', respuesta: '{{opcionId}}', secuencia: 1, recibidaUtc: '2026-11-11T11:59:00Z' }], alertasFoco: [] }] };

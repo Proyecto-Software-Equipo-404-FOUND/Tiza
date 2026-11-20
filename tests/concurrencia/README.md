@@ -1,8 +1,10 @@
 # QA-07: publicación concurrente sobre PostgreSQL Docker
 
 Los wrappers PowerShell y Bash ejecutan el mismo motor .NET 8 (`Runner`). No requieren
-curl, jq ni tokens Bearer. El contrato real es `POST /api/v1/evaluaciones/{id}/publicar`,
-encabezado `X-Institucion-Id`, cuerpo `{"versionEsperada":1,"cohorteId":"…"}`.
+curl ni jq. El contrato real es `POST /api/v1/evaluaciones/{id}/publicar`,
+cuerpo `{"versionEsperada":1,"cohorteId":"…"}`. Desde S3-EV-02 (#223) la institución sale del
+JWT: el runner genera un token de Docente de desarrollo firmado con `Jwt:SecretKey` de
+`appsettings.Development.json` (se puede pisar con `QA07_JWT_SECRET`).
 
 ## Preparar el entorno de forma segura
 

@@ -16,7 +16,8 @@ const values = { evaluacionesUrl: url, internalApiKey: process.env.QA_INTERNAL_A
   tokenA: process.env.QA_TOKEN_A || '', tokenB: process.env.QA_TOKEN_B || '' };
 environment.values.push(...Object.entries(values).map(([key, value]) => ({ key, value, enabled: true })));
 const visibility = process.env.QA_TEST_VISIBILITY !== 'false';
-if (visibility) assert.ok(values.tokenA && values.tokenB, 'Visibilidad requiere JWT reales A/B');
+// Desde S3-EV-02 crear y publicar también exigen el JWT del docente, no sólo la visibilidad.
+assert.ok(values.tokenA && values.tokenB, 'Faltan los JWT de docente A/B (QA_TOKEN_A y QA_TOKEN_B)');
 const folders = ['S2-QA-01 Evaluaciones y lotes'];
 if (visibility) folders.push('S2-QA-01 Visibilidad de entregas');
 const summary = await new Promise((resolve, reject) => newman.run({
