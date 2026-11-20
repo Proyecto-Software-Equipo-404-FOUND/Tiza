@@ -31,7 +31,7 @@ const examenes: MiExamen[] = [
 ];
 
 // El rol viaja en el JWT (claim role). Si no se puede leer se trata como sin sesión.
-function rolDelToken(request: Request): string | null {
+export function rolDelToken(request: Request): string | null {
   const encabezado = request.headers.get('Authorization');
   const carga = encabezado?.replace('Bearer ', '').split('.')[1];
   if (!carga) return null;
