@@ -24,6 +24,8 @@ type Lista = { alumnos: AlumnoPanel[]; idsVistos: ReadonlySet<string> };
  */
 export function useSalaDocente(conexion: ConexionSala, salaId: string) {
   const [fase, setFase] = useState<FaseSalaDocente>('espera');
+  // Falso hasta que llega el primer estadoSala: antes de eso `fase` es solo el valor inicial, no el real
+  const [recibioEstado, setRecibioEstado] = useState(false);
   const [lista, setLista] = useState<Lista>({ alumnos: [], idsVistos: new Set() });
   const [totalConectados, setTotalConectados] = useState(0);
   const [pregunta, setPregunta] = useState<PreguntaActual | null>(null);
@@ -68,10 +70,14 @@ export function useSalaDocente(conexion: ConexionSala, salaId: string) {
       setFechaLimiteSala(estado.fechaLimiteUtc ?? null);
       if (estado.servidorUtc) setDesfaseMs(calcularDesfaseMs(estado.servidorUtc));
       setFase(estado.estado === 'EnCurso' ? 'enCurso' : estado.estado === 'Finalizada' ? 'finalizada' : 'espera');
+      setRecibioEstado(true);
     });
     conexion.escuchar('salaIniciada', (carga) => {
       if (!activo) return;
-      setFechaLimiteSala((carga as SalaIniciadaEvento).fechaLimiteUtc);
+      const evento = carga as SalaIniciadaEvento;
+      setFechaLimiteSala(evento.fechaLimiteUtc);
+      // El reloj del servidor llega con el inicio: así el tiempo restante coincide con el de los alumnos
+      if (evento.servidorUtc) setDesfaseMs(calcularDesfaseMs(evento.servidorUtc));
       setFase('enCurso');
     });
     conexion.escuchar('preguntaActual', (carga) => {
@@ -158,6 +164,7 @@ export function useSalaDocente(conexion: ConexionSala, salaId: string) {
 
   return {
     fase,
+    recibioEstado,
     alumnos: lista.alumnos,
     totalConectados,
     pregunta,

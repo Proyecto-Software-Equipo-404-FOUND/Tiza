@@ -47,7 +47,7 @@ export type SalaIniciadaEvento = {
   servidorUtc?: string;
 };
 
-// // Evento `salaFinalizada` (sección 6.6). Lo emite el hub al finalizar la sala (S2-SA-03, #140).
+// Evento `salaFinalizada` (sección 6.6). Lo emite el hub al finalizar la sala (S2-SA-03, #140).
 export type SalaFinalizadaEvento = {
   salaId: string;
   finalizadaUtc: string;
