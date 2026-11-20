@@ -1,5 +1,5 @@
 import { pedir } from '@/shared/api/cliente';
-import type { Material } from '../apuntes';
+import type { Material, TextoMaterial } from '../apuntes';
 
 export const listarMateriales = (cursoId: string) =>
   pedir<Material[]>(`/api/v1/cursos/${cursoId}/materiales`);
@@ -15,3 +15,7 @@ export const subirMaterial = (cursoId: string, archivo: File, titulo?: string) =
 // Baja lógica: el backend responde 204 sin contenido
 export const eliminarMaterial = (cursoId: string, id: string) =>
   pedir<void>(`/api/v1/cursos/${cursoId}/materiales/${id}`, { method: 'DELETE' });
+
+// Vista previa del texto extraído (S3-CU-03, #229). Solo docente del curso o administrador; 409 si no está listo
+export const obtenerTextoMaterial = (cursoId: string, id: string) =>
+  pedir<TextoMaterial>(`/api/v1/cursos/${cursoId}/materiales/${id}/texto`);
