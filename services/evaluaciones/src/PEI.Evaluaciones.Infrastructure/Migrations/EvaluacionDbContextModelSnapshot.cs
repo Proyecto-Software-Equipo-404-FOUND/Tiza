@@ -120,6 +120,9 @@ namespace PEI.Evaluaciones.Infrastructure.Migrations
                     b.Property<Guid?>("CohorteId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("DocenteId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Estado")
                         .IsRequired()
                         .HasMaxLength(20)

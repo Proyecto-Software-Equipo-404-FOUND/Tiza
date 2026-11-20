@@ -9,7 +9,8 @@ public record CrearEvaluacionCommand(
     Guid InstitucionId,
     string Titulo,
     string Tipo,
-    JsonElement PreguntasJson) : IRequest<ResultadoOperacion<EvaluacionDto>>;
+    JsonElement PreguntasJson,
+    Guid? DocenteId = null) : IRequest<ResultadoOperacion<EvaluacionDto>>;
 
 public class CrearEvaluacionHandler : IRequestHandler<CrearEvaluacionCommand, ResultadoOperacion<EvaluacionDto>>
 {
@@ -53,6 +54,7 @@ public class CrearEvaluacionHandler : IRequestHandler<CrearEvaluacionCommand, Re
         {
             Id = Guid.NewGuid(),
             InstitucionId = request.InstitucionId,
+            DocenteId = request.DocenteId,
             Titulo = request.Titulo.Trim(),
             Tipo = request.Tipo.Trim(),
             Estado = EstadoEvaluacion.Borrador,

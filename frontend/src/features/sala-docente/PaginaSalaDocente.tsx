@@ -141,7 +141,7 @@ function PanelSala({ sala, conexion: conexionInyectada, onAbrirOtra }: PropsPane
       <Tarjeta titulo='Alumnos'>
         <p className='mb-3 inline-flex items-center gap-2 font-bold text-tiza-bosque'>
           <Users className='h-5 w-5' aria-hidden='true' />
-          Ingresaron: {totalConectados}
+          Conectados ahora: {totalConectados}
         </p>
         {alumnos.length === 0 ? (
           <p className='text-tiza-bosque/70'>Todavía no entró nadie.</p>
@@ -152,17 +152,28 @@ function PanelSala({ sala, conexion: conexionInyectada, onAbrirOtra }: PropsPane
                 key={alumno.alumnoId}
                 className='flex flex-wrap items-center justify-between gap-2 rounded-xl border border-tiza-menta px-3 py-2'
               >
-                <span className='min-w-0 break-words font-bold text-tiza-bosque'>{alumno.alias}</span>
-                <span className={`rounded-full px-3 py-1 text-sm font-bold ${ESTILO_FOCO[alumno.peorSeveridad]}`}>
-                  {ETIQUETA_FOCO[alumno.peorSeveridad]}
-                  {alumno.alertas > 0 ? ` (${alumno.alertas})` : ''}
+                <span
+                  className={`min-w-0 break-words font-bold ${alumno.desconectado ? 'text-tiza-bosque/60' : 'text-tiza-bosque'}`}
+                >
+                  {alumno.alias}
+                </span>
+                <span className='flex flex-wrap items-center gap-2'>
+                  {alumno.desconectado && (
+                    <span className='rounded-full border border-tiza-borde px-3 py-1 text-sm font-bold text-tiza-bosque/70'>
+                      Se desconectó
+                    </span>
+                  )}
+                  <span className={`rounded-full px-3 py-1 text-sm font-bold ${ESTILO_FOCO[alumno.peorSeveridad]}`}>
+                    {ETIQUETA_FOCO[alumno.peorSeveridad]}
+                    {alumno.alertas > 0 ? ` (${alumno.alertas})` : ''}
+                  </span>
                 </span>
               </li>
             ))}
           </ul>
         )}
         <p className='mt-3 text-xs text-tiza-bosque/70'>
-          El contador solo suma: si recargás la página, se recupera a medida que los alumnos vuelven a entrar.
+          Si recargás la página, la lista de conectados se recupera sola. Las alertas de foco anteriores no vuelven a mostrarse acá: quedan guardadas y las ves en el detalle de cada entrega. Los que se desconectan quedan en la lista con su aviso.
         </p>
       </Tarjeta>
 

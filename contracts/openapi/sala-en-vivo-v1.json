@@ -127,6 +127,75 @@
           }
         }
       }
+    },
+    "/interno/salas/pin/{pin}": {
+      "get": {
+        "tags": [
+          "Salas"
+        ],
+        "x-estado": "planificado",
+        "summary": "[Interno] Datos de una sala por PIN, para emitir el token de invitado.",
+        "description": "Proveedor: S3-SA-01 (#231, Ariel). Consumidor: Identidad, POST /api/auth/invitado. Endpoint interno: no se publica en el gateway.",
+        "operationId": "ObtenerSalaParaInvitado",
+        "security": [
+          {
+            "ApiKeyInterna": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "pin",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 100000,
+              "maximum": 999999
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Datos de la sala.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalaParaInvitado"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta la clave interna o es incorrecta.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "No autenticado.",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No hay una sala activa con ese PIN.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Sala no encontrada.",
+                  "status": 404,
+                  "type": "SALA_NO_ENCONTRADA"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -136,6 +205,12 @@
         "scheme": "bearer",
         "bearerFormat": "JWT",
         "description": "JWT institucional de Identidad (ver identidad-v1.json, JwtInstitucional)."
+      },
+      "ApiKeyInterna": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Api-Key-Interna",
+        "description": "Misma clave compartida entre servicios que usa Evaluaciones (ServiciosInternos:ApiKey). Los endpoints /interno/... no se publican en el gateway."
       }
     },
     "schemas": {
@@ -162,13 +237,19 @@
             "minimum": 5,
             "maximum": 240,
             "default": 120,
-            "description": "Minutos que la sala queda abierta desde que se crea. Pasado ese tiempo ya no se puede entrar con el PIN ni responder."
+            "description": "Minutos que dura el examen. Desde S3-SA-02 (#239) se cuentan desde que el docente inicia la sala (IniciarSala), no desde que se crea."
+          },
+          "permitirInvitados": {
+            "type": "boolean",
+            "default": false,
+            "description": "S3-SA-01 (#231). Si es true, se puede entrar con PIN + nombre sin cuenta (rol Invitado). Por defecto, no."
           }
         },
         "example": {
           "evaluacionId": "3c4d5e6f-7a8b-4c9d-8e0f-1a2b3c4d5e6f",
           "capacidadMaxima": 30,
-          "duracionMinutos": 45
+          "duracionMinutos": 45,
+          "permitirInvitados": false
         }
       },
       "SalaCreada": {
@@ -193,17 +274,29 @@
           },
           "fechaVencimiento": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "nullable": true,
+            "description": "S3-SA-02 (#239): null hasta que el docente inicia la sala. Al iniciar se calcula con duracionMinutos y llega a todos por el evento salaIniciada (ver signalr/sala-hub-v1.md)."
           },
           "capacidadMaxima": {
             "type": "integer"
+          },
+          "permitirInvitados": {
+            "type": "boolean",
+            "description": "S3-SA-01 (#231)."
+          },
+          "duracionMinutos": {
+            "type": "integer",
+            "description": "S3-SA-02 (#239)."
           }
         },
         "example": {
           "id": "6a2b7c3d-8e9f-4a01-b2c3-d4e5f6a7b8c9",
           "codigoPIN": 482913,
-          "fechaVencimiento": "2026-11-13T16:30:00Z",
-          "capacidadMaxima": 30
+          "fechaVencimiento": null,
+          "duracionMinutos": 45,
+          "capacidadMaxima": 30,
+          "permitirInvitados": false
         }
       },
       "ProblemDetails": {
@@ -221,6 +314,43 @@
           "detail": {
             "type": "string"
           }
+        }
+      },
+      "SalaParaInvitado": {
+        "type": "object",
+        "required": [
+          "salaId",
+          "institucionId",
+          "permiteInvitados",
+          "estado"
+        ],
+        "description": "S3-SA-01 (#231). Lo que Identidad necesita para emitir el token de invitado.",
+        "properties": {
+          "salaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "institucionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "permiteInvitados": {
+            "type": "boolean"
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "Abierta",
+              "Iniciada",
+              "Finalizada"
+            ]
+          }
+        },
+        "example": {
+          "salaId": "6a2b7c3d-8e9f-4a01-b2c3-d4e5f6a7b8c9",
+          "institucionId": "11111111-1111-1111-1111-111111111111",
+          "permiteInvitados": true,
+          "estado": "Abierta"
         }
       }
     }
