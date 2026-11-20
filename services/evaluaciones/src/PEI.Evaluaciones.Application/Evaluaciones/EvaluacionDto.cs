@@ -13,7 +13,8 @@ public record EvaluacionDto(
     JsonElement PreguntasJson,
     DateTimeOffset FechaCreacion,
     DateTimeOffset FechaActualizacion,
-    int Version)
+    int Version,
+    Guid? DocenteId = null)
 {
     public static EvaluacionDto Desde(Evaluacion evaluacion)
     {
@@ -29,6 +30,7 @@ public record EvaluacionDto(
             documento.RootElement.Clone(),
             evaluacion.FechaCreacion,
             evaluacion.FechaActualizacion,
-            evaluacion.Version);
+            evaluacion.Version,
+            evaluacion.DocenteId);
     }
 }

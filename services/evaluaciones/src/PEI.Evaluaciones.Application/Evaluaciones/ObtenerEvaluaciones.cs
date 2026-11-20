@@ -27,7 +27,9 @@ public class ObtenerEvaluacionHandler : IRequestHandler<ObtenerEvaluacionQuery, 
     }
 }
 
-public record ListarEvaluacionesQuery(Guid InstitucionId)
+// S3-EV-02 (#223): DocenteId null = sin filtro (Administrador). Con valor, solo los exámenes
+// de ese docente y los anteriores al Sprint 3 (sin dueño).
+public record ListarEvaluacionesQuery(Guid InstitucionId, Guid? DocenteId = null)
     : IRequest<IReadOnlyList<EvaluacionDto>>;
 
 public class ListarEvaluacionesHandler : IRequestHandler<ListarEvaluacionesQuery, IReadOnlyList<EvaluacionDto>>
@@ -43,6 +45,9 @@ public class ListarEvaluacionesHandler : IRequestHandler<ListarEvaluacionesQuery
     {
         var evaluaciones = await _repositorio.ListarAsync(request.InstitucionId, ct);
 
-        return evaluaciones.Select(EvaluacionDto.Desde).ToList();
+        return evaluaciones
+            .Where(e => AccesoEvaluaciones.PuedeVer(e, request.DocenteId))
+            .Select(EvaluacionDto.Desde)
+            .ToList();
     }
 }
