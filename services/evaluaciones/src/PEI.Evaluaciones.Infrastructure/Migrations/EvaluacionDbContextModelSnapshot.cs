@@ -22,6 +22,43 @@ namespace PEI.Evaluaciones.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("PEI.Evaluaciones.Domain.Entities.CalificacionDocente", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ComentarioDocente")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("DesgloseJson")
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("EntregaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("FechaEdicionUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("InstitucionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PreguntaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("PuntajeDocente")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EntregaId", "PreguntaId")
+                        .IsUnique();
+
+                    b.ToTable("CalificacionDocente", (string)null);
+                });
+
             modelBuilder.Entity("PEI.Evaluaciones.Domain.Entities.CalificacionSugerida", b =>
                 {
                     b.Property<Guid>("Id")
@@ -73,13 +110,26 @@ namespace PEI.Evaluaciones.Infrastructure.Migrations
                     b.Property<Guid>("AlumnoId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("DocenteAprobadorId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Estado")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<string>("EstadoNota")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("Sugerida");
+
                     b.Property<Guid>("EvaluacionId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("FechaAprobacionUtc")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTimeOffset>("FechaEntrega")
                         .HasColumnType("timestamp with time zone");
@@ -87,8 +137,16 @@ namespace PEI.Evaluaciones.Infrastructure.Migrations
                     b.Property<Guid>("InstitucionId")
                         .HasColumnType("uuid");
 
+                    b.Property<decimal?>("NotaFinal")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)");
+
                     b.Property<decimal?>("NotaMultipleChoice")
                         .HasColumnType("numeric");
+
+                    b.Property<decimal?>("PuntajeMaximo")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)");
 
                     b.Property<string>("RespuestasJson")
                         .IsRequired()
@@ -157,6 +215,15 @@ namespace PEI.Evaluaciones.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Evaluacion", (string)null);
+                });
+
+            modelBuilder.Entity("PEI.Evaluaciones.Domain.Entities.CalificacionDocente", b =>
+                {
+                    b.HasOne("PEI.Evaluaciones.Domain.Entities.EntregaExamen", null)
+                        .WithMany()
+                        .HasForeignKey("EntregaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("PEI.Evaluaciones.Domain.Entities.CalificacionSugerida", b =>

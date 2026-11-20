@@ -44,7 +44,7 @@ public class GetMatriculacionesByCohorteQueryHandlerTests
         cohorte.Desactivar();
         await _cohorteRepo.AddAsync(cohorte);
 
-        var matriculacion = new Matriculacion(institucionId, cohorte.Id, Guid.NewGuid());
+        var matriculacion = new Matriculacion(institucionId, cohorte.Id, Guid.NewGuid(), cohorte.CursoId);
         await _matriculacionRepo.AddAsync(matriculacion);
 
         var handler = new GetMatriculacionesByCohorteQueryHandler(_cohorteRepo, _matriculacionRepo);
@@ -97,8 +97,8 @@ public class GetMatriculacionesByCohorteQueryHandlerTests
         );
         await _cohorteRepo.AddAsync(cohorte);
 
-        var mat1 = new Matriculacion(institucionId, cohorte.Id, Guid.NewGuid());
-        var mat2 = new Matriculacion(institucionId, cohorte.Id, Guid.NewGuid());
+        var mat1 = new Matriculacion(institucionId, cohorte.Id, Guid.NewGuid(), cohorte.CursoId);
+        var mat2 = new Matriculacion(institucionId, cohorte.Id, Guid.NewGuid(), cohorte.CursoId);
         await _matriculacionRepo.AddAsync(mat1);
         await _matriculacionRepo.AddAsync(mat2);
 
@@ -129,8 +129,8 @@ public class GetMatriculacionesByCohorteQueryHandlerTests
         );
         await _cohorteRepo.AddAsync(cohorte);
 
-        var matActiva = new Matriculacion(institucionId, cohorte.Id, Guid.NewGuid());
-        var matBaja = new Matriculacion(institucionId, cohorte.Id, Guid.NewGuid());
+        var matActiva = new Matriculacion(institucionId, cohorte.Id, Guid.NewGuid(), cohorte.CursoId);
+        var matBaja = new Matriculacion(institucionId, cohorte.Id, Guid.NewGuid(), cohorte.CursoId);
         matBaja.DarDeBaja();
 
         await _matriculacionRepo.AddAsync(matActiva);
@@ -172,7 +172,7 @@ public class GetMatriculacionesByCohorteQueryHandlerTests
         var institucionId = Guid.NewGuid();
         var cohorte = new Cohorte(institucionId, Guid.NewGuid(), Guid.NewGuid(), "Comision Cerrada", "2026-2C");
         await _cohorteRepo.AddAsync(cohorte);
-        await _matriculacionRepo.AddAsync(new Matriculacion(institucionId, cohorte.Id, Guid.NewGuid()));
+        await _matriculacionRepo.AddAsync(new Matriculacion(institucionId, cohorte.Id, Guid.NewGuid(), cohorte.CursoId));
         cohorte.Desactivar();
 
         var handler = new GetMatriculacionesByCohorteQueryHandler(_cohorteRepo, _matriculacionRepo);

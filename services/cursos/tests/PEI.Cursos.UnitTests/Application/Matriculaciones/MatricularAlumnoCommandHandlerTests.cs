@@ -92,7 +92,7 @@ public class MatricularAlumnoCommandHandlerTests
         await _cohorteRepo.AddAsync(cohorte);
 
         var alumnoId = Guid.NewGuid();
-        var matriculaPrevia = new Matriculacion(institucionId, cohorte.Id, alumnoId);
+        var matriculaPrevia = new Matriculacion(institucionId, cohorte.Id, alumnoId, cohorte.CursoId);
         await _matriculacionRepo.AddAsync(matriculaPrevia);
 
         var handler = new MatricularAlumnoCommandHandler(_cohorteRepo, _matriculacionRepo, _uow, _tenant);
@@ -132,5 +132,62 @@ public class MatricularAlumnoCommandHandlerTests
         // Act & Assert
         var ex = await Assert.ThrowsAsync<DomainException>(() => handler.HandleAsync(command));
         Assert.Contains("El alumno es obligatorio", ex.Message);
+    }
+    [Theory]
+    [InlineData(true, true, true, true)]
+    [InlineData(true, true, false, false)]
+    [InlineData(false, true, true, false)]
+    [InlineData(true, false, true, false)]
+    public async Task SoloOtraMatriculaActivaDelMismoAlumnoYCursoBloqueaAlta(
+        bool mismoCurso, bool mismoAlumno, bool activa, bool conflicto)
+    {
+        var institucion = Guid.NewGuid();
+        var curso = Guid.NewGuid();
+        var alumno = Guid.NewGuid();
+        _tenant.InstitucionId = institucion;
+        var destino = new Cohorte(institucion, curso, Guid.NewGuid(), "Destino", "2026");
+        await _cohorteRepo.AddAsync(destino);
+        var previa = new Matriculacion(institucion, Guid.NewGuid(),
+            mismoAlumno ? alumno : Guid.NewGuid(), mismoCurso ? curso : Guid.NewGuid());
+        if (!activa) previa.DarDeBaja();
+        await _matriculacionRepo.AddAsync(previa);
+
+        var handler = new MatricularAlumnoCommandHandler(_cohorteRepo, _matriculacionRepo, _uow, _tenant);
+        var command = new MatricularAlumnoCommand(destino.Id, alumno);
+        if (conflicto)
+        {
+            await Assert.ThrowsAsync<PEI.Cursos.Application.UseCases.Matriculaciones.AlumnoEnOtraComisionException>(
+                () => handler.HandleAsync(command));
+            Assert.Single(_matriculacionRepo.Items);
+        }
+        else
+        {
+            var resultado = await handler.HandleAsync(command);
+            Assert.Contains(_matriculacionRepo.Items, m => m.Id == resultado.Id && m.CursoId == curso);
+        }
+    }
+
+    [Fact]
+    public async Task AlumnoEnOtraComision_InformaLaComisionActual()
+    {
+        // Contrato (#253): el 409 ALUMNO_EN_OTRA_COMISION suma cohorteActualId y cohorteActualNombre.
+        var institucion = Guid.NewGuid();
+        var curso = Guid.NewGuid();
+        var alumno = Guid.NewGuid();
+        _tenant.InstitucionId = institucion;
+        var destino = new Cohorte(institucion, curso, Guid.NewGuid(), "Destino", "2026");
+        await _cohorteRepo.AddAsync(destino);
+        var actual = new Matriculacion(institucion, Guid.NewGuid(), alumno, curso);
+        await _matriculacionRepo.AddAsync(actual);
+        _matriculacionRepo.NombresCohorte[actual.CohorteId] = "Comisión 2 · Turno noche";
+
+        var handler = new MatricularAlumnoCommandHandler(_cohorteRepo, _matriculacionRepo, _uow, _tenant);
+
+        var ex = await Assert.ThrowsAsync<PEI.Cursos.Application.UseCases.Matriculaciones.AlumnoEnOtraComisionException>(
+            () => handler.HandleAsync(new MatricularAlumnoCommand(destino.Id, alumno)));
+
+        Assert.Equal("ALUMNO_EN_OTRA_COMISION", ex.Code);
+        Assert.Equal(actual.CohorteId, ex.Extensions["cohorteActualId"]);
+        Assert.Equal("Comisión 2 · Turno noche", ex.Extensions["cohorteActualNombre"]);
     }
 }

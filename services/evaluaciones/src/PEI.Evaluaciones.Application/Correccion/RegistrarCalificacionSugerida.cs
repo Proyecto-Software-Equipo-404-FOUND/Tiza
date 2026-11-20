@@ -47,7 +47,13 @@ public sealed class RegistrarCalificacionSugeridaHandler
         var entrega = await _repositorio.ObtenerEntregaAsync(request.EntregaId, ct);
         if (entrega is null)
             return ResultadoOperacion<CalificacionSugeridaRegistrada>.NoEncontrado();
-
+        // S3-EV-03 (#224): Si la entrega ya fue aprobada por el docente, la IA no puede sobrescribirla (409 Conflict)
+        if (entrega.EstadoNota == EstadoNotaEntrega.Aprobada || entrega.FechaAprobacionUtc.HasValue)
+        {
+            return ResultadoOperacion<CalificacionSugeridaRegistrada>.Conflicto(
+                "La nota ya está aprobada por el docente y no se puede modificar.");
+        }
+        
         var evaluacion = await _repositorio.ObtenerEvaluacionAsync(entrega.EvaluacionId, entrega.InstitucionId, ct);
         if (evaluacion is null)
             return ResultadoOperacion<CalificacionSugeridaRegistrada>.NoEncontrado();

@@ -15,18 +15,18 @@ public static class AccesoEvaluaciones
     public const string RolDocente = "Docente";
     public const string RolAdministrador = "Administrador";
 
-    public static bool PuedeCrear(string? rol) => rol == RolDocente;
+    public static bool PuedeCrear(string? rol) => string.Equals(rol, RolDocente, StringComparison.OrdinalIgnoreCase);
 
-    public static bool PuedeLeer(string? rol) => rol is RolDocente or RolAdministrador;
+    public static bool PuedeLeer(string? rol) => string.Equals(rol, RolDocente, StringComparison.OrdinalIgnoreCase) || string.Equals(rol, RolAdministrador, StringComparison.OrdinalIgnoreCase);
 
-    public static bool PuedeModificar(string? rol) => rol == RolDocente;
+    public static bool PuedeModificar(string? rol) => string.Equals(rol, RolDocente, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>docenteId null = sin filtro (Administrador).</summary>
     public static bool PuedeVer(Evaluacion evaluacion, Guid? docenteId) =>
         docenteId is null || evaluacion.DocenteId is null || evaluacion.DocenteId == docenteId;
 
     /// <summary>Filtro por docente según el rol: el Docente ve lo suyo, el Administrador todo.</summary>
-    public static Guid? FiltroDocente(string? rol, Guid usuarioId) => rol == RolDocente ? usuarioId : null;
+    public static Guid? FiltroDocente(string? rol, Guid usuarioId) => string.Equals(rol, RolDocente, StringComparison.OrdinalIgnoreCase) ? usuarioId : null;
 }
 
 /// <summary>

@@ -21,7 +21,7 @@ public class ReactivarMatriculacionCommandHandlerTests
         // Arrange: Alumno previamente dado de baja se reincorpora
         var institucionId = Guid.NewGuid();
         var cohorteId = Guid.NewGuid();
-        var matriculacion = new Matriculacion(institucionId, cohorteId, Guid.NewGuid());
+        var matriculacion = new Matriculacion(institucionId, cohorteId, Guid.NewGuid(), Guid.NewGuid());
         matriculacion.DarDeBaja();
         await _matriculacionRepo.AddAsync(matriculacion);
 
@@ -59,7 +59,7 @@ public class ReactivarMatriculacionCommandHandlerTests
         var institucionId = Guid.NewGuid();
         var cohorteIdReal = Guid.NewGuid();
         var cohorteIdIntento = Guid.NewGuid();
-        var matriculacion = new Matriculacion(institucionId, cohorteIdReal, Guid.NewGuid());
+        var matriculacion = new Matriculacion(institucionId, cohorteIdReal, Guid.NewGuid(), Guid.NewGuid());
         matriculacion.DarDeBaja();
         await _matriculacionRepo.AddAsync(matriculacion);
 
@@ -80,7 +80,7 @@ public class ReactivarMatriculacionCommandHandlerTests
     {
         // Arrange: Ya se encuentra en estado activo
         var cohorteId = Guid.NewGuid();
-        var matriculacion = new Matriculacion(Guid.NewGuid(), cohorteId, Guid.NewGuid());
+        var matriculacion = new Matriculacion(Guid.NewGuid(), cohorteId, Guid.NewGuid(), Guid.NewGuid());
         await _matriculacionRepo.AddAsync(matriculacion);
 
         var handler = new ReactivarMatriculacionCommandHandler(_matriculacionRepo, _uow);
@@ -97,7 +97,7 @@ public class ReactivarMatriculacionCommandHandlerTests
     {
         // Arrange: Cursada completada no admite reactivacion
         var cohorteId = Guid.NewGuid();
-        var matriculacion = new Matriculacion(Guid.NewGuid(), cohorteId, Guid.NewGuid());
+        var matriculacion = new Matriculacion(Guid.NewGuid(), cohorteId, Guid.NewGuid(), Guid.NewGuid());
         matriculacion.Completar();
         await _matriculacionRepo.AddAsync(matriculacion);
 
