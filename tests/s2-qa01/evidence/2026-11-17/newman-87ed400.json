@@ -1,0 +1,228 @@
+{
+  "timestamp": "2026-11-17T21:44:01.413Z",
+  "visibility": "ejecutada",
+  "requests": [
+    {
+      "name": "Crear evaluación A",
+      "status": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201",
+          "passed": true
+        },
+        {
+          "name": "Borrador de la institución correcta",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "Publicar evaluación A",
+      "status": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200",
+          "passed": true
+        },
+        {
+          "name": "Publicada",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "Recibir lote A",
+      "status": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200",
+          "passed": true
+        },
+        {
+          "name": "Una entrega nueva",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "Reenviar lote A idéntico",
+      "status": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200",
+          "passed": true
+        },
+        {
+          "name": "No duplica ni cambia entregas",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "Rechazar lote A con institución ajena",
+      "status": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "Rechazar lote A sin clave interna",
+      "status": 401,
+      "assertions": [
+        {
+          "name": "HTTP 401",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "Crear evaluación B",
+      "status": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201",
+          "passed": true
+        },
+        {
+          "name": "Borrador de la institución correcta",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "Publicar evaluación B",
+      "status": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200",
+          "passed": true
+        },
+        {
+          "name": "Publicada",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "Recibir lote B",
+      "status": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200",
+          "passed": true
+        },
+        {
+          "name": "Una entrega nueva",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "Reenviar lote B idéntico",
+      "status": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200",
+          "passed": true
+        },
+        {
+          "name": "No duplica ni cambia entregas",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "Rechazar lote B con institución ajena",
+      "status": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "Rechazar lote B sin clave interna",
+      "status": 401,
+      "assertions": [
+        {
+          "name": "HTTP 401",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "A ve su entrega (control positivo obligatorio)",
+      "status": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200",
+          "passed": true
+        },
+        {
+          "name": "Sólo la entrega propia",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "A no lista entregas de B",
+      "status": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "A no lee entrega de B por ID",
+      "status": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "B ve su entrega (control positivo obligatorio)",
+      "status": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200",
+          "passed": true
+        },
+        {
+          "name": "Sólo la entrega propia",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "B no lista entregas de A",
+      "status": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "B no lee entrega de A por ID",
+      "status": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404",
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "failures": 0,
+  "assertions": 28
+}

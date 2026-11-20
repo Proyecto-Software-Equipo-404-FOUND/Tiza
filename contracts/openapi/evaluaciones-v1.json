@@ -892,6 +892,368 @@
           }
         }
       }
+    },
+    "/api/v1/evaluaciones/{id}/entregas/{entregaId}/respuestas/{preguntaId}/nota": {
+      "put": {
+        "tags": [
+          "Resultados"
+        ],
+        "x-estado": "planificado",
+        "summary": "El docente edita el puntaje de una pregunta de la entrega.",
+        "description": "Proveedor: S3-EV-03 (#224, Matías). Consumidor: Frontend S3-FE-01 (#232, Bárbara). Solo el Docente dueño de la evaluación (S3-EV-02, #223); Administrador y Alumno → 403. Otra institución o examen ajeno → 404. Los errores de negocio llevan su código en `type` (por ejemplo `NOTA_YA_APROBADA`), para que el front muestre el mensaje correcto.",
+        "operationId": "EditarNotaRespuesta",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/EvaluacionId"
+          },
+          {
+            "$ref": "#/components/parameters/EntregaIdConsulta"
+          },
+          {
+            "$ref": "#/components/parameters/PreguntaId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditarNotaRespuestaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Respuesta actualizada, con estadoCorreccion = Editada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaEntrega"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Puntaje fuera de rango o desglose que no suma.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "El puntaje tiene que estar entre 0 y 5.",
+                  "status": 400,
+                  "type": "PUNTAJE_FUERA_DE_RANGO",
+                  "errores": []
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin token o token inválido.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "No autenticado.",
+                  "status": 401,
+                  "errores": []
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El usuario no es el docente dueño del examen.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Solo el docente que creó el examen puede editar la nota.",
+                  "status": 403,
+                  "errores": []
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Evaluación, entrega o pregunta inexistente, o de otra institución.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Entrega no encontrada.",
+                  "status": 404,
+                  "errores": []
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "La nota de la entrega ya fue aprobada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "La nota ya está aprobada y no se puede editar.",
+                  "status": 409,
+                  "type": "NOTA_YA_APROBADA",
+                  "errores": []
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/evaluaciones/{id}/entregas/{entregaId}/aprobacion": {
+      "post": {
+        "tags": [
+          "Resultados"
+        ],
+        "x-estado": "planificado",
+        "summary": "El docente aprueba la nota final de la entrega.",
+        "description": "Proveedor: S3-EV-03 (#224, Matías). Consumidor: Frontend S3-FE-01 (#232, Bárbara). Solo el Docente dueño de la evaluación. La nota final es la suma, por pregunta, de puntajeDocente si existe; si no, puntajeObtenido (multiple choice) o notaSugerida (IA). Si alguna abierta respondida no tiene nota (PendienteIA) y el docente no la editó → 409 FALTAN_CORRECCIONES. Los errores de negocio llevan su código en `type` (por ejemplo `NOTA_YA_APROBADA`), para que el front muestre el mensaje correcto.",
+        "operationId": "AprobarNota",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/EvaluacionId"
+          },
+          {
+            "$ref": "#/components/parameters/EntregaIdConsulta"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Nota aprobada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotaAprobada"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin token o token inválido.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "No autenticado.",
+                  "status": 401,
+                  "errores": []
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El usuario no es el docente dueño del examen.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Solo el docente que creó el examen puede aprobar la nota.",
+                  "status": 403,
+                  "errores": []
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Evaluación o entrega inexistente, o de otra institución.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Entrega no encontrada.",
+                  "status": 404,
+                  "errores": []
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya estaba aprobada (NOTA_YA_APROBADA) o falta corregir alguna pregunta (FALTAN_CORRECCIONES).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Hay preguntas abiertas sin corregir.",
+                  "status": 409,
+                  "type": "FALTAN_CORRECCIONES",
+                  "errores": []
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alumnos/me/evaluaciones": {
+      "get": {
+        "tags": [
+          "Mis exámenes"
+        ],
+        "x-estado": "planificado",
+        "summary": "Exámenes que rindió el alumno de la sesión, con su nota si ya fue aprobada.",
+        "description": "Proveedor: S3-EV-04 (#225, Matías). Consumidor: Frontend S3-FE-02 (#233, Bárbara). Solo rol Alumno; el alumno sale del claim sub (nunca de un parámetro). Docente o Administrador → 403. Ordenado del más reciente al más viejo.",
+        "operationId": "ListarMisEvaluaciones",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista (puede estar vacía).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MiExamen"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin token o token inválido.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "No autenticado.",
+                  "status": 401,
+                  "errores": []
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no es Alumno.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Solo los alumnos tienen \"Mis exámenes\".",
+                  "status": 403,
+                  "errores": []
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/evaluaciones/{id}/metricas": {
+      "get": {
+        "tags": [
+          "Resultados"
+        ],
+        "x-estado": "planificado",
+        "summary": "Métricas de un examen: promedio, pregunta más difícil y cada alumno contra el promedio.",
+        "description": "Proveedor: S3-EV-05 (#240, Matías). Consumidor: Frontend S3-FE-06 (#246, Bárbara). Docente dueño del examen o Administrador de la institución; Alumno → 403. Otra institución o examen ajeno → 404.",
+        "operationId": "ObtenerMetricas",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/EvaluacionId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Métricas del examen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricasEvaluacion"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin token o token inválido.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "No autenticado.",
+                  "status": 401,
+                  "errores": []
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no puede ver métricas.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Solo docentes y administradores pueden ver las métricas.",
+                  "status": 403,
+                  "errores": []
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Evaluación inexistente, ajena o de otra institución.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Evaluación no encontrada.",
+                  "status": 404,
+                  "errores": []
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -941,6 +1303,16 @@
         "in": "path",
         "required": true,
         "description": "Identificador de la entrega.",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "PreguntaId": {
+        "name": "preguntaId",
+        "in": "path",
+        "required": true,
+        "description": "Identificador de la pregunta dentro de la evaluación.",
         "schema": {
           "type": "string",
           "format": "uuid"
@@ -1502,6 +1874,26 @@
           },
           "alertasFoco": {
             "$ref": "#/components/schemas/AlertasFocoResumen"
+          },
+          "estadoNota": {
+            "type": "string",
+            "enum": [
+              "Sugerida",
+              "Editada",
+              "Aprobada"
+            ],
+            "description": "S3-EV-03 (#224). Sugerida: solo hay nota automática o de la IA. Editada: el docente cambió algún puntaje. Aprobada: nota final cerrada."
+          },
+          "notaFinal": {
+            "type": "number",
+            "nullable": true,
+            "description": "Solo cuando estadoNota = Aprobada (S3-EV-03, #224)."
+          },
+          "fechaAprobacionUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "S3-EV-03 (#224): cuándo el docente aprobó la nota. Solo cuando estadoNota = Aprobada; sirve para mostrarla al recargar."
           }
         },
         "example": {
@@ -1608,8 +2000,19 @@
               "SugeridaIA",
               "PendienteIA",
               "Manual",
-              "SinRespuesta"
+              "SinRespuesta",
+              "Editada"
             ]
+          },
+          "puntajeDocente": {
+            "type": "number",
+            "nullable": true,
+            "description": "Puntaje que puso el docente al editar (S3-EV-03, #224). Si existe, manda sobre puntajeObtenido y notaSugerida."
+          },
+          "comentarioDocente": {
+            "type": "string",
+            "nullable": true,
+            "description": "S3-EV-03 (#224)."
           }
         }
       },
@@ -1811,6 +2214,270 @@
               }
             }
           }
+        }
+      },
+      "EditarNotaRespuestaRequest": {
+        "type": "object",
+        "required": [
+          "puntaje"
+        ],
+        "description": "S3-EV-03 (#224). El docente fija el puntaje de una pregunta de la entrega. Pisa la nota sugerida por la IA (que se conserva para auditoría) o la del multiple choice.",
+        "properties": {
+          "puntaje": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Entre 0 y el puntajeMaximo de la pregunta. Fuera de rango → 400 PUNTAJE_FUERA_DE_RANGO."
+          },
+          "comentario": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 1000,
+            "description": "Comentario del docente para el alumno."
+          },
+          "desglosePorCriterio": {
+            "type": "array",
+            "nullable": true,
+            "description": "Opcional. Si viene, la suma tiene que coincidir con puntaje.",
+            "items": {
+              "type": "object",
+              "required": [
+                "criterio",
+                "puntaje"
+              ],
+              "properties": {
+                "criterio": {
+                  "type": "string"
+                },
+                "puntaje": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
+            }
+          }
+        },
+        "example": {
+          "puntaje": 4,
+          "comentario": "Buen desarrollo, faltó el ejemplo."
+        }
+      },
+      "NotaAprobada": {
+        "type": "object",
+        "required": [
+          "entregaId",
+          "notaFinal",
+          "puntajeMaximo",
+          "aprobadaPorId",
+          "fechaAprobacionUtc"
+        ],
+        "description": "S3-EV-03 (#224). Nota final aprobada por el docente. Una vez aprobada no cambia aunque la IA vuelva a corregir.",
+        "properties": {
+          "entregaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "notaFinal": {
+            "type": "number"
+          },
+          "puntajeMaximo": {
+            "type": "number"
+          },
+          "aprobadaPorId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Claim sub del docente."
+          },
+          "fechaAprobacionUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "example": {
+          "entregaId": "9b8c7d6e-5f4a-4b3c-8d2e-1f0a9b8c7d6e",
+          "notaFinal": 8.5,
+          "puntajeMaximo": 10,
+          "aprobadaPorId": "0e1f2a3b-4c5d-4e6f-8a7b-9c0d1e2f3a4b",
+          "fechaAprobacionUtc": "2026-11-20T18:30:00Z"
+        }
+      },
+      "MiExamen": {
+        "type": "object",
+        "required": [
+          "evaluacionId",
+          "entregaId",
+          "titulo",
+          "fechaEntregaUtc",
+          "estado"
+        ],
+        "description": "S3-EV-04 (#225). Un examen rendido por el alumno de la sesión. En el Sprint 3 el alumno ve solo la nota final: los comentarios del docente (comentarioDocente) no se exponen al alumno.",
+        "properties": {
+          "evaluacionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "entregaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cohorteId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "fechaEntregaUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "PendienteCorreccion",
+              "Aprobada"
+            ],
+            "description": "El alumno ve la nota solo cuando el docente la aprobó."
+          },
+          "notaFinal": {
+            "type": "number",
+            "nullable": true,
+            "description": "Solo si estado = Aprobada."
+          },
+          "puntajeMaximo": {
+            "type": "number",
+            "nullable": true,
+            "description": "Solo si estado = Aprobada."
+          }
+        },
+        "example": {
+          "evaluacionId": "3c4d5e6f-7a8b-4c9d-8e0f-1a2b3c4d5e6f",
+          "entregaId": "9b8c7d6e-5f4a-4b3c-8d2e-1f0a9b8c7d6e",
+          "cohorteId": "c0a80101-0000-4000-8000-000000000001",
+          "titulo": "Parcial 1 · Sismos",
+          "fechaEntregaUtc": "2026-11-19T14:10:00Z",
+          "estado": "Aprobada",
+          "notaFinal": 8.5,
+          "puntajeMaximo": 10
+        }
+      },
+      "MetricasEvaluacion": {
+        "type": "object",
+        "required": [
+          "evaluacionId",
+          "cantidadEntregas",
+          "cantidadAprobadas",
+          "puntajeMaximo",
+          "preguntas",
+          "alumnos"
+        ],
+        "description": "S3-EV-05 (#240). Solo cuenta entregas con la nota aprobada. Con 0 aprobadas, promedio y preguntaMasDificilId son null y las listas vienen vacías. El \"promedio del curso\" del plan es el promedio de este examen entre los alumnos que lo rindieron y tienen la nota aprobada.",
+        "properties": {
+          "evaluacionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cantidadEntregas": {
+            "type": "integer"
+          },
+          "cantidadAprobadas": {
+            "type": "integer"
+          },
+          "puntajeMaximo": {
+            "type": "number"
+          },
+          "promedio": {
+            "type": "number",
+            "nullable": true,
+            "description": "Promedio de notaFinal de las entregas aprobadas de este examen."
+          },
+          "preguntaMasDificilId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "La de menor porcentaje promedio obtenido."
+          },
+          "preguntas": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "preguntaId",
+                "enunciado",
+                "puntajeMaximo",
+                "promedio",
+                "porcentaje"
+              ],
+              "properties": {
+                "preguntaId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "enunciado": {
+                  "type": "string"
+                },
+                "puntajeMaximo": {
+                  "type": "number"
+                },
+                "promedio": {
+                  "type": "number"
+                },
+                "porcentaje": {
+                  "type": "number",
+                  "description": "promedio / puntajeMaximo × 100."
+                }
+              }
+            }
+          },
+          "alumnos": {
+            "type": "array",
+            "description": "Cada alumno contra el promedio del curso.",
+            "items": {
+              "type": "object",
+              "required": [
+                "alumnoId",
+                "notaFinal",
+                "diferenciaConPromedio"
+              ],
+              "properties": {
+                "alumnoId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "notaFinal": {
+                  "type": "number"
+                },
+                "diferenciaConPromedio": {
+                  "type": "number",
+                  "description": "notaFinal − promedio (puede ser negativa)."
+                }
+              }
+            }
+          }
+        },
+        "example": {
+          "evaluacionId": "3c4d5e6f-7a8b-4c9d-8e0f-1a2b3c4d5e6f",
+          "cantidadEntregas": 28,
+          "cantidadAprobadas": 25,
+          "puntajeMaximo": 10,
+          "promedio": 7.2,
+          "preguntaMasDificilId": "5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b",
+          "preguntas": [
+            {
+              "preguntaId": "5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b",
+              "enunciado": "¿Qué es un sismo?",
+              "puntajeMaximo": 5,
+              "promedio": 2.9,
+              "porcentaje": 58
+            }
+          ],
+          "alumnos": [
+            {
+              "alumnoId": "7a8b9c0d-1e2f-4a3b-8c4d-5e6f7a8b9c0d",
+              "notaFinal": 8.5,
+              "diferenciaConPromedio": 1.3
+            }
+          ]
         }
       }
     },
