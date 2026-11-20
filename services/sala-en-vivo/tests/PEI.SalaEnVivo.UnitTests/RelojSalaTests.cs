@@ -75,6 +75,32 @@ namespace PEI.SalaEnVivo.UnitTests
             Assert.Equal(sala.FechaVencimiento, _cronometro.Vencimientos[sala.Id]);
         }
 
+        [Fact]
+        public async Task IniciarSala_VencidaSinIniciar_NoSeInicia()
+        {
+            var institucionId = Guid.NewGuid();
+            var sala = new Sala
+            {
+                Id = Guid.NewGuid(),
+                InstitucionId = institucionId,
+                EvaluacionId = Guid.NewGuid(),
+                CodigoPIN = 654321,
+                Estado = "Activa",
+                CapacidadMaxima = 30,
+                DuracionMinutos = 45,
+                FechaVencimiento = DateTime.UtcNow.AddMinutes(-1)
+            };
+            _salaRepository.Salas.Add(sala);
+            var handler = new IniciarSalaCommandHandler(_salaRepository, _unitOfWork, _evaluacionesClient, _cronometro);
+
+            var resultado = await handler.Handle(new IniciarSalaCommand(sala.Id, institucionId), CancellationToken.None);
+
+            Assert.False(resultado.Exito);
+            Assert.Equal("SALA_VENCIDA", resultado.Codigo);
+            Assert.Null(sala.IniciadaUtc);
+            Assert.Equal("Activa", sala.Estado);
+        }
+
         private sealed class CronometroQueRegistra : ISalaCronometroService
         {
             public Dictionary<Guid, DateTime> Vencimientos { get; } = new();

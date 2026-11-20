@@ -55,6 +55,14 @@ namespace PEI.SalaEnVivo.Application.UseCases.Salas.Handlers
                     "La sala ya finalizó.");
             }
 
+            // S3-SA-02 (#239): una sala creada y nunca iniciada vence a las 24 h (Sala.EsperaMaximaSinIniciar).
+            if (!sala.FueIniciada && sala.Estado == "Activa" && sala.FechaVencimiento <= DateTime.UtcNow)
+            {
+                return ResultadoControlSala<ResultadoInicioSalaDto>.Error(
+                    "SALA_VENCIDA",
+                    "La sala venció sin iniciarse (más de 24 horas). Creá una sala nueva.");
+            }
+
             var evaluacion = await ObtenerEvaluacionAsync(sala.EvaluacionId, sala.InstitucionId, cancellationToken);
 
             if (evaluacion == null || evaluacion.Preguntas.Count == 0)

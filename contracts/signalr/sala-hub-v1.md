@@ -1261,3 +1261,47 @@ public async Task<ResultadoEnvioRespuesta> EnviarRespuesta(EnviarRespuestaReques
 
 Este pseudocódigo es ilustrativo: la transacción, el manejo de `DbUpdateException` y la
 resolución de carreras deben implementarse en S2-SA-01, no copiarse sin esos controles.
+## 13. Cambios planificados del Sprint 3
+
+> Estado: **planificado** (S3-CT-01, #222). Se aprueba en la PR de contratos antes de
+> programar. Hasta que se implemente, vale lo de las secciones anteriores.
+
+### 13.1 Rol `Invitado` (S3-SA-01, #231 · front S3-FE-04, #235)
+
+- El token sale de Identidad, `POST /api/auth/invitado` (`identidad-v1.json`), solo si la
+  sala se creó con `permitirInvitados = true` (`sala-en-vivo-v1.json`).
+- Claims del token: `role = Invitado`, `sub` (id nuevo por ingreso), `institucion_id`,
+  `sala_id` y `name`. No trae `email`.
+- El invitado usa los mismos métodos que el alumno: `UnirseASala(pin)`,
+  `EnviarRespuesta(payload)`, `ObtenerEstadoSala()` y `RegistrarEventoFoco(payload)`.
+- `UnirseASala(pin)` con rol `Invitado`:
+  - el PIN tiene que corresponder a la sala del claim `sala_id`; si no → `NO_AUTORIZADO`;
+  - **no** se valida la matrícula contra Cursos (no hay `ALUMNO_NO_MATRICULADO`);
+  - si la sala dejó de admitir invitados → `SALA_SIN_INVITADOS`.
+- Para el docente, `alumnoIngreso` y `alumnosConectados` traen `esInvitado: true` y
+  `nombre` (del claim `name`) en los invitados. El `alias` sigue viniendo siempre, igual que
+  para los alumnos (§6.1); para los alumnos con cuenta `esInvitado` es `false` y `nombre` no viene.
+  El panel del docente muestra `nombre` cuando `esInvitado` es `true` y `alias` en los demás casos.
+- Las respuestas del invitado viajan a Evaluaciones en el lote de entregas con su `sub` como
+  `alumnoId` y `nombreInvitado` con el nombre. "Mis exámenes" no aplica a invitados.
+
+Matriz de autorización (se suma a la 4.2):
+
+| Método | Invitado |
+| --- | --- |
+| `UnirseASala(pin)`, `EnviarRespuesta(payload)`, `ObtenerEstadoSala()` | Sí, solo en la sala de su `sala_id` |
+| Métodos del docente | No |
+
+### 13.2 El reloj arranca al iniciar (S3-SA-02, #239 · front S3-FE-03, #234)
+
+- Al crear la sala, la respuesta trae `fechaVencimiento = null` y `duracionMinutos` (`SalaCreada`).
+- `IniciarSala()` calcula `FechaVencimiento = iniciadaUtc + duracionMinutos`.
+- `salaIniciada` y `estadoSala` incluyen `iniciadaUtc`, `fechaLimiteUtc` (el nombre que ya usa el front) y
+  `servidorUtc` (hora del servidor al emitir), para que el front calcule el tiempo restante
+  sin depender del reloj del celular.
+- Antes de iniciar, `estadoSala` trae `fechaLimiteUtc = null` y `duracionMinutos`;
+  el front muestra la duración completa sin correr.
+- Una sala que no se inició no tiene reloj de examen. Si nunca se inicia, el PIN deja de valer
+  a las 24 horas de creada (plazo máximo para iniciar); el docente la puede finalizar antes.
+- `IniciarSala()` sobre una sala que pasó esas 24 horas sin iniciarse responde `SALA_VENCIDA`:
+  el docente tiene que crear una sala nueva.

@@ -129,6 +129,24 @@ namespace PEI.SalaEnVivo.UnitTests
         }
 
         [Fact]
+        public async Task Handle_SalaIniciada_ElLimiteSaleDeLaBaseYNoDelCronometro()
+        {
+            // S3-SA-02 (#239), revisión de Melany: si Redis quedó con un valor viejo, estadoSala igual informa el real.
+            var salaId = Guid.NewGuid();
+            var institucionId = Guid.NewGuid();
+            var sala = CrearSala(salaId, institucionId, "EnCurso");
+            var inicio = DateTime.UtcNow.AddMinutes(-5);
+            sala.IniciadaUtc = inicio;
+            sala.FechaVencimiento = inicio.AddMinutes(45);
+
+            var estado = await CrearHandler().Handle(
+                new ObtenerEstadoSalaQuery(Guid.NewGuid(), institucionId, "Docente", salaId),
+                CancellationToken.None);
+
+            Assert.Equal(inicio.AddMinutes(45), estado.FechaLimiteUtc);
+        }
+
+        [Fact]
         public async Task Handle_SalaSinIniciar_NoTieneRelojYDevuelveLaDuracion()
         {
             // S3-SA-02 (#239): antes de iniciar, fechaLimiteUtc = null y se informa la duración.

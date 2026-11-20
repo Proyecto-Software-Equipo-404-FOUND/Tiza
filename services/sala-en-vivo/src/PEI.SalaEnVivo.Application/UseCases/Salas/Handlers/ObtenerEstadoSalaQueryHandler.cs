@@ -111,7 +111,12 @@ namespace PEI.SalaEnVivo.Application.UseCases.Salas.Handlers
             var relojCorriendo = sala.FueIniciada
                 || !string.Equals(sala.Estado, "Activa", StringComparison.OrdinalIgnoreCase);
             DateTime? fechaLimiteUtc = null;
-            if (relojCorriendo)
+            if (sala.FueIniciada)
+            {
+                // La base es la fuente de verdad desde que se inicia: no depende de que Redis se haya actualizado.
+                fechaLimiteUtc = DateTime.SpecifyKind(sala.FechaVencimiento, DateTimeKind.Utc);
+            }
+            else if (relojCorriendo)
             {
                 var vencimientoCronometro = await _cronometroService.ObtenerVencimientoAsync(salaId, cancellationToken);
                 fechaLimiteUtc = vencimientoCronometro
