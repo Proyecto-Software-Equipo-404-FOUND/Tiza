@@ -27,7 +27,7 @@ export function TarjetaNotaFinal({ resumen, aprobada, soloLectura, notaAprobada,
       titulo='Nota final'
       subtitulo={
         aprobada
-          ? `Nota corregida${fechaAprobacionUtc ? ` el ${formatearFechaHora(fechaAprobacionUtc)}` : ''}. El alumno ya puede verla.`
+          ? `Nota corregida${fechaAprobacionUtc ? ` (${formatearFechaHora(fechaAprobacionUtc)})` : ''}. El alumno ya puede verla.`
           : soloLectura
             ? 'Todavía no está corregida. Solo el docente que creó el examen puede aprobarla.'
             : 'Revisá la nota que sugirió la IA, corregila si hace falta y aprobala. Hasta entonces el alumno no la ve.'

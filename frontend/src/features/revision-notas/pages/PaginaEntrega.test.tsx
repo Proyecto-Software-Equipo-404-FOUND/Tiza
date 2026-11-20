@@ -173,7 +173,10 @@ describe('PaginaEntrega', () => {
       data: { ...entrega, estadoNota: 'Aprobada', notaFinal: 5, fechaAprobacionUtc: '2026-11-20T15:30:00Z' },
     });
     const vista = renderizar();
-    expect(screen.getByText(/Nota corregida el .*20\/11\/26/)).toBeInTheDocument();
+    // La fecha va entre paréntesis: la hora termina en punto («a. m.») y no debe quedar un doble punto
+    const subtitulo = screen.getByText(/Nota corregida \(.*20\/11\/26.*\)\. El alumno ya puede verla\./);
+    expect(subtitulo).toBeInTheDocument();
+    expect(subtitulo.textContent).not.toContain('..');
     vista.unmount();
     simular({ data: { ...entrega, estadoNota: 'Aprobada', notaFinal: 5 } });
     renderizar();
