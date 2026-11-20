@@ -37,3 +37,69 @@ jobs:
           name: qa05-newman-evidencia
           path: tests/qa05/results/summary.json
           if-no-files-found: warn
+
+  s2-qa01-newman:
+    name: S2-QA-01 Evaluaciones reales y PostgreSQL
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: tests/identity-negative/package-lock.json
+      - run: npm ci --prefix tests/identity-negative
+      - run: dotnet tool install --global dotnet-ef --version 8.0.11
+      - run: node tests/s2-qa01/run-api.mjs
+      - name: Idempotencia del comando usado por SignalR
+        run: dotnet test services/sala-en-vivo/tests/PEI.SalaEnVivo.UnitTests --filter FullyQualifiedName~EnviarRespuestaCommandHandlerTests --logger trx --results-directory TestResults/s2-qa01
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: s2-qa01-api
+          path: |
+            tests/s2-qa01/results/newman.json
+            TestResults/s2-qa01/
+
+  s2-qa01-cypress:
+    name: S2-QA-01 Cypress UI (MSW; no aceptación E2E backend)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci --prefix frontend
+      - name: Flujo docente reproducible en interfaz
+        run: node frontend/cypress/run-ui.mjs
+
+  s2-qa01-live:
+    name: S2-QA-01 Cypress y SignalR contra servicios reales
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci --prefix tests/identity-negative
+      - run: npm ci --prefix frontend
+      - run: dotnet tool install --global dotnet-ef --version 8.0.11
+      - run: node tests/s2-qa01/run-live.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: s2-qa01-live
+          path: |
+            tests/s2-qa01/results/live.json
+            tests/s2-qa01/results/newman.json
