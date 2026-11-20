@@ -321,7 +321,7 @@
             }
           },
           "409": {
-            "description": "S3-CU-02 (#228, planificado): el curso tiene alguna cohorte con matrículas activas.",
+            "description": "S3-CU-02 (#228): el curso tiene alguna cohorte con matrículas activas.",
             "content": {
               "application/problem+json": {
                 "schema": {
