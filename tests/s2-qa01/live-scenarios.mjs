@@ -70,7 +70,10 @@ export async function runScenarios({ root, env, password, container, command, la
   await api(`/api/v1/cohortes/${cohorte.id}/matriculas`, { method: 'POST', token: docenteA,
     expected: 409, body: { alumnoId: '11111111-0000-0000-0000-000000000003' } });
   const trasDuplicado = await api(`/api/v1/cohortes/${cohorte.id}/matriculas`, { token: docenteA });
-  assert.deepEqual(trasDuplicado, matriculas);
+  // La misma fecha puede llegar como .518800Z o .5188Z según la lectura: se comparan instantes, no texto.
+  const fechasNormalizadas = valor => JSON.parse(JSON.stringify(valor), (_, v) =>
+    typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T[\d:.]+(Z|[+-]\d{2}:\d{2})$/.test(v) ? new Date(v).toISOString() : v);
+  assert.deepEqual(fechasNormalizadas(trasDuplicado), fechasNormalizadas(matriculas));
   evidence.permisos = { docenteCrearCurso: 403, docenteCrearCohorte: 403, matriculaDuplicada: 409 };
   const pregunta = randomUUID(); const opcion = randomUUID();
   const evaluacion = await api('/api/v1/evaluaciones', { method: 'POST', token: docenteA, tenant, expected: 201,
