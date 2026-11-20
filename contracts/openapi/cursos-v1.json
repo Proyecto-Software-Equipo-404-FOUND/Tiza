@@ -31,6 +31,7 @@
           "Cursos"
         ],
         "summary": "Obtiene la lista paginada de cursos para la institución del usuario autenticado.",
+        "description": "Obtiene la lista paginada de cursos para la institución del usuario autenticado. Si el usuario tiene rol Docente, solo se retornan los cursos donde tiene asignada al menos una cohorte/comisión (histórica o activa). Si tiene rol Administrador, retorna todos los cursos.",
         "operationId": "GetCursos",
         "parameters": [
           {
@@ -193,7 +194,7 @@
             "description": "Rol no autorizado. Roles permitidos: Administrador o Docente."
           },
           "404": {
-            "description": "Curso no encontrado o perteneciente a otra institución.",
+            "description": "Curso no encontrado, perteneciente a otra institución o ajeno al docente autenticado (anti-enumeración).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -258,10 +259,10 @@
             "description": "JWT ausente o inválido."
           },
           "403": {
-            "description": "Rol no autorizado. Roles permitidos: Administrador."
+            "description": "Rol no autorizado. Roles permitidos: Administrador o Docente."
           },
           "404": {
-            "description": "Curso no encontrado.",
+            "description": "Curso no encontrado o ajeno al docente autenticado (anti-enumeración).",
             "content": {
               "application/problem+json": {
                 "schema": {

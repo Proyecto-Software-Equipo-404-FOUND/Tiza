@@ -89,8 +89,9 @@ public class CursosController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = cursoCreado.Id }, cursoCreado);
     }
 
-    /* Modifica los datos descriptivos de un curso existente garantizando aislamiento tenant. */
-    [Authorize(Policy = CursosAuthorization.SoloAdministrador)]
+    /* Modifica los datos descriptivos de un curso existente garantizando aislamiento tenant.
+    Permite acceso a Administradores y a Docentes asignados al curso (anti-enumeracion via 404). */
+    [Authorize(Policy = CursosAuthorization.AdministradorODocente)]
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(CursoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

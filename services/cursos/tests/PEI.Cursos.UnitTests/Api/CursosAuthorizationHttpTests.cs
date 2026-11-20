@@ -43,7 +43,7 @@ public sealed class CursosAuthorizationHttpTests
         { "GET", Cursos, false, 200 },
         { "GET", CursoPath, false, 200 },
         { "POST", Cursos, true, 201 },
-        { "PUT", CursoPath, true, 200 },
+        { "PUT", CursoPath, false, 200 },
         { "DELETE", CursoPath, true, 204 },
         { "GET", Cohortes, false, 200 },
         { "POST", Cohortes, true, 201 },
@@ -178,7 +178,7 @@ public sealed class CursosAuthorizationHttpTests
             Assert.Empty(operation.Responses["403"].Content);
             var roles = path.Contains("/alumnos/", StringComparison.Ordinal)
                 ? "Administrador, Docente o el propio Alumno"
-                : verb == OperationType.Get || path.Contains("matriculas", StringComparison.Ordinal)
+                : verb == OperationType.Get || path.Contains("matriculas", StringComparison.Ordinal) || (path == "/api/v1/cursos/{id}" && verb == OperationType.Put)
                     ? "Administrador o Docente" : "Administrador";
             Assert.Equal($"Rol no autorizado. Roles permitidos: {roles}.", operation.Responses["403"].Description);
         }
