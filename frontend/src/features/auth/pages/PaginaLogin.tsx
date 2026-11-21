@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { z } from 'zod';
 import { ApiError, guardarTokenRenovacion } from '@/shared/api/cliente';
@@ -131,6 +131,12 @@ export function PaginaLogin() {
                   Ingresar
                 </Boton>
               </form>
+              <p className='mt-5 text-center text-sm text-tiza-bosque/80'>
+                ¿No tenés cuenta?{' '}
+                <Link to='/invitado' className='font-bold text-tiza-bosque underline'>
+                  Entrar como invitado
+                </Link>
+              </p>
             </Tarjeta>
           </div>
         </div>
