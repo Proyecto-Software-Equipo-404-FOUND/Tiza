@@ -24,7 +24,9 @@ try
     await using var db = QaSupport.Open(database);
     await QaSupport.VerifyDatabase(db, database);
     using var client = new HttpClient { BaseAddress = new Uri(Option("--url", "http://127.0.0.1:5103")), Timeout = TimeSpan.FromSeconds(30) };
-    client.DefaultRequestHeaders.Add("X-Institucion-Id", institution.ToString());
+    // S3-EV-02 (#223): la institución sale del JWT; el docente del token queda como dueño de lo que crea.
+    client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(
+        "Bearer", TokenDesarrollo.Docente(institution, Guid.Parse("70707070-7070-4070-8070-0000000000d0")));
     using var probe = await client.GetAsync("/api/v1/evaluaciones");
     QaSupport.Require(probe.IsSuccessStatusCode, "La API no esta disponible.");
     for (var iteration = 1; iteration <= repetitions; iteration++)

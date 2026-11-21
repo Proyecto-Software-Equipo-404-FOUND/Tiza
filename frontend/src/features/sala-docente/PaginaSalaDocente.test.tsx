@@ -156,7 +156,47 @@ describe('PaginaSalaDocente', () => {
     );
 
     expect(screen.getByText('Alumno 1')).toBeInTheDocument();
-    expect(screen.getByText('Ingresaron: 1')).toBeInTheDocument();
+    expect(screen.getByText('Conectados ahora: 1')).toBeInTheDocument();
+  });
+
+  it('cuando un alumno sale lo marca como desconectado y actualiza el contador', async () => {
+    const { simular } = await renderizarPanel();
+    const alumnoId = 'aaaaaaaa-0000-4000-8000-000000000001';
+
+    act(() =>
+      simular('alumnoIngreso', {
+        salaId: SALA_ID,
+        alumnoId,
+        alias: 'Alumno 1',
+        totalConectados: 1,
+        ingresoUtc: new Date().toISOString(),
+      }),
+    );
+    act(() =>
+      simular('alumnoSalio', {
+        salaId: SALA_ID,
+        alumnoId,
+        alias: 'Alumno 1',
+        totalConectados: 0,
+        salidaUtc: new Date().toISOString(),
+      }),
+    );
+
+    expect(screen.getByText('Se desconectó')).toBeInTheDocument();
+    expect(screen.getByText('Conectados ahora: 0')).toBeInTheDocument();
+    expect(screen.getByText('Alumno 1')).toBeInTheDocument();
+
+    act(() =>
+      simular('alumnoIngreso', {
+        salaId: SALA_ID,
+        alumnoId,
+        alias: 'Alumno 1',
+        totalConectados: 1,
+        ingresoUtc: new Date().toISOString(),
+      }),
+    );
+    expect(screen.queryByText('Se desconectó')).not.toBeInTheDocument();
+    expect(screen.getByText('Conectados ahora: 1')).toBeInTheDocument();
   });
 
   it('muestra la alerta de foco en texto, no solo en color', async () => {

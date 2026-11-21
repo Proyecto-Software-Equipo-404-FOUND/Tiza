@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -59,6 +59,38 @@ namespace PEI.SalaEnVivo.UnitTests
                 FinalizadaUtc: DateTime.UtcNow,
                 MotivoCierre: "Docente",
                 Entregas: new List<EntregaAlumnoDto>());
+        }
+
+        [Fact]
+        public async Task ObtenerPreguntasAsync_UsaElEndpointInternoConClaveEInstitucion()
+        {
+            // S3-EV-02 (#223): el endpoint público exige el JWT del docente, Sala usa el interno.
+            var evaluacionId = Guid.NewGuid();
+            var institucionId = Guid.NewGuid();
+
+            var handler = new TestHttpMessageHandler(req =>
+            {
+                Assert.Equal(HttpMethod.Get, req.Method);
+                Assert.Equal($"/interno/evaluaciones/{evaluacionId}", req.RequestUri?.AbsolutePath);
+                Assert.Equal(TestApiKey, req.Headers.GetValues("X-Api-Key-Interna").First());
+                Assert.Equal(institucionId.ToString(), req.Headers.GetValues("X-Institucion-Id").First());
+
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(
+                        "{\"id\":\"" + evaluacionId + "\",\"estado\":\"Publicada\",\"preguntasJson\":{\"preguntas\":[]}}",
+                        System.Text.Encoding.UTF8,
+                        "application/json")
+                };
+            });
+
+            var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost/") };
+            var client = new EvaluacionesClient(httpClient, CrearConfiguracion());
+
+            var resultado = await client.ObtenerPreguntasAsync(evaluacionId, institucionId);
+
+            Assert.NotNull(resultado);
+            Assert.Equal(1, handler.Invocaciones);
         }
 
         [Fact]

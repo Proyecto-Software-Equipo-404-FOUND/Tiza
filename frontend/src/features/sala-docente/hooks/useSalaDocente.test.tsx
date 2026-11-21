@@ -219,4 +219,41 @@ describe('useSalaDocente', () => {
     emitir('alumnosConectados', { salaId: SALA, totalConectados: 3, alumnos: [], actualizadoUtc: 'x' });
     expect(vista.result.current.totalConectados).toBe(3);
   });
+
+  it('arma la lista con la foto de presencia: al recargar no arranca vacía', () => {
+    const { vista, emitir } = preparar();
+    emitir('alumnosConectados', {
+      salaId: SALA,
+      totalConectados: 2,
+      alumnos: [
+        { alumnoId: 'a1', alias: 'Alumno 1', ingresoUtc: '2026-11-05T14:00:00Z' },
+        { alumnoId: 'a2', alias: 'Alumno 2', ingresoUtc: '2026-11-05T14:01:00Z' },
+      ],
+      actualizadoUtc: 'x',
+    });
+    expect(vista.result.current.alumnos.map((a) => a.alias)).toEqual(['Alumno 1', 'Alumno 2']);
+    expect(vista.result.current.totalConectados).toBe(2);
+  });
+
+  it('con una foto nueva, el alumno que ya no figura queda como desconectado', () => {
+    const { vista, emitir } = preparar();
+    emitir('alumnosConectados', {
+      salaId: SALA,
+      totalConectados: 2,
+      alumnos: [
+        { alumnoId: 'a1', alias: 'Alumno 1', ingresoUtc: 'x' },
+        { alumnoId: 'a2', alias: 'Alumno 2', ingresoUtc: 'x' },
+      ],
+      actualizadoUtc: 'x',
+    });
+    emitir('alumnosConectados', {
+      salaId: SALA,
+      totalConectados: 1,
+      alumnos: [{ alumnoId: 'a1', alias: 'Alumno 1', ingresoUtc: 'x' }],
+      actualizadoUtc: 'x',
+    });
+    const [a1, a2] = vista.result.current.alumnos;
+    expect(a1.desconectado).toBeUndefined();
+    expect(a2.desconectado).toBe(true);
+  });
 });
