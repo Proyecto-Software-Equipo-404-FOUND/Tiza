@@ -97,7 +97,7 @@ export const handlersMateriales = [
     });
   }),
 
- // Baja lógica en el backend; el mock la quita de la lista
+  // Baja lógica en el backend; el mock la quita de la lista
   http.delete('*/api/v1/cursos/:cursoId/materiales/:id', ({ params }) => {
     const indice = materiales.findIndex((m) => m.id === params.id && m.cursoId === params.cursoId);
     if (indice === -1) return problema(404, 'Material no encontrado.');
