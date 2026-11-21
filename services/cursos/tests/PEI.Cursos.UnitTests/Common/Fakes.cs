@@ -155,6 +155,22 @@ public class FakeMatriculacionRepository : IMatriculacionRepository
         return Task.FromResult(matriculacion);
     }
 
+    public Task<bool> ExisteActivaEnOtraCohorteAsync(Guid cursoId, Guid alumnoId, Guid cohorteId, CancellationToken cancellationToken = default) =>
+        Task.FromResult(Items.Any(m => m.CursoId == cursoId && m.AlumnoId == alumnoId
+            && m.CohorteId != cohorteId && m.Estado == PEI.Cursos.Domain.Enums.EstadoMatriculacion.Activa));
+
+    /// <summary>Nombres de comisión para ObtenerCohorteActivaEnOtraAsync (si falta, se usa "").</summary>
+    public Dictionary<Guid, string> NombresCohorte { get; } = new();
+
+    public Task<(Guid Id, string Nombre)?> ObtenerCohorteActivaEnOtraAsync(Guid cursoId, Guid alumnoId, Guid cohorteId, CancellationToken cancellationToken = default)
+    {
+        var actual = Items.FirstOrDefault(m => m.CursoId == cursoId && m.AlumnoId == alumnoId
+            && m.CohorteId != cohorteId && m.Estado == PEI.Cursos.Domain.Enums.EstadoMatriculacion.Activa);
+        return Task.FromResult<(Guid Id, string Nombre)?>(actual is null
+            ? null
+            : (actual.CohorteId, NombresCohorte.GetValueOrDefault(actual.CohorteId, string.Empty)));
+    }
+
     public Task<bool> ExisteMatriculacionAsync(Guid cohorteId, Guid alumnoId, CancellationToken cancellationToken = default)
     {
         var existe = Items.Any(m => m.CohorteId == cohorteId && m.AlumnoId == alumnoId);

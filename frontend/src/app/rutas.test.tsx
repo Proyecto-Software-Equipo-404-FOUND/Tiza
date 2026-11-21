@@ -63,6 +63,10 @@ vi.mock('@/features/revision-notas/api/entregas', () => ({
   obtenerEntrega: vi.fn().mockRejectedValue(new Error('sin backend en este test')),
 }));
 
+vi.mock('@/features/mis-examenes/api/misExamenes', () => ({
+  listarMisExamenes: vi.fn().mockResolvedValue([]),
+}));
+
 vi.mock('@/features/revision-notas/api/usuarios', () => ({
   listarAlumnos: vi.fn().mockResolvedValue([]),
 }));
@@ -185,6 +189,20 @@ describe('rutas de la aplicación', () => {
     mostrar('/sala');
     expect(await screen.findByRole('heading', { level: 1, name: 'Sala en vivo' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Sala en vivo' })).toBeInTheDocument();
+  });
+
+  it('un alumno entra a Mis exámenes y ve el enlace en el menú', async () => {
+    iniciarComo('alumno');
+    mostrar('/mis-examenes');
+    expect(await screen.findByRole('heading', { level: 1, name: 'Mis exámenes' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Mis exámenes' })).toBeInTheDocument();
+  });
+
+  it.each(['docente', 'administrador'] as const)('un %s no entra a Mis exámenes ni ve el enlace', (rol) => {
+    iniciarComo(rol);
+    mostrar('/mis-examenes');
+    expect(screen.getByText('No tenés permiso para ver esta página.')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Mis exámenes' })).not.toBeInTheDocument();
   });
 
   it('un docente no entra a la sala del alumno', () => {

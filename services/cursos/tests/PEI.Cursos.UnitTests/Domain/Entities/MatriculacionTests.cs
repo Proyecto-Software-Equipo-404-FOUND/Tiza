@@ -19,7 +19,7 @@ public class MatriculacionTests
         var alumnoId = Guid.NewGuid();
 
         // Act
-        var matriculacion = new Matriculacion(institucionId, cohorteId, alumnoId);
+        var matriculacion = new Matriculacion(institucionId, cohorteId, alumnoId, Guid.NewGuid());
 
         // Assert
         Assert.NotEqual(Guid.Empty, matriculacion.Id);
@@ -37,22 +37,22 @@ public class MatriculacionTests
     {
         // Assert: Institucion vacía
         Assert.Throws<DomainException>(() =>
-            new Matriculacion(Guid.Empty, Guid.NewGuid(), Guid.NewGuid()));
+            new Matriculacion(Guid.Empty, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()));
 
         // Assert: Cohorte vacía
         Assert.Throws<DomainException>(() =>
-            new Matriculacion(Guid.NewGuid(), Guid.Empty, Guid.NewGuid()));
+            new Matriculacion(Guid.NewGuid(), Guid.Empty, Guid.NewGuid(), Guid.NewGuid()));
 
         // Assert: Alumno vacío
         Assert.Throws<DomainException>(() =>
-            new Matriculacion(Guid.NewGuid(), Guid.NewGuid(), Guid.Empty));
+            new Matriculacion(Guid.NewGuid(), Guid.NewGuid(), Guid.Empty, Guid.NewGuid()));
     }
 
     [Fact]
     public void DarDeBaja_DesdeEstadoActiva_DebeCambiarEstadoABajaYActualizarFechaUtc()
     {
         // Arrange
-        var matriculacion = new Matriculacion(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        var matriculacion = new Matriculacion(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
 
         // Act
         matriculacion.DarDeBaja();
@@ -66,7 +66,7 @@ public class MatriculacionTests
     public void DarDeBaja_SiYaEstaEnBaja_DebeLanzarInvalidOperationException()
     {
         // Arrange
-        var matriculacion = new Matriculacion(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        var matriculacion = new Matriculacion(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
         matriculacion.DarDeBaja();
 
         // Act & Assert
@@ -78,7 +78,7 @@ public class MatriculacionTests
     public void DarDeBaja_SobreMatriculacionCompletada_DebeLanzarInvalidOperationException()
     {
         // Arrange: Alumno que ya aprobó/completó la cursada
-        var matriculacion = new Matriculacion(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        var matriculacion = new Matriculacion(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
         matriculacion.Completar();
 
         // Act & Assert: No se puede dar de baja una cursada completada
@@ -90,7 +90,7 @@ public class MatriculacionTests
     public void Completar_DesdeEstadoActiva_DebeCambiarEstadoACompletadaYActualizarFechaUtc()
     {
         // Arrange
-        var matriculacion = new Matriculacion(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        var matriculacion = new Matriculacion(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
 
         // Act
         matriculacion.Completar();
@@ -104,7 +104,7 @@ public class MatriculacionTests
     public void Completar_SobreMatriculacionEnBaja_DebeLanzarDomainException()
     {
         // Arrange: Alumno dado de baja
-        var matriculacion = new Matriculacion(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        var matriculacion = new Matriculacion(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
         matriculacion.DarDeBaja();
 
         // Act & Assert: No se puede completar si está en baja
@@ -116,7 +116,7 @@ public class MatriculacionTests
     public void Reactivar_DesdeEstadoBaja_DebeRestablecerEstadoActivaYActualizarFechaUtc()
     {
         // Arrange
-        var matriculacion = new Matriculacion(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        var matriculacion = new Matriculacion(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
         matriculacion.DarDeBaja();
 
         // Act
@@ -131,11 +131,11 @@ public class MatriculacionTests
     public void Reactivar_SobreMatriculacionActivaOCompletada_DebeLanzarInvalidOperationException()
     {
         // Arrange 1: Activa
-        var matriculacionActiva = new Matriculacion(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        var matriculacionActiva = new Matriculacion(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
         Assert.Throws<InvalidOperationException>(() => matriculacionActiva.Reactivar());
 
         // Arrange 2: Completada
-        var matriculacionCompletada = new Matriculacion(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        var matriculacionCompletada = new Matriculacion(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
         matriculacionCompletada.Completar();
         Assert.Throws<InvalidOperationException>(() => matriculacionCompletada.Reactivar());
     }

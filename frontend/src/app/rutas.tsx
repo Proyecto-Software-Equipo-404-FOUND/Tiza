@@ -7,6 +7,7 @@ import { PaginaEditarEvaluacion } from '@/features/evaluaciones/pages/PaginaEdit
 import { PaginaEvaluacion } from '@/features/evaluaciones/pages/PaginaEvaluacion';
 import { PaginaEvaluaciones } from '@/features/evaluaciones/pages/PaginaEvaluaciones';
 import { PaginaNuevaEvaluacion } from '@/features/evaluaciones/pages/PaginaNuevaEvaluacion';
+import { PaginaMisExamenes } from '@/features/mis-examenes/PaginaMisExamenes';
 import { PaginaMatriculas } from '@/features/matriculas/PaginaMatriculas';
 import { PaginaEntrega } from '@/features/revision-notas/pages/PaginaEntrega';
 import { PaginaResultados } from '@/features/revision-notas/pages/PaginaResultados';
@@ -72,7 +73,10 @@ export const rutas: RouteObject[] = [
               {
                 // Solo alumnos
                 element: <RutaProtegida roles={['alumno']} />,
-                children: [{ path: '/sala', element: <PaginaSalaAlumno /> }],
+                children: [
+                  { path: '/sala', element: <PaginaSalaAlumno /> },
+                  { path: '/mis-examenes', element: <PaginaMisExamenes /> },
+                ],
               },
             ],
           },

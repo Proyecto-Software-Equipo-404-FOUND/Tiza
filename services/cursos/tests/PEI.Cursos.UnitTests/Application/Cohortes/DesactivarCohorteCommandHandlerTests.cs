@@ -99,7 +99,7 @@ public class DesactivarCohorteCommandHandlerTests
         var cursoId = Guid.NewGuid();
         var cohorte = new Cohorte(institucionId, cursoId, Guid.NewGuid(), "Comision Con Alumnos", "2026-1C");
         await _cohorteRepo.AddAsync(cohorte);
-        await _matriculacionRepo.AddAsync(new Matriculacion(institucionId, cohorte.Id, Guid.NewGuid()));
+        await _matriculacionRepo.AddAsync(new Matriculacion(institucionId, cohorte.Id, Guid.NewGuid(), cohorte.CursoId));
 
         var handler = new DesactivarCohorteCommandHandler(_cohorteRepo, _matriculacionRepo, _uow);
         var command = new DesactivarCohorteCommand(cursoId, cohorte.Id);
@@ -118,7 +118,7 @@ public class DesactivarCohorteCommandHandlerTests
         var cursoId = Guid.NewGuid();
         var cohorte = new Cohorte(institucionId, cursoId, Guid.NewGuid(), "Comision Vacia", "2026-1C");
         await _cohorteRepo.AddAsync(cohorte);
-        var matricula = new Matriculacion(institucionId, cohorte.Id, Guid.NewGuid());
+        var matricula = new Matriculacion(institucionId, cohorte.Id, Guid.NewGuid(), cohorte.CursoId);
         matricula.DarDeBaja();
         await _matriculacionRepo.AddAsync(matricula);
 

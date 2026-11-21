@@ -61,10 +61,10 @@ public static class DataSeeder
         var cohorteA1 = new Cohorte(InstitucionAId, CursoA1Id, DocenteAId, "Comisión 1A", "2026-2C");
         cohorteA1.AsignarId(CohorteA1Id);
 
-        var matriculaA1 = new Matriculacion(InstitucionAId, CohorteA1Id, Alumno1AId);
+        var matriculaA1 = new Matriculacion(InstitucionAId, CohorteA1Id, Alumno1AId, CursoA1Id);
         matriculaA1.AsignarId(MatriculacionA1Id);
 
-        var matriculaA2 = new Matriculacion(InstitucionAId, CohorteA1Id, Alumno2AId);
+        var matriculaA2 = new Matriculacion(InstitucionAId, CohorteA1Id, Alumno2AId, CursoA1Id);
         matriculaA2.AsignarId(MatriculacionA2Id);
 
         // Institución A: Curso secundario activo sin cohortes (para probar filtros y listas vacías)
@@ -78,10 +78,10 @@ public static class DataSeeder
         var cohorteB1 = new Cohorte(InstitucionBId, CursoB1Id, DocenteBId, "Comisión 1B", "2026-2C");
         cohorteB1.AsignarId(CohorteB1Id);
 
-        var matriculaB1 = new Matriculacion(InstitucionBId, CohorteB1Id, Alumno1BId);
+        var matriculaB1 = new Matriculacion(InstitucionBId, CohorteB1Id, Alumno1BId, CursoB1Id);
         matriculaB1.AsignarId(MatriculacionB1Id);
 
-        var matriculaB2 = new Matriculacion(InstitucionBId, CohorteB1Id, Alumno2BId);
+        var matriculaB2 = new Matriculacion(InstitucionBId, CohorteB1Id, Alumno2BId, CursoB1Id);
         matriculaB2.AsignarId(MatriculacionB2Id);
 
         // Institución B: Curso secundario dado de baja lógica (para validar filtro de activos)

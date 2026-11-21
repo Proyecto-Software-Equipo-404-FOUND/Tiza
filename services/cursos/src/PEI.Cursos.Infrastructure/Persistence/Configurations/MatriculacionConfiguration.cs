@@ -9,6 +9,9 @@ Mapea la tabla "Matriculaciones" en PostgreSQL, persistiendo el enum EstadoMatri
 como VARCHAR(30) y asegurando que un alumno no se matricule dos veces en la misma cohorte. */
 public class MatriculacionConfiguration : IEntityTypeConfiguration<Matriculacion>
 {
+    internal const string UnaActivaPorCurso = "UX_Matriculaciones_Activa_Institucion_Curso_Alumno";
+    internal const string UnaPorCohorte = "IX_Matriculaciones_CohorteId_AlumnoId";
+
     public void Configure(EntityTypeBuilder<Matriculacion> builder)
     {
         builder.ToTable("Matriculaciones");
@@ -52,12 +55,19 @@ public class MatriculacionConfiguration : IEntityTypeConfiguration<Matriculacion
 
         // Índice único compuesto: impide la doble matriculación de un alumno en una misma cohorte.
         builder.HasIndex(m => new { m.CohorteId, m.AlumnoId })
+            .HasDatabaseName(UnaPorCohorte)
             .IsUnique();
+
+        builder.HasIndex(m => new { m.InstitucionId, m.CursoId, m.AlumnoId })
+            .HasDatabaseName(UnaActivaPorCurso)
+            .IsUnique()
+            .HasFilter("\"Estado\" = 'Activa'");
 
         // Relación N a 1 con Cohorte.
         builder.HasOne(m => m.Cohorte)
             .WithMany(c => c.Matriculaciones)
-            .HasForeignKey(m => m.CohorteId)
+            .HasForeignKey(m => new { m.InstitucionId, m.CursoId, m.CohorteId })
+            .HasPrincipalKey(c => new { c.InstitucionId, c.CursoId, c.Id })
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
