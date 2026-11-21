@@ -42,6 +42,20 @@ namespace PEI.SalaEnVivo.UnitTests
         }
 
         [Fact]
+        public async Task Handle_SalaInexistente_RespondeSalaNoEncontradaAunqueElRelojDigaVencida()
+        {
+            // El estado de la sala se revisa antes que el reloj (revisión de la #255).
+            _cronometroService.ForzarVencida = true;
+            var command = new EnviarRespuestaCommand(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+                Guid.NewGuid(), "Respuesta", Guid.NewGuid(), 1);
+
+            var resultado = await CrearHandler().Handle(command, CancellationToken.None);
+
+            Assert.Equal("Rechazada", resultado.Estado);
+            Assert.Equal("SALA_NO_ENCONTRADA", resultado.Error!.Codigo);
+        }
+
+        [Fact]
         public async Task S2QA01_DosEnviosConMismaClave_PersistenUnaSolaRespuesta()
         {
             var salaId = Guid.NewGuid();

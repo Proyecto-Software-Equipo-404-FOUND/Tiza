@@ -23,7 +23,7 @@
           "Salas"
         ],
         "summary": "Abre una sala en vivo para una evaluación publicada y genera su PIN.",
-        "description": "Solo Docente o Administrador. La institución se toma del claim institucion_id del token, NUNCA del cuerpo. La evaluación tiene que existir, estar Publicada y ser de la misma institución (se consulta a Evaluaciones). Genera un PIN de 6 dígitos único entre las salas activas. La sala vence duracionMinutos después de creada (por defecto 120; FechaVencimiento). Estado inicial: Activa (esperando alumnos); pasa a EnCurso con IniciarSala y a Finalizada con FinalizarSala por el hub.",
+        "description": "Solo Docente o Administrador. La institución se toma del claim institucion_id del token, NUNCA del cuerpo. La evaluación tiene que existir, estar Publicada y ser de la misma institución (se consulta a Evaluaciones). Genera un PIN de 6 dígitos único entre las salas activas. El examen dura duracionMinutos (por defecto 120) contados desde que el docente inicia la sala, no desde que se crea (S3-SA-02, #239): la respuesta trae fechaVencimiento = null hasta IniciarSala. Si la sala nunca se inicia, el PIN deja de valer a las 24 h de creada (ver §13.2 de sala-hub-v1.md). Estado inicial: Activa (esperando alumnos); pasa a EnCurso con IniciarSala y a Finalizada con FinalizarSala por el hub.",
         "operationId": "CrearSala",
         "security": [
           {

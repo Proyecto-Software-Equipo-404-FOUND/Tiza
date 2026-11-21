@@ -147,6 +147,9 @@ namespace PEI.SalaEnVivo.Infrastructure.Persistence.Migrations
                     b.Property<int>("CodigoPIN")
                         .HasColumnType("integer");
 
+                    b.Property<int>("DuracionMinutos")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("EntregaPendiente")
                         .HasColumnType("boolean");
 
@@ -161,6 +164,9 @@ namespace PEI.SalaEnVivo.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("FinalizadaUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("IniciadaUtc")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("IndicePreguntaActual")

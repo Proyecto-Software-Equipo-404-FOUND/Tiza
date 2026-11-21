@@ -1303,3 +1303,5 @@ Matriz de autorización (se suma a la 4.2):
   el front muestra la duración completa sin correr.
 - Una sala que no se inició no tiene reloj de examen. Si nunca se inicia, el PIN deja de valer
   a las 24 horas de creada (plazo máximo para iniciar); el docente la puede finalizar antes.
+- `IniciarSala()` sobre una sala que pasó esas 24 horas sin iniciarse responde `SALA_VENCIDA`:
+  el docente tiene que crear una sala nueva.
