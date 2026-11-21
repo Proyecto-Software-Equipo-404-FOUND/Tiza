@@ -44,13 +44,26 @@ function PanelSala({ sala, conexion: conexionInyectada, onAbrirOtra }: PropsPane
   const { estado, reintentar } = useConexionSala(conexion);
   const [modal, setModal] = useState<'finalizar' | 'otra' | null>(null);
 
-  const { fase, recibioEstado, alumnos, totalConectados, pregunta, fechaLimiteSala, desfaseMs, motivoCierre } = sala_;
+  const {
+    fase,
+    recibioEstado,
+    alumnos,
+    totalConectados,
+    pregunta,
+    fechaLimiteSala,
+    duracionMinutosServidor,
+    desfaseMs,
+    motivoCierre,
+  } = sala_;
   const finalizada = fase === 'finalizada';
   // Hasta que llega el primer estadoSala, `fase` es solo el valor inicial: al recargar en plena sala no hay que
   // mostrar la duración quieta. Solo aplica si la sala trae duracionMinutos (una sala sin él ya tiene su fecha límite).
   const esperandoEstado = fase === 'espera' && !recibioEstado && !!sala.duracionMinutos;
+  // La duración de la sala guardada manda; si no la trae (sala guardada antes del Sprint 3), se usa la que informa el
+  // servidor en estadoSala
+  const duracionMinutos = sala.duracionMinutos ?? duracionMinutosServidor ?? undefined;
   // Hasta que el docente inicia, el reloj no corre: se muestra la duración completa (el fin se fija al iniciar)
-  const duracionEnEspera = fase === 'espera' && sala.duracionMinutos ? sala.duracionMinutos * 60 : undefined;
+  const duracionEnEspera = fase === 'espera' && duracionMinutos ? duracionMinutos * 60 : undefined;
   const limiteDeSala = fechaLimiteSala ?? sala.fechaVencimiento;
 
   const pedirOtraSala = () => {

@@ -360,6 +360,24 @@ describe('PaginaSalaDocente', () => {
     expect(screen.queryByRole('timer', { name: /^Sala:/ })).not.toBeInTheDocument();
   });
 
+  it('si la sala guardada no trae duracionMinutos, usa la que informa el servidor en estadoSala', async () => {
+    const { simular } = await renderizarPanel({ ...salaSinIniciar(), duracionMinutos: undefined });
+
+    act(() =>
+      simular('estadoSala', {
+        salaId: SALA_ID,
+        estado: 'Activa',
+        fechaLimiteUtc: null,
+        duracionMinutos: 75,
+        iniciadaUtc: null,
+        servidorUtc: new Date().toISOString(),
+      }),
+    );
+
+    expect(screen.getByRole('timer', { name: 'Duración: 75:00' })).toBeInTheDocument();
+    expect(screen.queryByRole('timer', { name: /^Sala:/ })).not.toBeInTheDocument();
+  });
+
   it('mientras no llega el estado de la sala no muestra ningún reloj', async () => {
     await renderizarPanel(salaSinIniciar());
 
