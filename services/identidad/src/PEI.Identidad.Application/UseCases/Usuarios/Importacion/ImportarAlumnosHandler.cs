@@ -1,17 +1,40 @@
 using System.ComponentModel.DataAnnotations;
 using System.Data.Common;
 using PEI.Identidad.Application.Abstractions;
+using PEI.Identidad.Application.Interfaces.Security;
 
 namespace PEI.Identidad.Application.UseCases.Usuarios.Importacion;
 
-public sealed class ImportarAlumnosHandler(IImportacionAlumnosDataAccess data)
+public sealed class ImportarAlumnosHandler(IImportacionAlumnosDataAccess data, IPasswordHasher? hasher = null)
 {
+    // S2-ID-02 (#135): mismas reglas que el registro (RegisterCommand): 8 caracteres o más y 72 bytes o menos.
+    public const int ContrasenaMinima = 8;
+    public const int ContrasenaMaximaBytes = 72;
+
+    /// <summary>null si la contraseña inicial es válida; si no, el motivo.</summary>
+    public static string? ValidarContrasenaInicial(string contrasena) =>
+        contrasena.Length < ContrasenaMinima || System.Text.Encoding.UTF8.GetByteCount(contrasena) > ContrasenaMaximaBytes
+            ? $"La contraseña inicial tiene que tener al menos {ContrasenaMinima} caracteres (y no más de {ContrasenaMaximaBytes} bytes)."
+            : null;
+
     public async Task<ResultadoImportacionAlumnos> HandleAsync(
         Guid administradorId,
         Guid institucionId,
         IReadOnlyList<FilaAlumnoCsv> filas,
-        CancellationToken ct)
+        CancellationToken ct,
+        string? contrasenaInicial = null)
     {
+        // Con contraseña inicial los alumnos quedan activos y pueden entrar sin el mail de activación.
+        // Se hashea una vez (BCrypt es lento a propósito) y se usa el mismo hash para todas las filas.
+        string? passwordHash = null;
+        if (!string.IsNullOrEmpty(contrasenaInicial))
+        {
+            if (ValidarContrasenaInicial(contrasenaInicial) is { } motivoContrasena)
+                throw new ArgumentException(motivoContrasena, nameof(contrasenaInicial));
+            passwordHash = (hasher ?? throw new InvalidOperationException("Falta el hasher de contraseñas."))
+                .Hash(contrasenaInicial);
+        }
+
         var creados = 0;
         var omitidos = 0;
         var errores = new List<ErrorImportacionAlumno>();
@@ -39,7 +62,9 @@ public sealed class ImportarAlumnosHandler(IImportacionAlumnosDataAccess data)
                     continue;
                 }
 
-                var resultado = await data.CrearPendienteAsync(administradorId, institucionId, nombre, apellido, email, ct);
+                var resultado = passwordHash is null
+                    ? await data.CrearPendienteAsync(administradorId, institucionId, nombre, apellido, email, ct)
+                    : await data.CrearActivoAsync(administradorId, institucionId, nombre, apellido, email, passwordHash, ct);
                 if (resultado.Resultado == ResultadoAltaAlumno.Creado) creados++;
                 else omitidos++;
             }
