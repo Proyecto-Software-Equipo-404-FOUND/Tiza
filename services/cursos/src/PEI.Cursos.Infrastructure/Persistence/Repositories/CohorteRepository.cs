@@ -87,4 +87,15 @@ public class CohorteRepository : ICohorteRepository
                         && c.Activo,
                       cancellationToken);
     }
+
+    public async Task<bool> ExisteDocenteEnCursoAsync(
+        Guid cursoId,
+        Guid docenteId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Cohortes
+            .AnyAsync(c => c.CursoId == cursoId
+                        && c.DocenteId == docenteId,
+                      cancellationToken);
+    }
 }

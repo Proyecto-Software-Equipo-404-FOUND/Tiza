@@ -17,4 +17,7 @@ public interface IResultadosRepositorio
     Task<List<CalificacionDocente>> ListarCalificacionesDocentePorEntregasAsync(List<Guid> entregaIds, CancellationToken ct);
     Task GuardarCalificacionDocenteAsync(CalificacionDocente calificacion, CancellationToken ct);
     Task GuardarCambiosAsync(CancellationToken ct);
+
+    // S3-EV-04 (#225): Mis exámenes del alumno
+    Task<List<(EntregaExamen Entrega, Evaluacion Evaluacion)>> ListarEntregasPorAlumnoAsync(Guid alumnoId, CancellationToken ct);
 }

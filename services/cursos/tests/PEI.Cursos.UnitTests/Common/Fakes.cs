@@ -49,9 +49,15 @@ public class FakeCursoRepository : ICursoRepository
         string? busqueda,
         int pagina,
         int tamanoPagina,
+        Guid? docenteId = null,
         CancellationToken cancellationToken = default)
     {
         var query = Items.AsQueryable();
+
+        if (docenteId.HasValue)
+        {
+            query = query.Where(c => c.Cohortes.Any(co => co.DocenteId == docenteId.Value));
+        }
 
         if (!string.IsNullOrWhiteSpace(area))
         {
@@ -141,6 +147,12 @@ public class FakeCohorteRepository : ICohorteRepository
     public Task<bool> ExisteDocenteEnCursoActivoAsync(Guid cursoId, Guid docenteId, CancellationToken cancellationToken = default)
     {
         var existe = Items.Any(c => c.CursoId == cursoId && c.DocenteId == docenteId && c.Activo);
+        return Task.FromResult(existe);
+    }
+
+    public Task<bool> ExisteDocenteEnCursoAsync(Guid cursoId, Guid docenteId, CancellationToken cancellationToken = default)
+    {
+        var existe = Items.Any(c => c.CursoId == cursoId && c.DocenteId == docenteId);
         return Task.FromResult(existe);
     }
 }

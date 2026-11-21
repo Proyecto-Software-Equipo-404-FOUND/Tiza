@@ -17,8 +17,11 @@ for (const [tenant, rol, alias, usuario] of [
   { email: `${usuario}@${tenant.toLowerCase()}.test`, password: '{{password}}' }, [
     `pm.test('Sesión institucional ${rol} ${tenant}', () => { const b=pm.response.json(); pm.expect(b.tokenType).to.eql('Bearer'); pm.expect(b.accessToken).to.be.a('string').and.not.empty; pm.collectionVariables.set('${alias}',b.accessToken); const c=JSON.parse(atob(b.accessToken.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); pm.expect(c.institucion_id).to.eql(pm.variables.get('tenant${tenant}')); pm.expect(c.role).to.eql('${rol}'); });`
   ], 'identidadUrl');
-request('QA04-01 A lista sólo sus cursos', 'GET', '/api/v1/cursos', 200, 'tokenA', null, [
+request('QA04-01 A lista sólo sus cursos', 'GET', '/api/v1/cursos', 200, 'adminA', null, [
   "pm.test('Exactamente los dos cursos A, ninguno B', () => {const b=pm.response.json(); pm.expect(b.totalItems).to.eql(2); pm.expect(b.items.map(x=>x.id).sort()).to.eql([pm.variables.get('cursoA'),pm.variables.get('cursoA2')].sort()); b.items.forEach(x=>pm.expect(x.institucionId).to.eql(pm.variables.get('tenantA')));});"
+]);
+request('S3-CU-01 Docente A ve solo los cursos que dicta', 'GET', '/api/v1/cursos', 200, 'tokenA', null, [
+  "pm.test('Solo curso A1 dictado por Docente A', () => {const b=pm.response.json(); pm.expect(b.totalItems).to.eql(1); pm.expect(b.items[0].id).to.eql(pm.variables.get('cursoA')); pm.expect(b.items[0].institucionId).to.eql(pm.variables.get('tenantA'));});"
 ]);
 request('QA04-02 A no lee curso B', 'GET', '/api/v1/cursos/{{cursoB}}', 404, 'tokenA', null, [
   "pm.test('No filtra atributos B', () => {pm.expect(pm.response.text()).not.to.include('Bases de Datos'); pm.expect(pm.response.text()).not.to.include(pm.variables.get('tenantB'));});"
@@ -67,7 +70,7 @@ request('EXTRA B conserva curso después de ataques', 'GET', '/api/v1/cursos/{{c
 request('EXTRA B conserva cohorte después de ataques', 'GET', '/api/v1/cursos/{{cursoB}}/cohortes', 200, 'tokenB', null, [
   "pm.test('Cohorte B no fue alterada',()=>{const b=pm.response.json();pm.expect(b).to.have.lengthOf(1);pm.expect(b[0].id).to.eql(pm.variables.get('cohorteB'));pm.expect(b[0].nombre).to.eql('Comisión 1B');pm.expect(b[0].periodo).to.eql('2026-2C');pm.expect(b[0].docenteId).to.eql(pm.variables.get('docenteB'));pm.expect(b[0].activo).to.eql(true);});"
 ]);
-request('EXTRA encabezado B no suplanta JWT A', 'GET', '/api/v1/cursos', 200, 'tokenA', null, [
+request('EXTRA encabezado B no suplanta JWT A', 'GET', '/api/v1/cursos', 200, 'adminA', null, [
   "pm.test('Header no cambia tenant',()=>{const b=pm.response.json();pm.expect(b.totalItems).to.eql(2);b.items.forEach(x=>pm.expect(x.institucionId).to.eql(pm.variables.get('tenantA')));});"
 ], 'cursosUrl', [{ key: 'X-Institucion-Id', value: '{{tenantB}}' }]);
 request('EXTRA rol Docente validado por Identidad', 'GET', '/api/auth/docente', 200, 'tokenA', null, [], 'identidadUrl');
