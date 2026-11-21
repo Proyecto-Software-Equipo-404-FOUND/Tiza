@@ -56,6 +56,9 @@ builder.Services.AddSingleton(builder.Configuration.GetSection("Institutional").
 builder.Services.AddScoped<IUsuariosConsultaDataAccess, UsuariosConsultaDataAccess>();
 builder.Services.AddScoped<ListarUsuariosHandler>();
 builder.Services.AddScoped<ObtenerUsuarioHandler>();
+builder.Services.AddScoped<IUsuariosModificacionDataAccess, UsuariosModificacionDataAccess>();
+builder.Services.AddScoped<PEI.Identidad.Application.UseCases.Usuarios.Estado.DarBajaUsuarioHandler>();
+builder.Services.AddScoped<PEI.Identidad.Application.UseCases.Usuarios.Estado.ReactivarUsuarioHandler>();
 builder.Services.AddIdentityAuthentication(builder.Configuration, builder.Environment);
 if (builder.Configuration.GetValue<bool>("DevelopmentTools:EnableTestTokens"))
 {
