@@ -14,6 +14,11 @@ public class EntregaExamen
     public decimal? NotaMultipleChoice { get; set; }
     public EstadoEntregaExamen Estado { get; set; }
     public DateTimeOffset FechaEntrega { get; set; }
+    public EstadoNotaEntrega EstadoNota { get; set; } = EstadoNotaEntrega.Sugerida;
+    public decimal? NotaFinal { get; set; }
+    public decimal? PuntajeMaximo { get; set; }
+    public DateTimeOffset? FechaAprobacionUtc { get; set; }
+    public Guid? DocenteAprobadorId { get; set; }
 
     // S2-EV-02 (#144): concurrencia optimista. El worker y el callback de IA pueden
     // modificar la misma entrega al mismo tiempo.

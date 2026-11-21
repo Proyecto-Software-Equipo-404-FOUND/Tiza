@@ -62,10 +62,6 @@ public class CohorteConfiguration : IEntityTypeConfiguration<Cohorte>
             .HasForeignKey(c => c.CursoId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Relación 1 a N con Matriculaciones con borrado restringido.
-        builder.HasMany(c => c.Matriculaciones)
-            .WithOne(m => m.Cohorte)
-            .HasForeignKey(m => m.CohorteId)
-            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasAlternateKey(c => new { c.InstitucionId, c.CursoId, c.Id });
     }
 }

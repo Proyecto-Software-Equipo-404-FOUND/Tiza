@@ -20,7 +20,7 @@ public class GetMatriculacionByIdQueryHandlerTests
         var institucionId = Guid.NewGuid();
         var cohorteId = Guid.NewGuid();
         var alumnoId = Guid.NewGuid();
-        var matriculacion = new Matriculacion(institucionId, cohorteId, alumnoId);
+        var matriculacion = new Matriculacion(institucionId, cohorteId, alumnoId, Guid.NewGuid());
         await _matriculacionRepo.AddAsync(matriculacion);
 
         var handler = new GetMatriculacionByIdQueryHandler(_matriculacionRepo);
