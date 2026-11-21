@@ -18,7 +18,10 @@ public record EntregaResumenDto(
     decimal? NotaSugeridaAbiertas,
     decimal? PuntajeMaximoAbiertas,
     DateTimeOffset FechaEntregaUtc,
-    AlertasFocoResumenDto AlertasFoco);
+    AlertasFocoResumenDto AlertasFoco,
+    string EstadoNota = "Sugerida",
+    decimal? NotaFinal = null,
+    DateTimeOffset? FechaAprobacionUtc = null);
 
 // S3-EV-01: Puntaje es lo que otorgó la IA; PuntajeMaximo, el máximo del criterio (puede faltar en calificaciones viejas).
 public record DesgloseCriterioDto(string Criterio, decimal Puntaje, decimal? PuntajeMaximo, string Comentario);
@@ -35,7 +38,9 @@ public record RespuestaEntregaDto(
     decimal? NotaSugerida,
     string? JustificacionIA,
     List<DesgloseCriterioDto>? DesglosePorCriterio,
-    string EstadoCorreccion);
+    string EstadoCorreccion,
+    decimal? PuntajeDocente = null,
+    string? ComentarioDocente = null);
 
 public record AlertaFocoDetalleDto(
     Guid? PreguntaId,
@@ -57,7 +62,10 @@ public record EntregaDetalleDto(
     DateTimeOffset FechaEntregaUtc,
     AlertasFocoResumenDto AlertasFoco,
     List<RespuestaEntregaDto> Respuestas,
-    List<AlertaFocoDetalleDto> Alertas);
+    List<AlertaFocoDetalleDto> Alertas,
+    string EstadoNota = "Sugerida",
+    decimal? NotaFinal = null,
+    DateTimeOffset? FechaAprobacionUtc = null);
 
 // Query para Listar Entregas
 public record ListarEntregasEvaluacionQuery(Guid EvaluacionId, Guid InstitucionId)
@@ -67,15 +75,7 @@ public record ListarEntregasEvaluacionQuery(Guid EvaluacionId, Guid InstitucionI
 public record ObtenerEntregaDetalleQuery(Guid EvaluacionId, Guid EntregaId, Guid InstitucionId)
     : IRequest<ResultadoOperacion<EntregaDetalleDto>>;
 
-// Interfaz propia para no tocar IEvaluacionRepositorio ni romper los tests
-public interface IResultadosRepositorio
-{
-    Task<Evaluacion?> ObtenerEvaluacionAsync(Guid evaluacionId, Guid institucionId, CancellationToken ct);
-    Task<List<EntregaExamen>> ListarEntregasPorEvaluacionAsync(Guid evaluacionId, Guid institucionId, CancellationToken ct);
-    Task<EntregaExamen?> ObtenerEntregaPorIdAsync(Guid evaluacionId, Guid entregaId, Guid institucionId, CancellationToken ct);
-    Task<List<CalificacionSugerida>> ListarCalificacionesPorEntregasAsync(List<Guid> entregaIds, CancellationToken ct);
-    Task<List<CalificacionSugerida>> ListarCalificacionesPorEntregaAsync(Guid entregaId, CancellationToken ct);
-}
+
 
 // Handler que usa IResultadosRepositorio
 public class ConsultarResultadosHandler :
@@ -104,11 +104,12 @@ public class ConsultarResultadosHandler :
 
         var entregaIds = entregas.Select(e => e.Id).ToList();
         var calificaciones = await _repositorio.ListarCalificacionesPorEntregasAsync(entregaIds, ct);
-
+        var calificacionesDocente = await _repositorio.ListarCalificacionesDocentePorEntregasAsync(entregaIds, ct);
         var resumenes = entregas.Select(entrega =>
         {
             var califsEntrega = calificaciones.Where(c => c.EntregaId == entrega.Id).ToList();
-            return MapearResumen(entrega, estructuraPreguntas, califsEntrega);
+            var califsDocenteEntrega = calificacionesDocente.Where(c => c.EntregaId == entrega.Id).ToList();
+            return MapearResumen(entrega, estructuraPreguntas, califsEntrega, califsDocenteEntrega);
         }).ToList();
 
         return ResultadoOperacion<List<EntregaResumenDto>>.Ok(resumenes);
@@ -131,10 +132,12 @@ public class ConsultarResultadosHandler :
         }
 
         var calificaciones = await _repositorio.ListarCalificacionesPorEntregaAsync(entrega.Id, ct);
-        var estructuraPreguntas = ParsearEstructuraPreguntas(evaluacion.PreguntasJson);
-        var resumen = MapearResumen(entrega, estructuraPreguntas, calificaciones);
+        var calificacionesDocente = await _repositorio.ListarCalificacionesDocentePorEntregaAsync(entrega.Id, ct);
 
-        var respuestas = MapearRespuestas(entrega.RespuestasJson, estructuraPreguntas, calificaciones);
+        var estructuraPreguntas = ParsearEstructuraPreguntas(evaluacion.PreguntasJson);
+        var resumen = MapearResumen(entrega, estructuraPreguntas, calificaciones, calificacionesDocente);
+
+        var respuestas = MapearRespuestas(entrega.RespuestasJson, estructuraPreguntas, calificaciones, calificacionesDocente);
         var alertas = MapearAlertasDetalle(entrega.AlertasFocoJson);
 
         var detalle = new EntregaDetalleDto(
@@ -150,7 +153,10 @@ public class ConsultarResultadosHandler :
             resumen.FechaEntregaUtc,
             resumen.AlertasFoco,
             respuestas,
-            alertas);
+            alertas,
+            resumen.EstadoNota,
+            resumen.NotaFinal,
+            resumen.FechaAprobacionUtc);
 
         return ResultadoOperacion<EntregaDetalleDto>.Ok(detalle);
     }
@@ -158,7 +164,8 @@ public class ConsultarResultadosHandler :
     private static EntregaResumenDto MapearResumen(
         EntregaExamen entrega,
         EstructuraPreguntasEvaluacion estructura,
-        List<CalificacionSugerida> calificaciones)
+        List<CalificacionSugerida> calificaciones,
+        List<CalificacionDocente>? calificacionesDocente = null)
     {
         var alertas = ParsearAlertas(entrega.AlertasFocoJson);
         var respondioAlgo = VerificarSiRespondioAlgo(entrega.RespuestasJson);
@@ -173,6 +180,19 @@ public class ConsultarResultadosHandler :
             }
         }
 
+        // S3-EV-03 (#224): Estado del ciclo de la nota
+        string estadoNota = "Sugerida";
+            if (entrega.EstadoNota == EstadoNotaEntrega.Aprobada || entrega.FechaAprobacionUtc.HasValue)
+            {
+                estadoNota = "Aprobada";
+            }
+            else if ((calificacionesDocente != null && calificacionesDocente.Count > 0) || entrega.EstadoNota == EstadoNotaEntrega.Editada)
+            {
+                estadoNota = "Editada";
+            }
+        decimal? notaFinal = estadoNota == "Aprobada" ? entrega.NotaFinal : null;
+        DateTimeOffset? fechaAprobacionUtc = entrega.FechaAprobacionUtc;
+
         return new EntregaResumenDto(
             entrega.Id,
             entrega.AlumnoId,
@@ -184,7 +204,10 @@ public class ConsultarResultadosHandler :
             notaSugeridaAbiertas,
             estructura.TienePreguntasAbiertas ? estructura.PuntajeMaximoAbiertas : null,
             entrega.FechaEntrega,
-            alertas);
+            alertas,
+            estadoNota,
+            notaFinal,
+            fechaAprobacionUtc);
     }
 
     private static AlertasFocoResumenDto ParsearAlertas(string alertasJson)
@@ -280,8 +303,11 @@ public class ConsultarResultadosHandler :
     private static List<RespuestaEntregaDto> MapearRespuestas(
         string respuestasJson,
         EstructuraPreguntasEvaluacion estructura,
-        List<CalificacionSugerida> calificaciones)
+        List<CalificacionSugerida> calificaciones,
+        List<CalificacionDocente>? calificacionesDocente = null)
     {
+        var docDict = (calificacionesDocente ?? new List<CalificacionDocente>())            
+            .ToDictionary(c => c.PreguntaId);
         var respuestasGuardadas = new Dictionary<Guid, (string? respuesta, string? opcionElegidaId)>();
         if (!string.IsNullOrWhiteSpace(respuestasJson))
         {
@@ -321,7 +347,7 @@ public class ConsultarResultadosHandler :
 
             if (p.Tipo == "OpcionMultiple")
             {
-                if (Guid.TryParse(opcionId, out var opcGuid) && p.Opciones.TryGetValue(opcGuid, out var opcionInfo))
+                if (!string.IsNullOrWhiteSpace(opcionId) && Guid.TryParse(opcionId, out var opcGuid) && p.Opciones.TryGetValue(opcGuid, out var opcionInfo))
                 {
                     opcionElegidaTexto = opcionInfo.Texto;
                     esCorrecta = opcionInfo.EsCorrecta;
@@ -356,6 +382,20 @@ public class ConsultarResultadosHandler :
                 }
             }
 
+            // S3-EV-03 (#224): Si el docente editó la nota, manda la calificación docente
+            decimal? puntajeDocente = null;
+            string? comentarioDocente = null;
+            if (docDict.TryGetValue(p.Id, out var califDocente))
+            {
+                puntajeDocente = califDocente.PuntajeDocente;
+                comentarioDocente = califDocente.ComentarioDocente;
+                estadoCorreccion = "Editada";
+                if (!string.IsNullOrWhiteSpace(califDocente.DesgloseJson))
+                {
+                    desglose = DesgloseCriterioLector.Leer(califDocente.DesgloseJson);
+                }
+            }
+            
             lista.Add(new RespuestaEntregaDto(
                 p.Id,
                 p.Enunciado,
@@ -368,7 +408,9 @@ public class ConsultarResultadosHandler :
                 notaSugerida,
                 justificacionIa,
                 desglose,
-                estadoCorreccion));
+                estadoCorreccion,
+                puntajeDocente,
+                comentarioDocente));
         }
 
         return lista;

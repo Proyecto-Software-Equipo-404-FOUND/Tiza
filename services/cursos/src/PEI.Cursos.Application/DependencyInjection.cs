@@ -49,12 +49,13 @@ public static class DependencyInjection
         services.AddScoped<IRequestHandler<GetMatriculacionByIdQuery, MatriculacionDto?>, GetMatriculacionByIdQueryHandler>();
         services.AddScoped<IRequestHandler<GetMatriculacionesByCohorteQuery, IReadOnlyList<MatriculacionDto>?>, GetMatriculacionesByCohorteQueryHandler>();
 
-        // Registrar Servicios y Handlers de Materiales (Caso de Uso S2-CU-01)
+        // Registrar Servicios y Handlers de Materiales (Casos de Uso S2-CU-01 y S3-CU-03)
         services.AddScoped<IAutorizacionMaterialService, AutorizacionMaterialService>();
         services.AddScoped<IRequestHandler<SubirMaterialCommand, MaterialCursoDto>, SubirMaterialCommandHandler>();
         services.AddScoped<IRequestHandler<EliminarMaterialCommand, bool>, EliminarMaterialCommandHandler>();
         services.AddScoped<IRequestHandler<ListarMaterialesPorCursoQuery, IReadOnlyList<MaterialCursoDto>>, ListarMaterialesPorCursoQueryHandler>();
         services.AddScoped<IRequestHandler<ObtenerTextoMaterialQuery, TextoMaterialDto>, ObtenerTextoMaterialQueryHandler>();
+        services.AddScoped<IRequestHandler<ObtenerTextoMaterialPublicoQuery, TextoMaterialDto>, ObtenerTextoMaterialPublicoQueryHandler>();
 
         return services;
     }

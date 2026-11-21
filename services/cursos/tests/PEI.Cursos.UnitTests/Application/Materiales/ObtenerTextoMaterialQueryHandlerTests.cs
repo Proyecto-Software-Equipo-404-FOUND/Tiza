@@ -59,6 +59,7 @@ public class ObtenerTextoMaterialQueryHandlerTests
         Assert.Equal("Resumen IA", resultado.Titulo);
         Assert.Equal(15, resultado.CantidadPaginas);
         Assert.Equal("Texto completo para generar preguntas de examen.", resultado.Texto);
+        Assert.True(resultado.TieneTexto);
     }
 
     [Fact]

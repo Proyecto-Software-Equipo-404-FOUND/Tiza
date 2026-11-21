@@ -1,14 +1,18 @@
+using PEI.Evaluaciones.Application.Evaluaciones.Queries.GetMisExamenes;
+using System.Security.Claims;
 using System.Text.Json;
 using MediatR;
-using Microsoft.AspNetCore.Mvc;
-using PEI.Evaluaciones.Application.Evaluaciones;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
+using PEI.Evaluaciones.Application.Correccion;
+using PEI.Evaluaciones.Application.Evaluaciones;
+
 
 namespace PEI.Evaluaciones.Api.Controllers;
 
 public record EvaluacionRequest(string Titulo, string Tipo, JsonElement PreguntasJson);
 public record PublicarEvaluacionRequest(int VersionEsperada, Guid CohorteId);
+public record EditarNotaRespuestaRequest(decimal Puntaje, string? Comentario, List<DesgloseItemDto>? DesglosePorCriterio);
 
 [ApiController]
 [Route("api/v1/evaluaciones")]
@@ -192,6 +196,97 @@ public class EvaluacionesController : ControllerBase
         return Ok(resultado.Valor);
     }
 
+    [HttpPut("{id:guid}/entregas/{entregaId:guid}/respuestas/{preguntaId:guid}/nota")]
+    public async Task<IActionResult> EditarNotaRespuesta(
+        Guid id,
+        Guid entregaId,
+        Guid preguntaId,
+        [FromBody] EditarNotaRespuestaRequest peticion,
+        CancellationToken ct)
+    {
+        if (!LeerSesion(out var sesion, out var error)) return error!;
+        if (!AccesoEvaluaciones.PuedeModificar(sesion.Rol))
+        {
+            return Problema(403, "Solo el docente que creó el examen puede editar la nota.", Array.Empty<string>());
+        }
+
+        var acceso = await ComprobarAcceso(id, sesion, ct);
+        if (acceso is not null) return acceso;
+
+        var resultado = await _mediador.Send(new EditarNotaRespuestaCommand(
+            id,
+            entregaId,
+            preguntaId,
+            sesion.InstitucionId,
+            sesion.UsuarioId,
+            sesion.Rol,
+            peticion.Puntaje,
+            peticion.Comentario,
+            peticion.DesglosePorCriterio), ct);
+
+        if (resultado.Tipo != TipoResultado.Ok)
+        {
+            return RespuestaError(resultado);
+        }
+
+        return Ok(resultado.Valor);
+    }
+
+    [HttpPost("{id:guid}/entregas/{entregaId:guid}/aprobacion")]
+    public async Task<IActionResult> AprobarNota(
+        Guid id,
+        Guid entregaId,
+        CancellationToken ct)
+    {
+        if (!LeerSesion(out var sesion, out var error)) return error!;
+        if (!AccesoEvaluaciones.PuedeModificar(sesion.Rol))
+        {
+            return Problema(403, "Solo el docente que creó el examen puede aprobar la nota.", Array.Empty<string>());
+        }
+
+        var acceso = await ComprobarAcceso(id, sesion, ct);
+        if (acceso is not null) return acceso;
+
+        var resultado = await _mediador.Send(new AprobarNotaEntregaCommand(
+            id,
+            entregaId,
+            sesion.InstitucionId,
+            sesion.UsuarioId,
+            sesion.Rol), ct);
+
+        if (resultado.Tipo != TipoResultado.Ok)
+        {
+            return RespuestaError(resultado);
+        }
+
+        return Ok(resultado.Valor);
+    }
+
+    [HttpGet("/api/v1/alumnos/me/evaluaciones")]
+    public async Task<IActionResult> ListarMisEvaluaciones(CancellationToken ct)
+    {
+        var usuarioClaim = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!Guid.TryParse(usuarioClaim, out var alumnoId))
+        {
+            return Problema(401, "No autenticado.", Array.Empty<string>());
+        }
+
+        var rol = User.FindFirst("role")?.Value ?? User.FindFirst(ClaimTypes.Role)?.Value;
+        if (!string.Equals(rol, "Alumno", StringComparison.OrdinalIgnoreCase))
+        {
+            return Problema(403, "Solo los alumnos tienen \"Mis exámenes\".", Array.Empty<string>());
+        }
+
+        var resultado = await _mediador.Send(new GetMisExamenesQuery(alumnoId, rol), ct);
+
+        if (resultado.Tipo != TipoResultado.Ok)
+        {
+            return Problema(400, resultado.Errores.FirstOrDefault() ?? "La peticion no es valida.", resultado.Errores);
+        }
+
+        return Ok(resultado.Valor);
+    }
+
     private sealed record Sesion(Guid InstitucionId, Guid UsuarioId, string? Rol);
 
     // Claims del contrato JwtInstitucional (identidad-v1.json): sub, institucion_id, role.
@@ -226,25 +321,40 @@ public class EvaluacionesController : ControllerBase
 
     private IActionResult RespuestaError<T>(ResultadoOperacion<T> resultado)
     {
+        var error = resultado.Errores.FirstOrDefault();
+        string? type = null;
+        if (error != null)
+        {
+            if (error.Contains("aprobada", StringComparison.OrdinalIgnoreCase))
+                type = "NOTA_YA_APROBADA";
+            else if (error.Contains("abiertas sin corregir", StringComparison.OrdinalIgnoreCase))
+                type = "FALTAN_CORRECCIONES";
+            else if (error.Contains("entre 0 y", StringComparison.OrdinalIgnoreCase))
+                type = "PUNTAJE_FUERA_DE_RANGO";
+        }
+
         return resultado.Tipo switch
         {
-            TipoResultado.NoEncontrado => Problema(404, "La evaluacion no existe.", resultado.Errores),
-            TipoResultado.Conflicto => Problema(409, "La operacion no se puede realizar en el estado actual.", resultado.Errores),
-            _ => Problema(400, "La peticion no es valida.", resultado.Errores)
+            TipoResultado.NoEncontrado => Problema(404, error ?? "La evaluacion no existe.", resultado.Errores),
+            TipoResultado.Conflicto => Problema(409, error ?? "La operacion no se puede realizar en el estado actual.", resultado.Errores, type),
+            _ => error != null && error.Contains("Solo el docente", StringComparison.OrdinalIgnoreCase)
+                ? Problema(403, error, resultado.Errores)
+                : Problema(400, error ?? "La peticion no es valida.", resultado.Errores, type)
         };
     }
 
-    private ObjectResult Problema(int estado, string titulo, IReadOnlyList<string> errores)
+    private ObjectResult Problema(int estado, string titulo, IReadOnlyList<string> errores, string? type = null)
     {
         var problema = new ProblemDetails
         {
             Status = estado,
             Title = titulo,
+            Type = type,
             Detail = errores.Count > 0 ? string.Join(" | ", errores) : null
         };
 
         problema.Extensions["errores"] = errores;
 
-        return new ObjectResult(problema) { StatusCode = estado };
+        return new ObjectResult(problema) { StatusCode = estado, ContentTypes = { "application/problem+json" } };
     }
 }
