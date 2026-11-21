@@ -60,6 +60,7 @@ namespace PEI.SalaEnVivo.Application.UseCases.Salas.Handlers
                 CodigoPIN = await CrearPIN(cancellationToken),
                 // S3-SA-02 (#239): el reloj del examen arranca al iniciar la sala, no acá.
                 DuracionMinutos = command.DuracionMinutos,
+                PermitirInvitados = command.PermitirInvitados,
                 FechaVencimiento = DateTime.UtcNow.Add(Sala.EsperaMaximaSinIniciar),
                 Estado = "Activa",
             };
