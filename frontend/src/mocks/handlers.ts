@@ -7,6 +7,7 @@ import { handlersCohortes } from './cohortes';
 import { handlersEvaluaciones } from './evaluaciones';
 import { handlersSalas } from './salas';
 import { handlersEntregas } from './entregas';
+import { handlersMetricas } from './metricas';
 import { handlersMisExamenes } from './misExamenes';
 import { handlersMateriales } from './materiales';
 
@@ -119,5 +120,6 @@ export const handlers = [
   ...handlersSalas,
   ...handlersEntregas,
   ...handlersMisExamenes,
+  ...handlersMetricas,
   ...handlersMateriales,
 ];
