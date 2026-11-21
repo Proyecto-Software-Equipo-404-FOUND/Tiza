@@ -11,7 +11,7 @@ Aisla las operaciones de consulta y almacenamiento sobre PostgreSQL (pei_cursos_
 public interface ICursoRepository
 {
     Task<Curso?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
-    Task<(IReadOnlyList<Curso> Items, int TotalItems)> GetPaginadosAsync(string? area, string? busqueda, int pagina, int tamanoPagina, CancellationToken cancellationToken = default);
+    Task<(IReadOnlyList<Curso> Items, int TotalItems)> GetPaginadosAsync(string? area, string? busqueda, int pagina, int tamanoPagina, Guid? docenteId = null, CancellationToken cancellationToken = default);
     Task AddAsync(Curso curso, CancellationToken cancellationToken = default);
     Task<bool> ExisteNombreAsync(string nombre, CancellationToken cancellationToken = default);
 }

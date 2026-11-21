@@ -1,3 +1,4 @@
+using PEI.Evaluaciones.Application.Evaluaciones.Queries.GetMisExamenes;
 using System.Security.Claims;
 using System.Text.Json;
 using MediatR;
@@ -256,6 +257,31 @@ public class EvaluacionesController : ControllerBase
         if (resultado.Tipo != TipoResultado.Ok)
         {
             return RespuestaError(resultado);
+        }
+
+        return Ok(resultado.Valor);
+    }
+
+    [HttpGet("/api/v1/alumnos/me/evaluaciones")]
+    public async Task<IActionResult> ListarMisEvaluaciones(CancellationToken ct)
+    {
+        var usuarioClaim = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!Guid.TryParse(usuarioClaim, out var alumnoId))
+        {
+            return Problema(401, "No autenticado.", Array.Empty<string>());
+        }
+
+        var rol = User.FindFirst("role")?.Value ?? User.FindFirst(ClaimTypes.Role)?.Value;
+        if (!string.Equals(rol, "Alumno", StringComparison.OrdinalIgnoreCase))
+        {
+            return Problema(403, "Solo los alumnos tienen \"Mis exámenes\".", Array.Empty<string>());
+        }
+
+        var resultado = await _mediador.Send(new GetMisExamenesQuery(alumnoId, rol), ct);
+
+        if (resultado.Tipo != TipoResultado.Ok)
+        {
+            return Problema(400, resultado.Errores.FirstOrDefault() ?? "La peticion no es valida.", resultado.Errores);
         }
 
         return Ok(resultado.Valor);
