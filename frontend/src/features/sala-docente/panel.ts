@@ -1,4 +1,12 @@
-import type { AlertaFocoEvento, AlumnoIngresoEvento, AlumnoPanel, PreguntaActual, SeveridadFoco } from './tipos';
+import type {
+  AlertaFocoEvento,
+  AlumnoIngresoEvento,
+  AlumnoPanel,
+  AlumnoSalioEvento,
+  AlumnosConectadosEvento,
+  PreguntaActual,
+  SeveridadFoco,
+} from './tipos';
 
 export const ALIAS_SIN_IDENTIFICAR = 'Alumno sin identificar';
 
@@ -33,11 +41,43 @@ export function registrarIngreso(alumnos: AlumnoPanel[], evento: AlumnoIngresoEv
       },
     ];
   }
-  return alumnos.map((alumno) =>
-    alumno.alumnoId === evento.alumnoId
-      ? { ...alumno, alias: evento.alias, ingresoUtc: alumno.ingresoUtc ?? evento.ingresoUtc }
-      : alumno,
-  );
+  return alumnos.map((alumno) => {
+    if (alumno.alumnoId !== evento.alumnoId) return alumno;
+    // Si estaba marcado como desconectado, al reconectarse vuelve a figurar como conectado
+    return { ...alumno, desconectado: undefined, alias: evento.alias, ingresoUtc: alumno.ingresoUtc ?? evento.ingresoUtc };
+  });
+}
+
+// Un alumno que sale no se saca de la lista (se conservan sus alertas): se marca como desconectado.
+// Si no estaba en la lista (salió y nunca lo vimos entrar) no se agrega.
+export function registrarSalida(alumnos: AlumnoPanel[], evento: AlumnoSalioEvento): AlumnoPanel[] {
+  return alumnos.map((alumno) => (alumno.alumnoId === evento.alumnoId ? { ...alumno, desconectado: true } : alumno));
+}
+
+// La foto de presencia manda sobre la lista: los que figuran en ella quedan conectados (se agregan si faltaban,
+// por ejemplo cuando el docente recargó la página) y los que ya no figuran quedan como desconectados.
+// Siempre se conservan las alertas que ya tenía cada alumno.
+export function aplicarFotoDePresencia(alumnos: AlumnoPanel[], foto: AlumnosConectadosEvento): AlumnoPanel[] {
+  const conectados = new Map(foto.alumnos.map((alumno) => [alumno.alumnoId, alumno]));
+  const conocidos = new Set(alumnos.map((alumno) => alumno.alumnoId));
+
+  const actualizados = alumnos.map((alumno): AlumnoPanel => {
+    const conectado = conectados.get(alumno.alumnoId);
+    if (!conectado) return { ...alumno, desconectado: true };
+    return { ...alumno, desconectado: undefined, alias: conectado.alias, ingresoUtc: alumno.ingresoUtc ?? conectado.ingresoUtc };
+  });
+  const nuevos = foto.alumnos
+    .filter((alumno) => !conocidos.has(alumno.alumnoId))
+    .map(
+      (alumno): AlumnoPanel => ({
+        alumnoId: alumno.alumnoId,
+        alias: alumno.alias,
+        ingresoUtc: alumno.ingresoUtc,
+        alertas: 0,
+        peorSeveridad: 'ninguna',
+      }),
+    );
+  return [...actualizados, ...nuevos];
 }
 
 export type ResultadoAlerta = { alumnos: AlumnoPanel[]; idsVistos: ReadonlySet<string> };

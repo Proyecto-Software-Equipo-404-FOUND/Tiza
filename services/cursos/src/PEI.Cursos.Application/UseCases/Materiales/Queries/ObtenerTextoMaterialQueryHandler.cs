@@ -38,12 +38,16 @@ public class ObtenerTextoMaterialQueryHandler : IRequestHandler<ObtenerTextoMate
             throw new KeyNotFoundException($"El material con ID '{request.Id}' no existe, fue dado de baja o no se encuentra listo.");
         }
 
-        // 4. Proyeccion al DTO de texto
+        // 4. Proyeccion al DTO de texto calculando la presencia de contenido legible
+        var tieneTexto = !string.IsNullOrWhiteSpace(material.TextoExtraido);
+        var texto = tieneTexto ? material.TextoExtraido! : string.Empty;
+
         return new TextoMaterialDto(
             material.Id,
             material.Titulo,
             material.CantidadPaginas,
-            material.TextoExtraido
+            texto,
+            tieneTexto
         );
     }
 }

@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ConexionSala } from '@/shared/realtime/tipos';
 import { codigoDeError, mensajeAccionSala } from '../errores';
-import { calcularDesfaseMs, registrarAlerta, registrarIngreso } from '../panel';
+import { aplicarFotoDePresencia, calcularDesfaseMs, registrarAlerta, registrarIngreso, registrarSalida } from '../panel';
 import type {
   AlertaFocoEvento,
   AlumnoIngresoEvento,
   AlumnoPanel,
+  AlumnoSalioEvento,
+  AlumnosConectadosEvento,
   EstadoSalaEvento,
   FaseSalaDocente,
   PreguntaActual,
@@ -47,6 +49,13 @@ export function useSalaDocente(conexion: ConexionSala, salaId: string) {
       // El total lo calcula el servidor: manda sobre el conteo local
       setTotalConectados(evento.totalConectados);
     });
+    conexion.escuchar('alumnoSalio', (carga) => {
+      if (!activo) return;
+      const evento = carga as AlumnoSalioEvento;
+      setLista((previa) => ({ ...previa, alumnos: registrarSalida(previa.alumnos, evento) }));
+      // El total lo calcula el servidor: manda sobre el conteo local
+      if (typeof evento.totalConectados === 'number') setTotalConectados(evento.totalConectados);
+    });
     conexion.escuchar('alertaFoco', (carga) => {
       if (!activo) return;
       const evento = carga as AlertaFocoEvento;
@@ -79,11 +88,16 @@ export function useSalaDocente(conexion: ConexionSala, salaId: string) {
         return { ...previo, [evento.preguntaId]: ids };
       });
     });
-    // Foto de presencia que manda el hub al unirse el docente: solo se usa el total
+    // Foto de presencia: la manda el hub cuando el docente se une o se reconecta (así, al recargar, la lista
+    // no arranca vacía) y cada vez que un alumno entra o sale. Manda sobre la lista y sobre el total.
     conexion.escuchar('alumnosConectados', (carga) => {
       if (!activo) return;
-      const total = (carga as { totalConectados?: unknown }).totalConectados;
-      if (typeof total === 'number') setTotalConectados(total);
+      const foto = carga as Partial<AlumnosConectadosEvento>;
+      if (Array.isArray(foto.alumnos)) {
+        const alumnosConectados = foto as AlumnosConectadosEvento;
+        setLista((previa) => ({ ...previa, alumnos: aplicarFotoDePresencia(previa.alumnos, alumnosConectados) }));
+      }
+      if (typeof foto.totalConectados === 'number') setTotalConectados(foto.totalConectados);
     });
     conexion.escuchar('salaFinalizada', (carga) => {
       if (!activo) return;

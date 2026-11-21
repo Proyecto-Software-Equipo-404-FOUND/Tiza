@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using PEI.Cursos.Application.Interfaces;
+using PEI.Cursos.Domain.Enums;
 
 namespace PEI.Cursos.Application.UseCases.Matriculaciones.Commands;
 
@@ -27,6 +28,10 @@ public class ReactivarMatriculacionCommandHandler : IRequestHandler<ReactivarMat
         {
             return false;
         }
+
+        if (matriculacion.Estado == EstadoMatriculacion.Baja &&
+            await _matriculacionRepository.ObtenerCohorteActivaEnOtraAsync(matriculacion.CursoId, matriculacion.AlumnoId, matriculacion.CohorteId, cancellationToken) is { } actual)
+            throw new AlumnoEnOtraComisionException(actual.Id, actual.Nombre);
 
         // 2. Ejecutar la reactivacion de la matriculacion en el dominio
         matriculacion.Reactivar();

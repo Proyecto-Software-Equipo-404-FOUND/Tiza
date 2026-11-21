@@ -21,7 +21,7 @@ public class DarDeBajaMatriculacionCommandHandlerTests
         // Arrange
         var institucionId = Guid.NewGuid();
         var cohorteId = Guid.NewGuid();
-        var matriculacion = new Matriculacion(institucionId, cohorteId, Guid.NewGuid());
+        var matriculacion = new Matriculacion(institucionId, cohorteId, Guid.NewGuid(), Guid.NewGuid());
         await _matriculacionRepo.AddAsync(matriculacion);
 
         var handler = new DarDeBajaMatriculacionCommandHandler(_matriculacionRepo, _uow);
@@ -58,7 +58,7 @@ public class DarDeBajaMatriculacionCommandHandlerTests
         var institucionId = Guid.NewGuid();
         var cohorteIdReal = Guid.NewGuid();
         var cohorteIdIntento = Guid.NewGuid();
-        var matriculacion = new Matriculacion(institucionId, cohorteIdReal, Guid.NewGuid());
+        var matriculacion = new Matriculacion(institucionId, cohorteIdReal, Guid.NewGuid(), Guid.NewGuid());
         await _matriculacionRepo.AddAsync(matriculacion);
 
         var handler = new DarDeBajaMatriculacionCommandHandler(_matriculacionRepo, _uow);
@@ -78,7 +78,7 @@ public class DarDeBajaMatriculacionCommandHandlerTests
     {
         // Arrange
         var cohorteId = Guid.NewGuid();
-        var matriculacion = new Matriculacion(Guid.NewGuid(), cohorteId, Guid.NewGuid());
+        var matriculacion = new Matriculacion(Guid.NewGuid(), cohorteId, Guid.NewGuid(), Guid.NewGuid());
         matriculacion.DarDeBaja();
         await _matriculacionRepo.AddAsync(matriculacion);
 
@@ -96,7 +96,7 @@ public class DarDeBajaMatriculacionCommandHandlerTests
     {
         // Arrange: Cursada ya finalizada y completada no permite baja
         var cohorteId = Guid.NewGuid();
-        var matriculacion = new Matriculacion(Guid.NewGuid(), cohorteId, Guid.NewGuid());
+        var matriculacion = new Matriculacion(Guid.NewGuid(), cohorteId, Guid.NewGuid(), Guid.NewGuid());
         matriculacion.Completar();
         await _matriculacionRepo.AddAsync(matriculacion);
 

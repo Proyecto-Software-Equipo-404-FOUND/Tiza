@@ -62,4 +62,55 @@ public class ResultadosRepositorio : IResultadosRepositorio
             .Where(c => c.EntregaId == entregaId)
             .ToListAsync(ct);
     }
+
+    public Task<CalificacionDocente?> ObtenerCalificacionDocenteAsync(
+        Guid entregaId,
+        Guid preguntaId,
+        CancellationToken ct)
+    {
+        return _contexto.CalificacionesDocente
+            .FirstOrDefaultAsync(c => c.EntregaId == entregaId && c.PreguntaId == preguntaId, ct);
+    }
+
+    public Task<List<CalificacionDocente>> ListarCalificacionesDocentePorEntregaAsync(
+        Guid entregaId,
+        CancellationToken ct)
+    {
+        return _contexto.CalificacionesDocente
+            .AsNoTracking()
+            .Where(c => c.EntregaId == entregaId)
+            .ToListAsync(ct);
+    }
+
+    public Task<List<CalificacionDocente>> ListarCalificacionesDocentePorEntregasAsync(
+        List<Guid> entregaIds,
+        CancellationToken ct)
+    {
+        return _contexto.CalificacionesDocente
+            .AsNoTracking()
+            .Where(c => entregaIds.Contains(c.EntregaId))
+            .ToListAsync(ct);
+    }
+
+    public async Task GuardarCalificacionDocenteAsync(CalificacionDocente calificacion, CancellationToken ct)
+    {
+        var existente = await _contexto.CalificacionesDocente
+            .FirstOrDefaultAsync(c => c.EntregaId == calificacion.EntregaId && c.PreguntaId == calificacion.PreguntaId, ct);
+
+        if (existente is null)
+        {
+            await _contexto.CalificacionesDocente.AddAsync(calificacion, ct);
+        }
+        else
+        {
+            existente.PuntajeDocente = calificacion.PuntajeDocente;
+            existente.ComentarioDocente = calificacion.ComentarioDocente;
+            existente.DesgloseJson = calificacion.DesgloseJson;
+            existente.FechaEdicionUtc = calificacion.FechaEdicionUtc;
+        }
+
+        await _contexto.SaveChangesAsync(ct);
+    }
+
+    public Task GuardarCambiosAsync(CancellationToken ct) => _contexto.SaveChangesAsync(ct);
 }
