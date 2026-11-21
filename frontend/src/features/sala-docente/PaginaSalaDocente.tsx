@@ -222,9 +222,9 @@ export function PaginaSalaDocente({ conexion }: Props) {
   const [sala, setSala] = useState<SalaCreada | null>(() => recuperarSala(evaluacionId, usuarioId));
   const abrir = useAbrirSala();
 
-  const alAbrir = (capacidadMaxima: number, duracionMinutos: number) =>
+  const alAbrir = (capacidadMaxima: number, duracionMinutos: number, permitirInvitados: boolean) =>
     abrir.mutate(
-      { evaluacionId, capacidadMaxima, duracionMinutos },
+      { evaluacionId, capacidadMaxima, duracionMinutos, permitirInvitados },
       {
         onSuccess: (creada) => {
           guardarSala(evaluacionId, usuarioId, creada);

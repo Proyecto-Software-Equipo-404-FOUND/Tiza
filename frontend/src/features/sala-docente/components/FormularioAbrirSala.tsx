@@ -19,7 +19,7 @@ type Props = {
   cargando: boolean;
   /** Mensaje de error del servidor al intentar abrir la sala */
   error?: string | null;
-  onAbrir: (capacidadMaxima: number, duracionMinutos: number) => void;
+  onAbrir: (capacidadMaxima: number, duracionMinutos: number, permitirInvitados: boolean) => void;
 };
 
 export function FormularioAbrirSala({ cargando, error, onAbrir }: Props) {
@@ -27,6 +27,8 @@ export function FormularioAbrirSala({ cargando, error, onAbrir }: Props) {
   const [errorCampo, setErrorCampo] = useState<string | undefined>();
   const [textoDuracion, setTextoDuracion] = useState(String(DURACION_POR_DEFECTO));
   const [errorDuracion, setErrorDuracion] = useState<string | undefined>();
+  // Por defecto la sala no admite invitados (contrato sala-en-vivo-v1: permitirInvitados = false)
+  const [permitirInvitados, setPermitirInvitados] = useState(false);
 
   const enviar = (evento: FormEvent) => {
     evento.preventDefault();
@@ -36,7 +38,7 @@ export function FormularioAbrirSala({ cargando, error, onAbrir }: Props) {
     setErrorCampo(capacidad.error);
     setErrorDuracion(duracion.error);
     if (capacidad.valor === null || duracion.valor === null) return;
-    onAbrir(capacidad.valor, duracion.valor);
+    onAbrir(capacidad.valor, duracion.valor, permitirInvitados);
   };
 
   return (
@@ -66,6 +68,21 @@ export function FormularioAbrirSala({ cargando, error, onAbrir }: Props) {
           error={errorDuracion}
           onChange={(evento) => setTextoDuracion(evento.target.value)}
         />
+        <label className='flex items-start gap-3 text-tiza-bosque'>
+          <input
+            type='checkbox'
+            checked={permitirInvitados}
+            onChange={(evento) => setPermitirInvitados(evento.target.checked)}
+            disabled={cargando}
+            className='mt-1 h-5 w-5 shrink-0'
+          />
+          <span>
+            <span className='font-semibold'>Permitir invitados</span>
+            <span className='block text-sm text-tiza-bosque/70'>
+              Quienes no tienen cuenta pueden entrar con el PIN y su nombre.
+            </span>
+          </span>
+        </label>
         {error && <BannerError mensaje={error} />}
         <Boton type='submit' cargando={cargando} className='inline-flex items-center justify-center gap-2'>
           <DoorOpen className='h-5 w-5' aria-hidden='true' />

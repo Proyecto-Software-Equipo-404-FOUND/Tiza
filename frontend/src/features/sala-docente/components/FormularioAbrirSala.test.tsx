@@ -8,7 +8,7 @@ describe('FormularioAbrirSala', () => {
     const onAbrir = vi.fn();
     render(<FormularioAbrirSala cargando={false} onAbrir={onAbrir} />);
     await userEvent.click(screen.getByRole('button', { name: 'Abrir sala' }));
-    expect(onAbrir).toHaveBeenCalledWith(40, 60);
+    expect(onAbrir).toHaveBeenCalledWith(40, 60, false);
   });
 
   it('no envía una capacidad fuera de rango y muestra el error', async () => {
@@ -44,7 +44,7 @@ describe('FormularioAbrirSala', () => {
     await userEvent.clear(campo);
     await userEvent.type(campo, '45');
     await userEvent.click(screen.getByRole('button', { name: 'Abrir sala' }));
-    expect(onAbrir).toHaveBeenCalledWith(40, 45);
+    expect(onAbrir).toHaveBeenCalledWith(40, 45, false);
   });
 
   it('no envía una duración fuera de rango', async () => {
@@ -56,5 +56,23 @@ describe('FormularioAbrirSala', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Abrir sala' }));
     expect(screen.getByRole('alert')).toHaveTextContent('entre 5 y 240');
     expect(onAbrir).not.toHaveBeenCalled();
+  });
+
+  it('por defecto la sala no admite invitados', () => {
+    render(<FormularioAbrirSala cargando={false} onAbrir={vi.fn()} />);
+    expect(screen.getByRole('checkbox', { name: /Permitir invitados/ })).not.toBeChecked();
+  });
+
+  it('con «Permitir invitados» tildado abre la sala admitiendo invitados', async () => {
+    const onAbrir = vi.fn();
+    render(<FormularioAbrirSala cargando={false} onAbrir={onAbrir} />);
+    await userEvent.click(screen.getByRole('checkbox', { name: /Permitir invitados/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir sala' }));
+    expect(onAbrir).toHaveBeenCalledWith(40, 60, true);
+  });
+
+  it('mientras carga no se puede cambiar «Permitir invitados»', () => {
+    render(<FormularioAbrirSala cargando onAbrir={vi.fn()} />);
+    expect(screen.getByRole('checkbox', { name: /Permitir invitados/ })).toBeDisabled();
   });
 });

@@ -100,7 +100,7 @@ describe('PaginaSalaDocente', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Abrir sala' }));
 
     expect(mutate).toHaveBeenCalledWith(
-      { evaluacionId: EVALUACION, capacidadMaxima: 40, duracionMinutos: 60 },
+      { evaluacionId: EVALUACION, capacidadMaxima: 40, duracionMinutos: 60, permitirInvitados: false },
       expect.any(Object),
     );
   });
