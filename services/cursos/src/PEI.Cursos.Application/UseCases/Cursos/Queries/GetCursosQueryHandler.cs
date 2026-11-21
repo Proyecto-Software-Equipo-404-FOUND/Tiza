@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using PEI.BuildingBlocks.MultiTenancy;
 using PEI.Cursos.Application.Common.DTOs;
 using PEI.Cursos.Application.DTOs.Cursos;
 using PEI.Cursos.Application.Interfaces;
@@ -14,21 +15,37 @@ Recupera cursos paginados desde el repositorio y los envuelve en el contenedor g
 public class GetCursosQueryHandler : IRequestHandler<GetCursosQuery, ResultadoPaginadoDTO<CursoDto>>
 {
     private readonly ICursoRepository _cursoRepository;
+    private readonly ITenantContext? _tenantContext;
 
     public GetCursosQueryHandler(ICursoRepository cursoRepository)
+        : this(cursoRepository, null)
+    {
+    }
+
+    public GetCursosQueryHandler(ICursoRepository cursoRepository, ITenantContext? tenantContext)
     {
         _cursoRepository = cursoRepository;
+        _tenantContext = tenantContext;
     }
 
     public async Task<ResultadoPaginadoDTO<CursoDto>> HandleAsync(GetCursosQuery request, CancellationToken cancellationToken = default)
     {
-        // 1. Obtener cursos paginados y conteo total desde el repositorio filtrado por tenant
+        // 1. Determinar si se debe filtrar por docente segun el rol del usuario autenticado
+        Guid? docenteId = null;
+        if (_tenantContext is not null &&
+            string.Equals(_tenantContext.Rol, "Docente", StringComparison.OrdinalIgnoreCase))
+        {
+            docenteId = _tenantContext.UsuarioId;
+        }
+
+        // 2. Obtener cursos paginados y conteo total desde el repositorio filtrado por tenant y docente
         var (cursos, totalItems) = await _cursoRepository.GetPaginadosAsync(
             request.Area,
             request.Busqueda,
             request.Pagina,
             request.TamanoPagina,
-            cancellationToken
+            docenteId: docenteId,
+            cancellationToken: cancellationToken
         );
 
         // 2. Proyectar entidades de dominio a DTOs de salida inmutables
