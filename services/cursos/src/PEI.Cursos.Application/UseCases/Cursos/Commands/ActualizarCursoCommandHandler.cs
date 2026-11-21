@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using PEI.BuildingBlocks.MultiTenancy;
 using PEI.Cursos.Application.DTOs.Cursos;
 using PEI.Cursos.Application.Interfaces;
 
@@ -13,26 +12,13 @@ public class ActualizarCursoCommandHandler : IRequestHandler<ActualizarCursoComm
 {
     private readonly ICursoRepository _cursoRepository;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ICohorteRepository? _cohorteRepository;
-    private readonly ITenantContext? _tenantContext;
 
     public ActualizarCursoCommandHandler(
         ICursoRepository cursoRepository,
         IUnitOfWork unitOfWork)
-        : this(cursoRepository, unitOfWork, null, null)
-    {
-    }
-
-    public ActualizarCursoCommandHandler(
-        ICursoRepository cursoRepository,
-        IUnitOfWork unitOfWork,
-        ICohorteRepository? cohorteRepository,
-        ITenantContext? tenantContext)
     {
         _cursoRepository = cursoRepository;
         _unitOfWork = unitOfWork;
-        _cohorteRepository = cohorteRepository;
-        _tenantContext = tenantContext;
     }
 
     public async Task<CursoDto?> HandleAsync(ActualizarCursoCommand request, CancellationToken cancellationToken = default)
@@ -44,26 +30,7 @@ public class ActualizarCursoCommandHandler : IRequestHandler<ActualizarCursoComm
             return null;
         }
 
-        // 2. Regla anti-enumeracion: Si el rol es Docente, solo puede editar cursos donde dicta comisiones
-        if (_tenantContext is not null &&
-            string.Equals(_tenantContext.Rol, "Docente", StringComparison.OrdinalIgnoreCase))
-        {
-            if (_tenantContext.UsuarioId.HasValue && _cohorteRepository is not null)
-            {
-                var dictaCurso = await _cohorteRepository.ExisteDocenteEnCursoAsync(
-                    curso.Id,
-                    _tenantContext.UsuarioId.Value,
-                    cancellationToken
-                );
-
-                if (!dictaCurso)
-                {
-                    return null;
-                }
-            }
-        }
-
-        // 3. Si el nombre cambia, validar que no colisione con otro curso de la misma institucion
+        // 2. Si el nombre cambia, validar que no colisione con otro curso de la misma institucion
         var nombreTrim = request.Nombre.Trim();
         if (!curso.Nombre.Equals(nombreTrim, StringComparison.OrdinalIgnoreCase))
         {

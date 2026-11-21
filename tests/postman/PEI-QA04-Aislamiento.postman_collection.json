@@ -187,7 +187,7 @@
           },
           {
             "key": "Authorization",
-            "value": "Bearer {{tokenA}}"
+            "value": "Bearer {{adminA}}"
           }
         ],
         "url": "{{cursosUrl}}/api/v1/cursos"
@@ -200,6 +200,35 @@
             "exec": [
               "pm.test('HTTP esperado 200', () => pm.response.to.have.status(200));",
               "pm.test('Exactamente los dos cursos A, ninguno B', () => {const b=pm.response.json(); pm.expect(b.totalItems).to.eql(2); pm.expect(b.items.map(x=>x.id).sort()).to.eql([pm.variables.get('cursoA'),pm.variables.get('cursoA2')].sort()); b.items.forEach(x=>pm.expect(x.institucionId).to.eql(pm.variables.get('tenantA')));});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "S3-CU-01 Docente A ve solo los cursos que dicta",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenA}}"
+          }
+        ],
+        "url": "{{cursosUrl}}/api/v1/cursos"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP esperado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Solo curso A1 dictado por Docente A', () => {const b=pm.response.json(); pm.expect(b.totalItems).to.eql(1); pm.expect(b.items[0].id).to.eql(pm.variables.get('cursoA')); pm.expect(b.items[0].institucionId).to.eql(pm.variables.get('tenantA'));});"
             ]
           }
         }
@@ -1397,7 +1426,7 @@
           },
           {
             "key": "Authorization",
-            "value": "Bearer {{tokenA}}"
+            "value": "Bearer {{adminA}}"
           },
           {
             "key": "X-Institucion-Id",

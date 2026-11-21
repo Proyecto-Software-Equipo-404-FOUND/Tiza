@@ -259,10 +259,10 @@
             "description": "JWT ausente o inválido."
           },
           "403": {
-            "description": "Rol no autorizado. Roles permitidos: Administrador o Docente."
+            "description": "Rol no autorizado. Roles permitidos: Administrador."
           },
           "404": {
-            "description": "Curso no encontrado o ajeno al docente autenticado (anti-enumeración).",
+            "description": "Curso no encontrado.",
             "content": {
               "application/problem+json": {
                 "schema": {
