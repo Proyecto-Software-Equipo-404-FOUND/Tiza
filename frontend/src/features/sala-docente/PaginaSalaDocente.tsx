@@ -155,7 +155,7 @@ function PanelSala({ sala, conexion: conexionInyectada, onAbrirOtra }: PropsPane
                 <span
                   className={`min-w-0 break-words font-bold ${alumno.desconectado ? 'text-tiza-bosque/60' : 'text-tiza-bosque'}`}
                 >
-                  {alumno.alias}
+                  {alumno.esInvitado && alumno.nombre ? alumno.nombre : alumno.alias}
                 </span>
                 <span className='flex flex-wrap items-center gap-2'>
                   {alumno.desconectado && (

@@ -35,6 +35,7 @@ export function registrarIngreso(alumnos: AlumnoPanel[], evento: AlumnoIngresoEv
       {
         alumnoId: evento.alumnoId,
         alias: evento.alias,
+        ...(evento.esInvitado ? { esInvitado: true, nombre: evento.nombre } : {}),
         ingresoUtc: evento.ingresoUtc,
         alertas: 0,
         peorSeveridad: 'ninguna',
@@ -44,7 +45,13 @@ export function registrarIngreso(alumnos: AlumnoPanel[], evento: AlumnoIngresoEv
   return alumnos.map((alumno) => {
     if (alumno.alumnoId !== evento.alumnoId) return alumno;
     // Si estaba marcado como desconectado, al reconectarse vuelve a figurar como conectado
-    return { ...alumno, desconectado: undefined, alias: evento.alias, ingresoUtc: alumno.ingresoUtc ?? evento.ingresoUtc };
+    return {
+      ...alumno,
+      desconectado: undefined,
+      alias: evento.alias,
+      ...(evento.esInvitado ? { esInvitado: true, nombre: evento.nombre } : {}),
+      ingresoUtc: alumno.ingresoUtc ?? evento.ingresoUtc,
+    };
   });
 }
 
@@ -64,7 +71,13 @@ export function aplicarFotoDePresencia(alumnos: AlumnoPanel[], foto: AlumnosCone
   const actualizados = alumnos.map((alumno): AlumnoPanel => {
     const conectado = conectados.get(alumno.alumnoId);
     if (!conectado) return { ...alumno, desconectado: true };
-    return { ...alumno, desconectado: undefined, alias: conectado.alias, ingresoUtc: alumno.ingresoUtc ?? conectado.ingresoUtc };
+    return {
+      ...alumno,
+      desconectado: undefined,
+      alias: conectado.alias,
+      ...(conectado.esInvitado ? { esInvitado: true, nombre: conectado.nombre } : {}),
+      ingresoUtc: alumno.ingresoUtc ?? conectado.ingresoUtc,
+    };
   });
   const nuevos = foto.alumnos
     .filter((alumno) => !conocidos.has(alumno.alumnoId))
@@ -72,6 +85,7 @@ export function aplicarFotoDePresencia(alumnos: AlumnoPanel[], foto: AlumnosCone
       (alumno): AlumnoPanel => ({
         alumnoId: alumno.alumnoId,
         alias: alumno.alias,
+        ...(alumno.esInvitado ? { esInvitado: true, nombre: alumno.nombre } : {}),
         ingresoUtc: alumno.ingresoUtc,
         alertas: 0,
         peorSeveridad: 'ninguna',

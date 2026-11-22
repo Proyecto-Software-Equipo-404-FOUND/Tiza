@@ -159,6 +159,25 @@ describe('PaginaSalaDocente', () => {
     expect(screen.getByText('Conectados ahora: 1')).toBeInTheDocument();
   });
 
+  it('al invitado lo muestra con el nombre que escribió y no con su alias', async () => {
+    const { simular } = await renderizarPanel();
+
+    act(() =>
+      simular('alumnoIngreso', {
+        salaId: SALA_ID,
+        alumnoId: 'aaaaaaaa-0000-4000-8000-000000000002',
+        alias: 'Alumno 7',
+        esInvitado: true,
+        nombre: 'Lucía Fernández',
+        totalConectados: 1,
+        ingresoUtc: new Date().toISOString(),
+      }),
+    );
+
+    expect(screen.getByText('Lucía Fernández')).toBeInTheDocument();
+    expect(screen.queryByText('Alumno 7')).not.toBeInTheDocument();
+  });
+
   it('cuando un alumno sale lo marca como desconectado y actualiza el contador', async () => {
     const { simular } = await renderizarPanel();
     const alumnoId = 'aaaaaaaa-0000-4000-8000-000000000001';
