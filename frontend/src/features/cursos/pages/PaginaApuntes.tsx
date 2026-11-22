@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Trash2 } from 'lucide-react';
+import { Eye, Trash2 } from 'lucide-react';
 import { Spinner } from '@/shared/components/Spinner';
 import { BannerError } from '@/shared/components/BannerError';
 import { Tabla, type Columna } from '@/shared/components/Tabla';
@@ -13,12 +13,14 @@ import { useCurso } from '../hooks/useCurso';
 import { useMateriales } from '../hooks/useMateriales';
 import { useEliminarMaterial } from '../hooks/useEliminarMaterial';
 import { FormularioApunte } from '../components/FormularioApunte';
+import { VistaPreviaApunte } from '../components/VistaPreviaApunte';
 import { etiquetaEstado, formatearTamano, type Material } from '../apuntes';
 import { mensajeApuntes } from '../mensajesApuntes';
 
 const estiloChico = '!px-3 !py-1.5 text-sm whitespace-nowrap';
 
 const crearColumnas = (
+  onVerTexto: (material: Material) => void,
   onEliminar: (material: Material) => void,
   eliminando: boolean,
 ): Columna<Material>[] => [
@@ -33,16 +35,30 @@ const crearColumnas = (
   {
     titulo: 'Acciones',
     celda: (material) => (
-      <Boton
-        variante='secundario'
-        className={`${estiloChico} !text-tiza-coral`}
-        onClick={() => onEliminar(material)}
-        disabled={eliminando}
-        aria-label={`Eliminar ${material.titulo}`}
-      >
-        <Trash2 className='mr-1.5 inline h-4 w-4' aria-hidden='true' />
-        Eliminar
-      </Boton>
+      <div className='flex flex-wrap gap-2'>
+        {/* El texto solo existe cuando el apunte terminó de procesarse */}
+        {material.estado === 'Listo' && (
+          <Boton
+            variante='secundario'
+            className={estiloChico}
+            onClick={() => onVerTexto(material)}
+            aria-label={`Ver texto de ${material.titulo}`}
+          >
+            <Eye className='mr-1.5 inline h-4 w-4' aria-hidden='true' />
+            Ver texto
+          </Boton>
+        )}
+        <Boton
+          variante='secundario'
+          className={`${estiloChico} !text-tiza-coral`}
+          onClick={() => onEliminar(material)}
+          disabled={eliminando}
+          aria-label={`Eliminar ${material.titulo}`}
+        >
+          <Trash2 className='mr-1.5 inline h-4 w-4' aria-hidden='true' />
+          Eliminar
+        </Boton>
+      </div>
     ),
   },
 ];
@@ -56,10 +72,17 @@ export function PaginaApuntes() {
   // El apunte se conserva al cerrar el cartel para que el texto no cambie durante la animación de salida
   const [aEliminar, setAEliminar] = useState<Material | null>(null);
   const [confirmando, setConfirmando] = useState(false);
+  const [aVer, setAVer] = useState<Material | null>(null);
+  const [viendoTexto, setViendoTexto] = useState(false);
 
   const pedirConfirmacion = (material: Material) => {
     setAEliminar(material);
     setConfirmando(true);
+  };
+
+  const verTexto = (material: Material) => {
+    setAVer(material);
+    setViendoTexto(true);
   };
 
   const confirmar = () => {
@@ -77,7 +100,7 @@ export function PaginaApuntes() {
   };
 
   const sinPermiso = error instanceof ApiError && error.estado === 403;
-  const columnas = crearColumnas(pedirConfirmacion, eliminar.isPending);
+  const columnas = crearColumnas(verTexto, pedirConfirmacion, eliminar.isPending);
 
   return (
     <main className='mx-auto flex max-w-4xl flex-col gap-4 p-6'>
@@ -119,6 +142,8 @@ export function PaginaApuntes() {
         onCancelar={() => setConfirmando(false)}
         onConfirmar={confirmar}
       />
+
+      <VistaPreviaApunte material={aVer} abierto={viendoTexto} onCerrar={() => setViendoTexto(false)} />
     </main>
   );
 }

@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/shared/api/cliente';
+import { useSesion } from '@/features/auth/SesionContext';
+import { useAprobarNota } from '../hooks/useAprobarNota';
 import { useEntrega } from '../hooks/useEntregas';
 import { useNombresAlumnos } from '../hooks/useNombresAlumnos';
 import type { EntregaDetalle } from '../tipos';
@@ -10,6 +12,8 @@ import { PaginaEntrega } from './PaginaEntrega';
 
 vi.mock('../hooks/useEntregas', () => ({ useEntregas: vi.fn(), useEntrega: vi.fn() }));
 vi.mock('../hooks/useNombresAlumnos', () => ({ useNombresAlumnos: vi.fn() }));
+vi.mock('../hooks/useAprobarNota', () => ({ useAprobarNota: vi.fn() }));
+vi.mock('@/features/auth/SesionContext', () => ({ useSesion: vi.fn() }));
 
 const entrega: EntregaDetalle = {
   entregaId: 'en1',
@@ -53,7 +57,18 @@ const entrega: EntregaDetalle = {
   ],
 };
 
-function simular(estado: Record<string, unknown>) {
+const aprobarNota = vi.fn();
+
+function simular(estado: Record<string, unknown>, rol: 'docente' | 'administrador' = 'docente') {
+  vi.mocked(useSesion).mockReturnValue({
+    usuario: { id: 'u1', nombre: 'Usuario', rol, institucionId: 'i1' },
+  } as unknown as ReturnType<typeof useSesion>);
+  vi.mocked(useAprobarNota).mockReturnValue({
+    mutate: aprobarNota,
+    isPending: false,
+    isError: false,
+    error: null,
+  } as unknown as ReturnType<typeof useAprobarNota>);
   vi.mocked(useEntrega).mockReturnValue({
     data: undefined,
     isPending: false,
@@ -65,14 +80,16 @@ function simular(estado: Record<string, unknown>) {
   vi.mocked(useNombresAlumnos).mockReturnValue({ nombreDe: () => 'Pérez, Ana', cargando: false, fallo: false });
 }
 
+const arbol = () => (
+  <MemoryRouter initialEntries={['/evaluaciones/e1/resultados/en1']}>
+    <Routes>
+      <Route path='/evaluaciones/:evaluacionId/resultados/:entregaId' element={<PaginaEntrega />} />
+    </Routes>
+  </MemoryRouter>
+);
+
 function renderizar() {
-  return render(
-    <MemoryRouter initialEntries={['/evaluaciones/e1/resultados/en1']}>
-      <Routes>
-        <Route path='/evaluaciones/:evaluacionId/resultados/:entregaId' element={<PaginaEntrega />} />
-      </Routes>
-    </MemoryRouter>,
-  );
+  return render(arbol());
 }
 
 describe('PaginaEntrega', () => {
@@ -84,7 +101,7 @@ describe('PaginaEntrega', () => {
     simular({ data: entrega });
     renderizar();
     expect(screen.getByRole('heading', { level: 1, name: 'Pérez, Ana' })).toBeInTheDocument();
-    expect(screen.getByText('Corregida')).toBeInTheDocument();
+    expect(screen.getByText('Nota sugerida')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '← Volver a resultados' })).toHaveAttribute(
       'href',
       '/evaluaciones/e1/resultados',
@@ -122,6 +139,48 @@ describe('PaginaEntrega', () => {
     simular({ data: { ...entrega, respondioAlgo: false, notaSugeridaAbiertas: 0 } });
     renderizar();
     expect(screen.getByText('Sin respuestas')).toBeInTheDocument();
+    expect(screen.getByText('Sin nota sugerida')).toBeInTheDocument();
+    expect(screen.queryByText('Nota sugerida')).not.toBeInTheDocument();
+  });
+
+  it('si la pantalla se refresca después de guardar un puntaje, no se pierde lo escrito', async () => {
+    simular({ data: entrega });
+    const vista = renderizar();
+    await userEvent.clear(screen.getByLabelText(/Nota final de la pregunta 2/));
+    await userEvent.type(screen.getByLabelText(/Nota final de la pregunta 2/), '4');
+    // Un guardado salió bien y el refresco trae la nota como «Editada»
+    simular({ data: { ...entrega, estadoNota: 'Editada' } });
+    vista.rerender(arbol());
+    expect(screen.getByLabelText(/Nota final de la pregunta 2/)).toHaveValue('4');
+  });
+
+  it('el texto de «Notas» cambia según quién mira y si ya está corregida', () => {
+    simular({ data: entrega });
+    const vista = renderizar();
+    expect(screen.getByText(/es la que aprobás más abajo/)).toBeInTheDocument();
+    vista.unmount();
+    simular({ data: entrega }, 'administrador');
+    const admin = renderizar();
+    expect(screen.getByText(/la define el docente/)).toBeInTheDocument();
+    admin.unmount();
+    simular({ data: { ...entrega, estadoNota: 'Aprobada', notaFinal: 5 } });
+    renderizar();
+    expect(screen.getByText(/ya está corregida/)).toBeInTheDocument();
+  });
+
+  it('con la nota aprobada muestra cuándo se corrigió, y sin fecha no inventa una', () => {
+    simular({
+      data: { ...entrega, estadoNota: 'Aprobada', notaFinal: 5, fechaAprobacionUtc: '2026-11-20T15:30:00Z' },
+    });
+    const vista = renderizar();
+    // La fecha va entre paréntesis: la hora termina en punto («a. m.») y no debe quedar un doble punto
+    const subtitulo = screen.getByText(/Nota corregida \(.*20\/11\/26.*\)\. El alumno ya puede verla\./);
+    expect(subtitulo).toBeInTheDocument();
+    expect(subtitulo.textContent).not.toContain('..');
+    vista.unmount();
+    simular({ data: { ...entrega, estadoNota: 'Aprobada', notaFinal: 5 } });
+    renderizar();
+    expect(screen.getByText('Nota corregida. El alumno ya puede verla.')).toBeInTheDocument();
   });
 
   it('avisa si la IA todavía no corrigió una respuesta', () => {
@@ -177,5 +236,117 @@ describe('PaginaEntrega', () => {
     renderizar();
     await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
     expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
+  describe('nota final', () => {
+    it('precarga cada pregunta abierta con la nota sugerida y suma el total', () => {
+      simular({ data: entrega });
+      renderizar();
+      expect(screen.getByLabelText(/Nota final de la pregunta 2/)).toHaveValue('3,5');
+      expect(screen.getByText('5,5 / 6')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Aprobar nota final' })).toBeEnabled();
+    });
+
+    it('al cambiar el puntaje recalcula el total', async () => {
+      simular({ data: entrega });
+      renderizar();
+      const campo = screen.getByLabelText(/Nota final de la pregunta 2/);
+      await userEvent.clear(campo);
+      await userEvent.type(campo, '4');
+      expect(screen.getByText('6 / 6')).toBeInTheDocument();
+    });
+
+    it('no deja aprobar con un puntaje que supera el máximo y lo explica', async () => {
+      simular({ data: entrega });
+      renderizar();
+      const campo = screen.getByLabelText(/Nota final de la pregunta 2/);
+      await userEvent.clear(campo);
+      await userEvent.type(campo, '5');
+      expect(screen.getByText('No puede superar 4.')).toBeInTheDocument();
+      expect(screen.getByText('Faltan puntajes')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Aprobar nota final' })).toBeDisabled();
+    });
+
+    it('si la IA no sugirió nota, hay que completarla a mano para poder aprobar', async () => {
+      const pendiente: EntregaDetalle = {
+        ...entrega,
+        respuestas: [entrega.respuestas[0], { ...entrega.respuestas[1], notaSugerida: null, estadoCorreccion: 'PendienteIA' }],
+      };
+      simular({ data: pendiente });
+      renderizar();
+      expect(screen.getByText('Hay 1 pregunta sin puntaje válido. Completalas para poder aprobar.')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Aprobar nota final' })).toBeDisabled();
+      await userEvent.type(screen.getByLabelText(/Nota final de la pregunta 2/), '2,5');
+      expect(screen.getByRole('button', { name: 'Aprobar nota final' })).toBeEnabled();
+    });
+
+    it('si el docente solo confirma lo que sugirió la IA, aprueba sin guardar cambios', async () => {
+      simular({ data: entrega });
+      renderizar();
+      await userEvent.click(screen.getByRole('button', { name: 'Aprobar nota final' }));
+      expect(aprobarNota).not.toHaveBeenCalled();
+      await userEvent.click(screen.getByRole('button', { name: 'Sí, aprobar' }));
+      expect(aprobarNota).toHaveBeenCalledWith([]);
+    });
+
+    it('manda solo los puntajes que el docente cambió', async () => {
+      simular({ data: entrega });
+      renderizar();
+      const campo = screen.getByLabelText(/Nota final de la pregunta 2/);
+      await userEvent.clear(campo);
+      await userEvent.type(campo, '4');
+      await userEvent.click(screen.getByRole('button', { name: 'Aprobar nota final' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Sí, aprobar' }));
+      expect(aprobarNota).toHaveBeenCalledWith([{ preguntaId: 'p2', puntaje: 4 }]);
+    });
+
+    it('con la nota ya aprobada no se puede editar ni volver a aprobar', () => {
+      simular({
+        data: {
+          ...entrega,
+          notaFinal: 5.5,
+          estadoNota: 'Aprobada',
+          respuestas: [entrega.respuestas[0], { ...entrega.respuestas[1], puntajeDocente: 3.5 }],
+        },
+      });
+      renderizar();
+      // El estado de corrección deja paso a «Corregida»
+      expect(screen.getAllByText('Corregida').length).toBeGreaterThan(0);
+      expect(screen.queryByText('Nota sugerida')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Aprobar nota final' })).not.toBeInTheDocument();
+      expect(screen.getByLabelText(/Nota final de la pregunta 2/)).toBeDisabled();
+    });
+
+    it('el administrador ve la nota pero no puede editarla ni aprobarla', () => {
+      simular({ data: entrega }, 'administrador');
+      renderizar();
+      expect(screen.queryByRole('button', { name: 'Aprobar nota final' })).not.toBeInTheDocument();
+      expect(screen.getByLabelText(/Nota final de la pregunta 2/)).toBeDisabled();
+      expect(screen.getByText(/Solo el docente que creó el examen puede aprobarla/)).toBeInTheDocument();
+    });
+
+    it('explica con el código del contrato por qué no se pudo aprobar', () => {
+      simular({ data: entrega });
+      vi.mocked(useAprobarNota).mockReturnValue({
+        mutate: aprobarNota,
+        isPending: false,
+        isError: true,
+        error: new ApiError(409, { status: 409, type: 'FALTAN_CORRECCIONES' }),
+      } as unknown as ReturnType<typeof useAprobarNota>);
+      renderizar();
+      expect(screen.getByRole('alert')).toHaveTextContent('Todavía hay preguntas abiertas sin nota');
+    });
+
+    it('muestra el error si no se pudo aprobar', () => {
+      simular({ data: entrega });
+      vi.mocked(useAprobarNota).mockReturnValue({
+        mutate: aprobarNota,
+        isPending: false,
+        isError: true,
+        error: new ApiError(500, null),
+      } as unknown as ReturnType<typeof useAprobarNota>);
+      renderizar();
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+    });
   });
 });

@@ -32,6 +32,7 @@ public class CursoRepository : ICursoRepository
         string? busqueda,
         int pagina,
         int tamanoPagina,
+        Guid? docenteId = null,
         CancellationToken cancellationToken = default)
     {
         var query = _context.Cursos
@@ -52,17 +53,23 @@ public class CursoRepository : ICursoRepository
             query = query.Where(c => c.Nombre.ToLower().Contains(busquedaNormalizada));
         }
 
-        // 3. Orden alfabetico predeterminado
+        // 3. Filtro opcional por docente asignado a cohortes (si el usuario autenticado es Docente)
+        if (docenteId.HasValue)
+        {
+            query = query.Where(c => c.Cohortes.Any(co => co.DocenteId == docenteId.Value));
+        }
+
+        // 4. Orden alfabetico predeterminado
         query = query.OrderBy(c => c.Nombre);
 
-        // 4. Conteo total de coincidencias para el calculo de paginacion
+        // 5. Conteo total de coincidencias para el calculo de paginacion
         var totalItems = await query.CountAsync(cancellationToken);
 
-        // 5. Normalizacion de limites de navegacion seguros
+        // 6. Normalizacion de limites de navegacion seguros
         var paginaSegura = pagina < 1 ? 1 : pagina;
         var tamanoSeguro = tamanoPagina <= 0 ? 10 : (tamanoPagina > 50 ? 50 : tamanoPagina);
 
-        // 6. Extraccion paginada de registros en memoria
+        // 7. Extraccion paginada de registros en memoria
         var items = await query
             .Skip((paginaSegura - 1) * tamanoSeguro)
             .Take(tamanoSeguro)

@@ -32,6 +32,13 @@ public class MatriculacionRepository : IMatriculacionRepository
         _context.Matriculaciones.AnyAsync(m => m.CursoId == cursoId && m.AlumnoId == alumnoId
             && m.CohorteId != cohorteId && m.Estado == EstadoMatriculacion.Activa, cancellationToken);
 
+    // Consulta directa O(1) delegada a PostgreSQL que valida si el curso tiene alumnos activos.
+    public async Task<bool> ExisteActivaEnCursoAsync(Guid cursoId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Matriculaciones
+            .AnyAsync(m => m.CursoId == cursoId && m.Estado == EstadoMatriculacion.Activa, cancellationToken);
+    }
+
     public async Task<(Guid Id, string Nombre)?> ObtenerCohorteActivaEnOtraAsync(Guid cursoId, Guid alumnoId, Guid cohorteId, CancellationToken cancellationToken = default)
     {
         var actual = await (
