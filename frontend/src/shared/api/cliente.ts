@@ -69,6 +69,18 @@ function segundosRestantes(jwt: string): number | null {
   }
 }
 
+// Rol del token según su claim `role` (en minúscula), o null si no se puede leer.
+// El invitado (contrato identidad-v1) no tiene refresh token: ante un 401 no hay nada que renovar.
+function rolDelToken(jwt: string): string | null {
+  try {
+    const base64 = jwt.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const { role } = JSON.parse(atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, '='))) as { role?: unknown };
+    return typeof role === 'string' ? role.toLowerCase() : null;
+  } catch {
+    return null;
+  }
+}
+
 // Si varios pedidos fallan con 401 a la vez, comparten una sola renovación
 let renovacionEnCurso: Promise<boolean> | null = null;
 function renovarUnaVez(): Promise<boolean> {
@@ -96,12 +108,18 @@ export async function pedir<T>(
   if (!respuesta.ok) {
     // Con un token guardado, un 401 significa que el accessToken venció: se intenta renovar una vez
     if (respuesta.status === 401 && token) {
-      const esRutaDeAuth = ruta.includes('/auth/');
-      if (!esReintento && !esRutaDeAuth && (await renovarUnaVez())) {
-        return pedir<T>(ruta, opciones, true);
+      if (rolDelToken(token) === 'invitado') {
+        // El invitado no tiene refresh: vuelve a su pantalla de ingreso, con el aviso de acceso vencido
+        guardarToken(null);
+        window.location.assign('/invitado?vencido=1');
+      } else {
+        const esRutaDeAuth = ruta.includes('/auth/');
+        if (!esReintento && !esRutaDeAuth && (await renovarUnaVez())) {
+          return pedir<T>(ruta, opciones, true);
+        }
+        guardarToken(null);
+        window.location.assign('/login');
       }
-      guardarToken(null);
-      window.location.assign('/login');
     }
     const detalle = await respuesta.json().catch(() => null);
     throw new ApiError(respuesta.status, detalle);
