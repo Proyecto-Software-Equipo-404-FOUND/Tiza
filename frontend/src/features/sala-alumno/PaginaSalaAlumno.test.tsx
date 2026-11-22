@@ -7,10 +7,13 @@ import { PaginaSalaAlumno } from './PaginaSalaAlumno';
 
 const SALA = '11111111-1111-4111-8111-111111111111';
 
-function preparar(invocar: (metodo: string, ...args: unknown[]) => Promise<unknown> = async () => {}) {
+function preparar(
+  invocar: (metodo: string, ...args: unknown[]) => Promise<unknown> = async () => {},
+  propiedades: { esInvitado?: boolean; pinInicial?: string } = {},
+) {
   const { conexion, simular } = crearConexionFalsa();
   conexion.invocar = vi.fn(invocar);
-  render(<PaginaSalaAlumno conexion={conexion} />);
+  render(<PaginaSalaAlumno conexion={conexion} {...propiedades} />);
   return { conexion, simular };
 }
 
@@ -139,5 +142,55 @@ describe('PaginaSalaAlumno', () => {
 
     expect(screen.getByRole('heading', { name: 'Examen entregado' })).toBeInTheDocument();
     expect(screen.getByText('Se terminó el tiempo.')).toBeInTheDocument();
+  });
+
+  it('un alumno con cuenta no ve el aviso del invitado al terminar', async () => {
+    const { simular } = preparar();
+    await escribirYEntrar('123456');
+    await screen.findByRole('heading', { name: 'Estás en la sala' });
+
+    act(() =>
+      simular('salaFinalizada', {
+        salaId: SALA,
+        finalizadaUtc: '2026-10-28T14:30:00.000Z',
+        motivo: 'Docente',
+      }),
+    );
+
+    expect(screen.getByRole('heading', { name: 'Examen entregado' })).toBeInTheDocument();
+    expect(screen.queryByText(/Como ingresaste como invitado/)).not.toBeInTheDocument();
+  });
+
+  it('al invitado le avisa, al terminar, que no va a poder consultar su nota en Tiza', async () => {
+    const { simular } = preparar(undefined, { esInvitado: true });
+    await escribirYEntrar('123456');
+    await screen.findByRole('heading', { name: 'Estás en la sala' });
+
+    act(() =>
+      simular('salaFinalizada', {
+        salaId: SALA,
+        finalizadaUtc: '2026-10-28T14:30:00.000Z',
+        motivo: 'Docente',
+      }),
+    );
+
+    expect(screen.getByRole('heading', { name: 'Examen entregado' })).toBeInTheDocument();
+    expect(screen.getByText('Tu docente cerró la sala.')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Tus respuestas quedaron registradas. Como ingresaste como invitado, no vas a poder consultar tu nota en Tiza: pedísela a tu docente.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('con pinInicial el campo del PIN viene escrito y con ese PIN se une a la sala', async () => {
+    const { conexion } = preparar(undefined, { esInvitado: true, pinInicial: '482913' });
+    expect(screen.getByLabelText('PIN')).toHaveValue('482913');
+
+    await waitFor(() => expect(botonEntrar()).toBeEnabled());
+    await userEvent.click(screen.getByLabelText('Entendí el aviso y acepto'));
+    await userEvent.click(botonEntrar());
+
+    expect(conexion.invocar).toHaveBeenCalledWith('UnirseASala', 482913);
   });
 });
