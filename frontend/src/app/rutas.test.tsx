@@ -332,4 +332,27 @@ describe('rutas del invitado', () => {
     mostrar('/sala', { pin: '12ab' });
     expect(await screen.findByLabelText('PIN')).toHaveValue('');
   });
+
+describe('sesión vencida al recargar', () => {
+  it('un invitado con el token vencido vuelve a su ingreso con el aviso de acceso vencido', () => {
+    guardarToken(
+      crearTokenFalso(
+        { id: 'inv-1', nombre: 'Lucia Fernandez', rol: 'invitado', institucionId: INSTITUCION_A },
+        { exp: 1, salaId: 'sala-1' },
+      ),
+    );
+    mostrar('/sala');
+    expect(screen.getByRole('heading', { name: 'Entrar como invitado' })).toBeInTheDocument();
+    expect(screen.getByText('Tu acceso como invitado venció. Volvé a ingresar con el PIN y tu nombre.')).toBeInTheDocument();
+  });
+
+  it('un docente con el token vencido y sin refresh sigue yendo al login', () => {
+    guardarToken(
+      crearTokenFalso({ id: DOCENTE_A_ID, nombre: 'Docente A', rol: 'docente', institucionId: INSTITUCION_A }, { exp: 1 }),
+    );
+    mostrar('/cursos');
+    expect(screen.getByRole('heading', { name: 'Ingresar a Tiza' })).toBeInTheDocument();
+  });
+});
+
 });
