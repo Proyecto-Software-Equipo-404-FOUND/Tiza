@@ -30,7 +30,7 @@ public class MetricasEvaluacionTests
     }
 
     [Fact]
-    public async Task Handle_SinEntregas_DevuelvePromedioNullYListaVacia()
+    public async Task Handle_SinEntregasAprobadas_DevuelvePromedioYPreguntaMasDificilNullYListasVacias()
     {
         var repo = new FakeResultadosRepositorio(CrearEvaluacion());
         var handler = new GetMetricasEvaluacionHandler(repo);
@@ -41,91 +41,112 @@ public class MetricasEvaluacionTests
 
         Assert.Equal(TipoResultado.Ok, resultado.Tipo);
         Assert.NotNull(resultado.Valor);
-        Assert.Equal(0, resultado.Valor!.CantidadEntregas);
-        Assert.Null(resultado.Valor.PromedioExamen);
-        Assert.Equal(10m, resultado.Valor.PuntajeMaximoExamen);
+        Assert.Equal(0, resultado.Valor!.CantidadAprobadas);
+        Assert.Null(resultado.Valor.Promedio);
+        Assert.Null(resultado.Valor.PreguntaMasDificilId);
+        Assert.Equal(10m, resultado.Valor.PuntajeMaximo);
+        Assert.Empty(resultado.Valor.Preguntas);
         Assert.Empty(resultado.Valor.Alumnos);
     }
 
     [Fact]
-    public async Task Handle_ConEntregas_CalculaPromedioPreguntaMasDificilYComparativaAlumnos()
+    public async Task Handle_EntregasSinAprobarNoCuentan_SoloConsideraAprobadas()
     {
-        var alumno1 = Guid.NewGuid();
-        var alumno2 = Guid.NewGuid();
-        var entrega1Id = Guid.NewGuid();
-        var entrega2Id = Guid.NewGuid();
+        var alumnoAprobado = Guid.NewGuid();
+        var alumnoSugerida = Guid.NewGuid();
+        var alumnoPendiente = Guid.NewGuid();
+        var alumnoEditada = Guid.NewGuid();
+
+        var entregaAprobadaId = Guid.NewGuid();
+        var entregaSugeridaId = Guid.NewGuid();
+        var entregaPendienteId = Guid.NewGuid();
+        var entregaEditadaId = Guid.NewGuid();
 
         var repo = new FakeResultadosRepositorio(CrearEvaluacion());
 
-        // Alumno 1: MC correcta (4m) + abierta sugerida IA (4m) -> 8m
+        // Única entrega Aprobada: MC correcta (2m) + abierta docente (6m) = 8m
         repo.Entregas.Add(new EntregaExamen
         {
-            Id = entrega1Id,
+            Id = entregaAprobadaId,
             InstitucionId = InstitucionId,
             EvaluacionId = EvaluacionId,
             SalaId = Guid.NewGuid(),
-            AlumnoId = alumno1,
-            Estado = EstadoEntregaExamen.Corregida,
-            EstadoNota = EstadoNotaEntrega.Sugerida,
-            FechaEntrega = DateTimeOffset.UtcNow.AddMinutes(-10),
+            AlumnoId = alumnoAprobado,
+            Estado = EstadoEntregaExamen.CorreccionManual,
+            EstadoNota = EstadoNotaEntrega.Aprobada,
+            FechaEntrega = DateTimeOffset.UtcNow.AddMinutes(-15),
             RespuestasJson = JsonSerializer.Serialize(new object[]
             {
                 new { preguntaId = PreguntaMcId, opcionElegidaId = OpcionCorrectaId.ToString() },
-                new { preguntaId = PreguntaAbiertaId, respuesta = "Respuesta 1" }
+                new { preguntaId = PreguntaAbiertaId, respuesta = "Respuesta aprobada" }
             })
-        });
-        repo.CalificacionesIa.Add(new CalificacionSugerida
-        {
-            Id = Guid.NewGuid(),
-            InstitucionId = InstitucionId,
-            EntregaId = entrega1Id,
-            PreguntaId = PreguntaAbiertaId,
-            NotaSugerida = 4m,
-            Justificacion = "Bien",
-            FechaRegistro = DateTimeOffset.UtcNow
-        });
-
-        // Alumno 2: MC incorrecta (0m), pero docente editó abierta a 6m -> 6m
-        // (Verifica prioridad: docente > IA > MC)
-        repo.Entregas.Add(new EntregaExamen
-        {
-            Id = entrega2Id,
-            InstitucionId = InstitucionId,
-            EvaluacionId = EvaluacionId,
-            SalaId = Guid.NewGuid(),
-            AlumnoId = alumno2,
-            Estado = EstadoEntregaExamen.CorreccionManual,
-            EstadoNota = EstadoNotaEntrega.Editada,
-            FechaEntrega = DateTimeOffset.UtcNow.AddMinutes(-5),
-            RespuestasJson = JsonSerializer.Serialize(new object[]
-            {
-                new { preguntaId = PreguntaMcId, opcionElegidaId = OpcionIncorrectaId.ToString() },
-                new { preguntaId = PreguntaAbiertaId, respuesta = "Respuesta 2" }
-            })
-        });
-        repo.CalificacionesIa.Add(new CalificacionSugerida
-        {
-            Id = Guid.NewGuid(),
-            InstitucionId = InstitucionId,
-            EntregaId = entrega2Id,
-            PreguntaId = PreguntaAbiertaId,
-            NotaSugerida = 1m,
-            Justificacion = "IA baja",
-            FechaRegistro = DateTimeOffset.UtcNow
         });
         repo.CalificacionesDocente.Add(new CalificacionDocente
         {
             Id = Guid.NewGuid(),
             InstitucionId = InstitucionId,
-            EntregaId = entrega2Id,
+            EntregaId = entregaAprobadaId,
             PreguntaId = PreguntaAbiertaId,
             PuntajeDocente = 6m,
             FechaEdicionUtc = DateTimeOffset.UtcNow
         });
 
-        // Puntajes: Alumno 1 = 8m, Alumno 2 = 6m -> Promedio curso = 7m
-        // Pregunta MC: (4 + 0) / 2 = 2.0m promedio
-        // Pregunta Abierta: (4 + 6) / 2 = 5.0m promedio -> Pregunta MC es la más difícil
+        // Entrega con nota Sugerida (NO aprobada -> no debe contar)
+        repo.Entregas.Add(new EntregaExamen
+        {
+            Id = entregaSugeridaId,
+            InstitucionId = InstitucionId,
+            EvaluacionId = EvaluacionId,
+            SalaId = Guid.NewGuid(),
+            AlumnoId = alumnoSugerida,
+            Estado = EstadoEntregaExamen.Corregida,
+            EstadoNota = EstadoNotaEntrega.Sugerida,
+            FechaEntrega = DateTimeOffset.UtcNow.AddMinutes(-10),
+            RespuestasJson = JsonSerializer.Serialize(new object[]
+            {
+                new { preguntaId = PreguntaMcId, opcionElegidaId = OpcionIncorrectaId.ToString() },
+                new { preguntaId = PreguntaAbiertaId, respuesta = "Respuesta sugerida" }
+            })
+        });
+        repo.CalificacionesIa.Add(new CalificacionSugerida
+        {
+            Id = Guid.NewGuid(),
+            InstitucionId = InstitucionId,
+            EntregaId = entregaSugeridaId,
+            PreguntaId = PreguntaAbiertaId,
+            NotaSugerida = 2m,
+            Justificacion = "IA",
+            FechaRegistro = DateTimeOffset.UtcNow
+        });
+
+        // Entrega Pendiente (NO aprobada -> no debe contar)
+        repo.Entregas.Add(new EntregaExamen
+        {
+            Id = entregaPendienteId,
+            InstitucionId = InstitucionId,
+            EvaluacionId = EvaluacionId,
+            SalaId = Guid.NewGuid(),
+            AlumnoId = alumnoPendiente,
+            Estado = EstadoEntregaExamen.Corregida,
+            EstadoNota = EstadoNotaEntrega.Sugerida,
+            FechaEntrega = DateTimeOffset.UtcNow.AddMinutes(-5),
+            RespuestasJson = "[]"
+        });
+
+        // Entrega Editada pero aún no Aprobada (NO debe contar)
+        repo.Entregas.Add(new EntregaExamen
+        {
+            Id = entregaEditadaId,
+            InstitucionId = InstitucionId,
+            EvaluacionId = EvaluacionId,
+            SalaId = Guid.NewGuid(),
+            AlumnoId = alumnoEditada,
+            Estado = EstadoEntregaExamen.CorreccionManual,
+            EstadoNota = EstadoNotaEntrega.Editada,
+            FechaEntrega = DateTimeOffset.UtcNow.AddMinutes(-2),
+            RespuestasJson = "[]"
+        });
+
         var handler = new GetMetricasEvaluacionHandler(repo);
         var resultado = await handler.Handle(
             new GetMetricasEvaluacionQuery(EvaluacionId, InstitucionId),
@@ -134,24 +155,118 @@ public class MetricasEvaluacionTests
         Assert.Equal(TipoResultado.Ok, resultado.Tipo);
         var metricas = resultado.Valor!;
 
-        Assert.Equal(2, metricas.CantidadEntregas);
-        Assert.Equal(7m, metricas.PromedioExamen);
-        Assert.Equal(10m, metricas.PuntajeMaximoExamen);
+        Assert.Equal(1, metricas.CantidadAprobadas);
+        Assert.Equal(8m, metricas.Promedio);
+        Assert.Single(metricas.Alumnos);
+        Assert.Equal(alumnoAprobado, metricas.Alumnos[0].AlumnoId);
+        Assert.Equal(8m, metricas.Alumnos[0].NotaFinal);
+        Assert.Equal(0m, metricas.Alumnos[0].DiferenciaConPromedio);
+    }
 
-        Assert.NotNull(metricas.PreguntaMasDificil);
-        Assert.Equal(PreguntaMcId, metricas.PreguntaMasDificil!.PreguntaId);
-        Assert.Equal(2m, metricas.PreguntaMasDificil.PuntajePromedio);
+    [Fact]
+    public async Task Handle_ConEntregasAprobadas_CalculaPromedioPreguntaMasDificilPorPorcentajeYAlumnos()
+    {
+        var alumno1 = Guid.NewGuid();
+        var alumno2 = Guid.NewGuid();
+        var entrega1Id = Guid.NewGuid();
+        var entrega2Id = Guid.NewGuid();
+
+        // Pregunta MC: puntajeMaximo = 2
+        // Pregunta Abierta: puntajeMaximo = 8
+        var repo = new FakeResultadosRepositorio(CrearEvaluacion());
+
+        // Alumno 1 (Aprobada): MC correcta (2/2 = 100%) + abierta docente (4/8 = 50%) -> 6m
+        repo.Entregas.Add(new EntregaExamen
+        {
+            Id = entrega1Id,
+            InstitucionId = InstitucionId,
+            EvaluacionId = EvaluacionId,
+            SalaId = Guid.NewGuid(),
+            AlumnoId = alumno1,
+            Estado = EstadoEntregaExamen.CorreccionManual,
+            EstadoNota = EstadoNotaEntrega.Aprobada,
+            FechaEntrega = DateTimeOffset.UtcNow.AddMinutes(-10),
+            RespuestasJson = JsonSerializer.Serialize(new object[]
+            {
+                new { preguntaId = PreguntaMcId, opcionElegidaId = OpcionCorrectaId.ToString() },
+                new { preguntaId = PreguntaAbiertaId, respuesta = "Respuesta 1" }
+            })
+        });
+        repo.CalificacionesDocente.Add(new CalificacionDocente
+        {
+            Id = Guid.NewGuid(),
+            InstitucionId = InstitucionId,
+            EntregaId = entrega1Id,
+            PreguntaId = PreguntaAbiertaId,
+            PuntajeDocente = 4m,
+            FechaEdicionUtc = DateTimeOffset.UtcNow
+        });
+
+        // Alumno 2 (Aprobada): MC correcta (2/2 = 100%) + abierta docente (2/8 = 25%) -> 4m
+        repo.Entregas.Add(new EntregaExamen
+        {
+            Id = entrega2Id,
+            InstitucionId = InstitucionId,
+            EvaluacionId = EvaluacionId,
+            SalaId = Guid.NewGuid(),
+            AlumnoId = alumno2,
+            Estado = EstadoEntregaExamen.CorreccionManual,
+            EstadoNota = EstadoNotaEntrega.Aprobada,
+            FechaEntrega = DateTimeOffset.UtcNow.AddMinutes(-5),
+            RespuestasJson = JsonSerializer.Serialize(new object[]
+            {
+                new { preguntaId = PreguntaMcId, opcionElegidaId = OpcionCorrectaId.ToString() },
+                new { preguntaId = PreguntaAbiertaId, respuesta = "Respuesta 2" }
+            })
+        });
+        repo.CalificacionesDocente.Add(new CalificacionDocente
+        {
+            Id = Guid.NewGuid(),
+            InstitucionId = InstitucionId,
+            EntregaId = entrega2Id,
+            PreguntaId = PreguntaAbiertaId,
+            PuntajeDocente = 2m,
+            FechaEdicionUtc = DateTimeOffset.UtcNow
+        });
+
+        // Puntajes: Alumno 1 = 6m, Alumno 2 = 4m -> Promedio = 5m
+        // Pregunta MC: promedio 2.0 / 2 = 100%
+        // Pregunta Abierta: promedio 3.0 / 8 = 37.5% (mayor puntaje absoluto 3.0 > 2.0, pero MENOR porcentaje -> es la más difícil)
+        var handler = new GetMetricasEvaluacionHandler(repo);
+        var resultado = await handler.Handle(
+            new GetMetricasEvaluacionQuery(EvaluacionId, InstitucionId),
+            CancellationToken.None);
+
+        Assert.Equal(TipoResultado.Ok, resultado.Tipo);
+        var metricas = resultado.Valor!;
+
+        Assert.Equal(2, metricas.CantidadAprobadas);
+        Assert.Equal(5m, metricas.Promedio);
+        Assert.Equal(10m, metricas.PuntajeMaximo);
+
+        Assert.Equal(PreguntaAbiertaId, metricas.PreguntaMasDificilId);
+
+        Assert.Equal(2, metricas.Preguntas.Count);
+        var metricaMc = metricas.Preguntas.Single(p => p.PreguntaId == PreguntaMcId);
+        Assert.Equal("Pregunta MC", metricaMc.Enunciado);
+        Assert.Equal(2m, metricaMc.PuntajeMaximo);
+        Assert.Equal(2m, metricaMc.Promedio);
+        Assert.Equal(100m, metricaMc.Porcentaje);
+
+        var metricaAbierta = metricas.Preguntas.Single(p => p.PreguntaId == PreguntaAbiertaId);
+        Assert.Equal("Pregunta Abierta", metricaAbierta.Enunciado);
+        Assert.Equal(8m, metricaAbierta.PuntajeMaximo);
+        Assert.Equal(3m, metricaAbierta.Promedio);
+        Assert.Equal(37.5m, metricaAbierta.Porcentaje);
 
         Assert.Equal(2, metricas.Alumnos.Count);
         var metricaAlumno1 = metricas.Alumnos.Single(a => a.AlumnoId == alumno1);
-        Assert.Equal(8m, metricaAlumno1.PuntajeObtenido);
+        Assert.Equal(6m, metricaAlumno1.NotaFinal);
         Assert.Equal(1m, metricaAlumno1.DiferenciaConPromedio);
-        Assert.Equal("PorEncimaDelPromedio", metricaAlumno1.ComparacionConPromedio);
 
         var metricaAlumno2 = metricas.Alumnos.Single(a => a.AlumnoId == alumno2);
-        Assert.Equal(6m, metricaAlumno2.PuntajeObtenido);
+        Assert.Equal(4m, metricaAlumno2.NotaFinal);
         Assert.Equal(-1m, metricaAlumno2.DiferenciaConPromedio);
-        Assert.Equal("PorDebajoDelPromedio", metricaAlumno2.ComparacionConPromedio);
     }
 
     private static Evaluacion CrearEvaluacion() => new()
@@ -162,12 +277,12 @@ public class MetricasEvaluacionTests
         Tipo = "Examen",
         PreguntasJson = $$$"""
         {"version":1,"preguntas":[
-          {"id":"{{{PreguntaMcId}}}","enunciado":"Pregunta MC","tipo":"OpcionMultiple","puntajeMaximo":4,
+          {"id":"{{{PreguntaMcId}}}","enunciado":"Pregunta MC","tipo":"OpcionMultiple","puntajeMaximo":2,
            "opciones":[
              {"id":"{{{OpcionCorrectaId}}}","texto":"Correcta","esCorrecta":true},
              {"id":"{{{OpcionIncorrectaId}}}","texto":"Incorrecta","esCorrecta":false}
            ]},
-          {"id":"{{{PreguntaAbiertaId}}}","enunciado":"Pregunta Abierta","tipo":"Abierta","puntajeMaximo":6}
+          {"id":"{{{PreguntaAbiertaId}}}","enunciado":"Pregunta Abierta","tipo":"Abierta","puntajeMaximo":8}
         ]}
         """
     };

@@ -4,48 +4,31 @@ using PEI.Evaluaciones.Domain.Entities;
 
 namespace PEI.Evaluaciones.Application.Evaluaciones.Queries.GetMetricasEvaluacion;
 
-// ==========================================
-// DTOs DE RESPUESTA (S3-EV-05 - #240)
-// ==========================================
+public sealed record GetMetricasEvaluacionQuery(
+    Guid EvaluacionId,
+    Guid InstitucionId) : IRequest<ResultadoOperacion<MetricasEvaluacionDto>>;
 
-public record PreguntaMasDificilDto(
+public sealed record MetricasEvaluacionDto(
+    decimal? Promedio,
+    decimal PuntajeMaximo,
+    int CantidadAprobadas,
+    Guid? PreguntaMasDificilId,
+    IReadOnlyList<MetricaPreguntaDto> Preguntas,
+    IReadOnlyList<MetricaAlumnoDto> Alumnos);
+
+public sealed record MetricaPreguntaDto(
     Guid PreguntaId,
     string Enunciado,
-    string Tipo,
-    decimal PuntajePromedio,
     decimal PuntajeMaximo,
-    double PorcentajeAcierto);
+    decimal Promedio,
+    decimal Porcentaje);
 
-public record MetricaAlumnoDto(
+public sealed record MetricaAlumnoDto(
     Guid AlumnoId,
-    Guid EntregaId,
-    string EstadoNota,
-    decimal PuntajeObtenido,
-    decimal PuntajeMaximo,
-    decimal DiferenciaConPromedio,
-    string ComparacionConPromedio);
+    decimal NotaFinal,
+    decimal DiferenciaConPromedio);
 
-public record MetricasEvaluacionDto(
-    Guid EvaluacionId,
-    string Titulo,
-    int CantidadEntregas,
-    decimal? PromedioExamen,
-    decimal PuntajeMaximoExamen,
-    PreguntaMasDificilDto? PreguntaMasDificil,
-    List<MetricaAlumnoDto> Alumnos);
-
-// ==========================================
-// QUERY
-// ==========================================
-
-public record GetMetricasEvaluacionQuery(Guid EvaluacionId, Guid InstitucionId)
-    : IRequest<ResultadoOperacion<MetricasEvaluacionDto>>;
-
-// ==========================================
-// HANDLER
-// ==========================================
-
-public class GetMetricasEvaluacionHandler
+public sealed class GetMetricasEvaluacionHandler
     : IRequestHandler<GetMetricasEvaluacionQuery, ResultadoOperacion<MetricasEvaluacionDto>>
 {
     private readonly IResultadosRepositorio _repositorio;
@@ -57,12 +40,10 @@ public class GetMetricasEvaluacionHandler
 
     public async Task<ResultadoOperacion<MetricasEvaluacionDto>> Handle(
         GetMetricasEvaluacionQuery request,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
         var evaluacion = await _repositorio.ObtenerEvaluacionAsync(
-            request.EvaluacionId,
-            request.InstitucionId,
-            ct);
+            request.EvaluacionId, request.InstitucionId, cancellationToken);
 
         if (evaluacion is null)
         {
@@ -70,220 +51,228 @@ public class GetMetricasEvaluacionHandler
         }
 
         var preguntas = ParsearPreguntas(evaluacion.PreguntasJson);
-        var puntajeMaximoExamen = preguntas.Sum(p => p.PuntajeMaximo);
+        var puntajeMaximoExamen = Math.Round(preguntas.Sum(p => p.PuntajeMaximo), 2);
 
-        var entregas = await _repositorio.ListarEntregasPorEvaluacionAsync(
-            request.EvaluacionId,
-            request.InstitucionId,
-            ct);
+        var todasLasEntregas = await _repositorio.ListarEntregasPorEvaluacionAsync(
+            request.EvaluacionId, request.InstitucionId, cancellationToken);
 
-        if (entregas.Count == 0)
+        // Regla contrato S3-CT-01: solo cuentan las entregas con nota Aprobada
+        var entregasAprobadas = todasLasEntregas
+            .Where(e => e.EstadoNota == EstadoNotaEntrega.Aprobada)
+            .ToList();
+
+        if (entregasAprobadas.Count == 0)
         {
-            return ResultadoOperacion<MetricasEvaluacionDto>.Ok(new MetricasEvaluacionDto(
-                evaluacion.Id,
-                evaluacion.Titulo,
-                CantidadEntregas: 0,
-                PromedioExamen: null,
-                PuntajeMaximoExamen: puntajeMaximoExamen,
-                PreguntaMasDificil: null,
-                Alumnos: new List<MetricaAlumnoDto>()));
+            return ResultadoOperacion<MetricasEvaluacionDto>.Ok(
+                new MetricasEvaluacionDto(
+                    Promedio: null,
+                    PuntajeMaximo: puntajeMaximoExamen,
+                    CantidadAprobadas: 0,
+                    PreguntaMasDificilId: null,
+                    Preguntas: Array.Empty<MetricaPreguntaDto>(),
+                    Alumnos: Array.Empty<MetricaAlumnoDto>()));
         }
 
-        var entregaIds = entregas.Select(e => e.Id).ToList();
-        var calificacionesIa = await _repositorio.ListarCalificacionesPorEntregasAsync(entregaIds, ct);
-        var calificacionesDocente = await _repositorio.ListarCalificacionesDocentePorEntregasAsync(entregaIds, ct);
+        var entregaIds = entregasAprobadas.Select(e => e.Id).ToList();
 
-        // Acumuladores por pregunta para detectar la de menor puntaje promedio
+        var calificacionesIa = await _repositorio.ListarCalificacionesPorEntregasAsync(
+            entregaIds, cancellationToken);
+        var calificacionesDocente = await _repositorio.ListarCalificacionesDocentePorEntregasAsync(
+            entregaIds, cancellationToken);
+
+        var iaPorEntregaPregunta = calificacionesIa
+            .GroupBy(c => (c.EntregaId, c.PreguntaId))
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.FechaRegistro).First().NotaSugerida);
+
+        var docentePorEntregaPregunta = calificacionesDocente
+            .GroupBy(c => (c.EntregaId, c.PreguntaId))
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.FechaEdicionUtc).First().PuntajeDocente);
+
         var sumaPorPregunta = preguntas.ToDictionary(p => p.Id, _ => 0m);
-        var conteoPorPregunta = preguntas.ToDictionary(p => p.Id, _ => 0);
+        var resultadosAlumnos = new List<(Guid AlumnoId, decimal NotaFinal)>();
 
-        // Puntaje total calculado por cada entrega/alumno
-        var puntajesPorEntrega = new List<(EntregaExamen Entrega, decimal PuntajeTotal)>();
-
-        foreach (var entrega in entregas)
+        foreach (var entrega in entregasAprobadas)
         {
-            var respuestasEntrega = ParsearRespuestasEntrega(entrega.RespuestasJson);
-            var docPorPregunta = calificacionesDocente
-                .Where(c => c.EntregaId == entrega.Id)
-                .ToDictionary(c => c.PreguntaId, c => c.PuntajeDocente);
-            var iaPorPregunta = calificacionesIa
-                .Where(c => c.EntregaId == entrega.Id)
-                .ToDictionary(c => c.PreguntaId, c => c.NotaSugerida);
-
-            decimal sumaPreguntasEntrega = 0m;
+            var respuestas = ParsearRespuestas(entrega.RespuestasJson);
+            decimal notaAlumno = 0m;
 
             foreach (var pregunta in preguntas)
             {
                 decimal puntajePregunta = CalcularPuntajePregunta(
+                    entrega.Id,
                     pregunta,
-                    respuestasEntrega,
-                    docPorPregunta,
-                    iaPorPregunta);
+                    respuestas,
+                    docentePorEntregaPregunta,
+                    iaPorEntregaPregunta);
 
-                sumaPreguntasEntrega += puntajePregunta;
+                notaAlumno += puntajePregunta;
                 sumaPorPregunta[pregunta.Id] += puntajePregunta;
-                conteoPorPregunta[pregunta.Id]++;
             }
 
-            // Si la entrega ya fue aprobada con NotaFinal explícita, se respeta NotaFinal;
-            // caso contrario se usa la suma vigente de puntajes (docente > IA > MC).
-            var puntajeAlumno = (entrega.EstadoNota == EstadoNotaEntrega.Aprobada && entrega.NotaFinal.HasValue)
-                ? entrega.NotaFinal.Value
-                : sumaPreguntasEntrega;
-
-            puntajesPorEntrega.Add((entrega, Math.Round(puntajeAlumno, 2)));
+            resultadosAlumnos.Add((entrega.AlumnoId, Math.Round(notaAlumno, 2)));
         }
 
-        // 1. Promedio general del examen
-        var promedioExamen = Math.Round(puntajesPorEntrega.Average(x => x.PuntajeTotal), 2);
+        var cantidadAprobadas = entregasAprobadas.Count;
+        var promedioExamen = Math.Round(
+            resultadosAlumnos.Average(r => r.NotaFinal), 2);
 
-        // 2. Pregunta con menor puntaje promedio (la más difícil)
-        PreguntaMasDificilDto? preguntaMasDificil = null;
-        if (preguntas.Count > 0)
+        // Métricas para TODAS las preguntas
+        var metricasPreguntas = new List<MetricaPreguntaDto>();
+        foreach (var pregunta in preguntas)
         {
-            var candidata = preguntas
-                .Select(p =>
-                {
-                    var total = conteoPorPregunta[p.Id];
-                    var prom = total > 0 ? Math.Round(sumaPorPregunta[p.Id] / total, 2) : 0m;
-                    var porcentaje = p.PuntajeMaximo > 0
-                        ? Math.Round((double)(prom / p.PuntajeMaximo) * 100.0, 2)
-                        : 0.0;
+            var promedioPregunta = Math.Round(sumaPorPregunta[pregunta.Id] / cantidadAprobadas, 2);
+            var porcentaje = pregunta.PuntajeMaximo > 0m
+                ? Math.Round((promedioPregunta / pregunta.PuntajeMaximo) * 100m, 2)
+                : 0m;
 
-                    return new PreguntaMasDificilDto(
-                        p.Id,
-                        p.Enunciado,
-                        p.Tipo,
-                        prom,
-                        p.PuntajeMaximo,
-                        porcentaje);
-                })
-                .OrderBy(x => x.PuntajePromedio)
-                .ThenBy(x => x.PorcentajeAcierto)
-                .First();
-
-            preguntaMasDificil = candidata;
+            metricasPreguntas.Add(new MetricaPreguntaDto(
+                PreguntaId: pregunta.Id,
+                Enunciado: pregunta.Enunciado,
+                PuntajeMaximo: pregunta.PuntajeMaximo,
+                Promedio: promedioPregunta,
+                Porcentaje: porcentaje));
         }
 
-        // 3. Cada alumno comparado contra el promedio del curso
-        var alumnos = puntajesPorEntrega
-            .Select(item =>
-            {
-                var diferencia = Math.Round(item.PuntajeTotal - promedioExamen, 2);
-                var comparacion = diferencia > 0m
-                    ? "PorEncimaDelPromedio"
-                    : diferencia < 0m
-                        ? "PorDebajoDelPromedio"
-                        : "EnElPromedio";
+        // La pregunta más difícil es la de MENOR PORCENTAJE promedio
+        Guid? preguntaMasDificilId = metricasPreguntas.Count > 0
+            ? metricasPreguntas
+                .OrderBy(p => p.Porcentaje)
+                .ThenBy(p => p.Promedio)
+                .First()
+                .PreguntaId
+            : null;
 
-                return new MetricaAlumnoDto(
-                    item.Entrega.AlumnoId,
-                    item.Entrega.Id,
-                    item.Entrega.EstadoNota.ToString(),
-                    item.PuntajeTotal,
-                    puntajeMaximoExamen,
-                    diferencia,
-                    comparacion);
-            })
-            .OrderByDescending(a => a.PuntajeObtenido)
+        var alumnosDto = resultadosAlumnos
+            .Select(r => new MetricaAlumnoDto(
+                AlumnoId: r.AlumnoId,
+                NotaFinal: r.NotaFinal,
+                DiferenciaConPromedio: Math.Round(r.NotaFinal - promedioExamen, 2)))
             .ToList();
 
-        var resultado = new MetricasEvaluacionDto(
-            evaluacion.Id,
-            evaluacion.Titulo,
-            entregas.Count,
-            promedioExamen,
-            puntajeMaximoExamen,
-            preguntaMasDificil,
-            alumnos);
-
-        return ResultadoOperacion<MetricasEvaluacionDto>.Ok(resultado);
+        return ResultadoOperacion<MetricasEvaluacionDto>.Ok(
+            new MetricasEvaluacionDto(
+                Promedio: promedioExamen,
+                PuntajeMaximo: puntajeMaximoExamen,
+                CantidadAprobadas: cantidadAprobadas,
+                PreguntaMasDificilId: preguntaMasDificilId,
+                Preguntas: metricasPreguntas,
+                Alumnos: alumnosDto));
     }
 
     private static decimal CalcularPuntajePregunta(
-        PreguntaInfo pregunta,
-        Dictionary<Guid, string?> respuestasEntrega,
-        Dictionary<Guid, decimal> docPorPregunta,
-        Dictionary<Guid, decimal> iaPorPregunta)
+        Guid entregaId,
+        PreguntaDefinicion pregunta,
+        Dictionary<Guid, string?> respuestas,
+        Dictionary<(Guid EntregaId, Guid PreguntaId), decimal> docenteMap,
+        Dictionary<(Guid EntregaId, Guid PreguntaId), decimal> iaMap)
     {
-        // Prioridad 1: Edición explícita del docente
-        if (docPorPregunta.TryGetValue(pregunta.Id, out var puntajeDocente))
-        {
-            return puntajeDocente;
-        }
+        decimal bruto;
 
-        // Prioridad 2: Opción múltiple evaluada automáticamente
-        if (string.Equals(pregunta.Tipo, "OpcionMultiple", StringComparison.OrdinalIgnoreCase))
+        if (docenteMap.TryGetValue((entregaId, pregunta.Id), out var puntajeDocente))
         {
-            if (respuestasEntrega.TryGetValue(pregunta.Id, out var opcionIdStr) &&
-                !string.IsNullOrWhiteSpace(opcionIdStr) &&
-                Guid.TryParse(opcionIdStr, out var opcionGuid) &&
-                pregunta.OpcionesCorrectas.Contains(opcionGuid))
+            bruto = puntajeDocente;
+        }
+        else if (string.Equals(pregunta.Tipo, "OpcionMultiple", StringComparison.OrdinalIgnoreCase))
+        {
+            if (respuestas.TryGetValue(pregunta.Id, out var opcionElegida)
+                && !string.IsNullOrWhiteSpace(opcionElegida)
+                && pregunta.OpcionesCorrectas.Contains(opcionElegida.Trim()))
             {
-                return pregunta.PuntajeMaximo;
+                bruto = pregunta.PuntajeMaximo;
             }
-
-            return 0m;
+            else
+            {
+                bruto = 0m;
+            }
         }
-
-        // Prioridad 3: Nota sugerida por IA para pregunta abierta
-        if (iaPorPregunta.TryGetValue(pregunta.Id, out var notaIa))
+        else if (iaMap.TryGetValue((entregaId, pregunta.Id), out var puntajeIa))
         {
-            return notaIa;
+            bruto = puntajeIa;
+        }
+        else
+        {
+            bruto = 0m;
         }
 
-        return 0m;
+        if (bruto < 0m) return 0m;
+        if (bruto > pregunta.PuntajeMaximo) return pregunta.PuntajeMaximo;
+        return bruto;
     }
 
-    private static List<PreguntaInfo> ParsearPreguntas(string preguntasJson)
+    private sealed record PreguntaDefinicion(
+        Guid Id,
+        string Enunciado,
+        string Tipo,
+        decimal PuntajeMaximo,
+        HashSet<string> OpcionesCorrectas);
+
+    private static List<PreguntaDefinicion> ParsearPreguntas(string preguntasJson)
     {
-        var lista = new List<PreguntaInfo>();
+        var lista = new List<PreguntaDefinicion>();
         if (string.IsNullOrWhiteSpace(preguntasJson)) return lista;
 
         try
         {
             using var doc = JsonDocument.Parse(preguntasJson);
-            if (!doc.RootElement.TryGetProperty("preguntas", out var arr) || arr.ValueKind != JsonValueKind.Array)
-                return lista;
-
-            foreach (var elem in arr.EnumerateArray())
+            if (!doc.RootElement.TryGetProperty("preguntas", out var preguntasElem)
+                || preguntasElem.ValueKind != JsonValueKind.Array)
             {
-                if (!elem.TryGetProperty("id", out var idProp) || !Guid.TryParse(idProp.GetString(), out var id))
-                    continue;
+                return lista;
+            }
 
-                var enunciado = elem.TryGetProperty("enunciado", out var e) ? e.GetString() ?? "" : "";
-                var tipo = elem.TryGetProperty("tipo", out var t) ? t.GetString() ?? "Abierta" : "Abierta";
-                var puntajeMaximo = elem.TryGetProperty("puntajeMaximo", out var pm) && pm.TryGetDecimal(out var max)
-                    ? max
+            foreach (var p in preguntasElem.EnumerateArray())
+            {
+                if (!p.TryGetProperty("id", out var idProp)
+                    || !Guid.TryParse(idProp.GetString(), out var id))
+                {
+                    continue;
+                }
+
+                var enunciado = p.TryGetProperty("enunciado", out var enProp)
+                    ? enProp.GetString() ?? string.Empty
+                    : string.Empty;
+
+                var tipo = p.TryGetProperty("tipo", out var tipoProp)
+                    ? tipoProp.GetString() ?? string.Empty
+                    : string.Empty;
+
+                var puntajeMaximo = p.TryGetProperty("puntajeMaximo", out var pmProp)
+                    && pmProp.TryGetDecimal(out var pm)
+                    ? pm
                     : 0m;
 
-                var correctas = new HashSet<Guid>();
-                if (elem.TryGetProperty("opciones", out var opcs) && opcs.ValueKind == JsonValueKind.Array)
+                var opcionesCorrectas = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                if (p.TryGetProperty("opciones", out var opsProp)
+                    && opsProp.ValueKind == JsonValueKind.Array)
                 {
-                    foreach (var o in opcs.EnumerateArray())
+                    foreach (var op in opsProp.EnumerateArray())
                     {
-                        if (o.TryGetProperty("id", out var oid) &&
-                            Guid.TryParse(oid.GetString(), out var oGuid) &&
-                            o.TryGetProperty("esCorrecta", out var c) &&
-                            c.GetBoolean())
+                        var esCorrecta = op.TryGetProperty("esCorrecta", out var ecProp)
+                            && ecProp.ValueKind == JsonValueKind.True;
+
+                        if (esCorrecta && op.TryGetProperty("id", out var opIdProp))
                         {
-                            correctas.Add(oGuid);
+                            var opId = opIdProp.GetString();
+                            if (!string.IsNullOrWhiteSpace(opId))
+                            {
+                                opcionesCorrectas.Add(opId.Trim());
+                            }
                         }
                     }
                 }
 
-                lista.Add(new PreguntaInfo(id, enunciado, tipo, puntajeMaximo, correctas));
+                lista.Add(new PreguntaDefinicion(id, enunciado, tipo, puntajeMaximo, opcionesCorrectas));
             }
         }
         catch
         {
-            // JSON inválido devuelve lista vacía sin romper el endpoint
+            // JSON inválido devuelve lista vacía
         }
 
         return lista;
     }
 
-    private static Dictionary<Guid, string?> ParsearRespuestasEntrega(string respuestasJson)
+    private static Dictionary<Guid, string?> ParsearRespuestas(string respuestasJson)
     {
         var dict = new Dictionary<Guid, string?>();
         if (string.IsNullOrWhiteSpace(respuestasJson)) return dict;
@@ -295,11 +284,18 @@ public class GetMetricasEvaluacionHandler
 
             foreach (var elem in doc.RootElement.EnumerateArray())
             {
-                if (!elem.TryGetProperty("preguntaId", out var pid) || !Guid.TryParse(pid.GetString(), out var pGuid))
+                if (!elem.TryGetProperty("preguntaId", out var pid)
+                    || !Guid.TryParse(pid.GetString(), out var pGuid))
+                {
                     continue;
+                }
 
-                var opcion = elem.TryGetProperty("opcionElegidaId", out var oProp) ? oProp.GetString() : null;
-                var resp = elem.TryGetProperty("respuesta", out var rProp) ? rProp.GetString() : null;
+                var opcion = elem.TryGetProperty("opcionElegidaId", out var oProp)
+                    ? oProp.GetString()
+                    : null;
+                var resp = elem.TryGetProperty("respuesta", out var rProp)
+                    ? rProp.GetString()
+                    : null;
                 dict[pGuid] = opcion ?? resp;
             }
         }
@@ -310,11 +306,4 @@ public class GetMetricasEvaluacionHandler
 
         return dict;
     }
-
-    private record PreguntaInfo(
-        Guid Id,
-        string Enunciado,
-        string Tipo,
-        decimal PuntajeMaximo,
-        HashSet<Guid> OpcionesCorrectas);
 }
