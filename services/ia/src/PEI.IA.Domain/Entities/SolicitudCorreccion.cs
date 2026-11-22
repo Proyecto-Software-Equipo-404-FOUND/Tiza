@@ -63,6 +63,15 @@ public class SolicitudCorreccion : Entity<Guid>
     /// <summary>Estado actual de la solicitud.</summary>
     public EstadoCorreccion Estado { get; private set; } = EstadoCorreccion.Pendiente;
 
+    /// <summary>Indica si la solicitud requiere revisión manual por parte del docente.</summary>
+    public bool RequiereRevisionDocente { get; private set; }
+
+    /// <summary>Indica si se detectó sospecha de engaño o intento de manipulación en la respuesta.</summary>
+    public bool SospechaEngano { get; private set; }
+
+    /// <summary>Motivo por el cual se deriva a revisión manual o se marca sospecha.</summary>
+    public string? MotivoRevision { get; private set; }
+
     /// <summary>Mensaje de error si la corrección falló.</summary>
     public string? Error { get; private set; }
 
@@ -125,6 +134,36 @@ public class SolicitudCorreccion : Entity<Guid>
         Estado = EstadoCorreccion.Fallida;
         FechaModificacionUtc = DateTime.UtcNow;
     }
+
+    /// <summary>Marca la solicitud para revisión manual por parte del docente (formato inválido o intento de engaño).</summary>
+    public void MarcarParaRevisionDocente(
+        string motivo,
+        bool esSospechaEngano,
+        decimal? notaSugerida = null,
+        string? justificacion = null,
+        string? desglosePorCriterioJson = null,
+        string? proveedor = null,
+        string? modelo = null,
+        int tokensEntrada = 0,
+        int tokensSalida = 0,
+        long latenciaMs = 0)
+    {
+        RequiereRevisionDocente = true;
+        SospechaEngano = esSospechaEngano;
+        MotivoRevision = motivo;
+        Estado = EstadoCorreccion.RevisionManual;
+
+        if (notaSugerida.HasValue) NotaSugerida = notaSugerida.Value;
+        if (!string.IsNullOrWhiteSpace(justificacion)) Justificacion = justificacion;
+        if (!string.IsNullOrWhiteSpace(desglosePorCriterioJson)) DesglosePorCriterioJson = desglosePorCriterioJson;
+        if (!string.IsNullOrWhiteSpace(proveedor)) Proveedor = proveedor;
+        if (!string.IsNullOrWhiteSpace(modelo)) Modelo = modelo;
+        TokensEntrada = tokensEntrada;
+        TokensSalida = tokensSalida;
+        LatenciaMs = latenciaMs;
+
+        FechaModificacionUtc = DateTime.UtcNow;
+    }
 }
 
 /// <summary>Estados posibles de una solicitud de corrección.</summary>
@@ -133,5 +172,6 @@ public enum EstadoCorreccion
     Pendiente,
     EnProceso,
     Completada,
-    Fallida
+    Fallida,
+    RevisionManual
 }
