@@ -29,6 +29,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddSingleton<ILlmClient, PollyResilientLlmClient>();
 
 // ── Servicios de aplicación ──
+builder.Services.AddSingleton<IBarandaSeguridad, BarandaSeguridad>();
 builder.Services.AddSingleton<IPromptBuilder, PromptBuilder>();
 builder.Services.AddScoped<ICorreccionService, CorreccionService>();
 
