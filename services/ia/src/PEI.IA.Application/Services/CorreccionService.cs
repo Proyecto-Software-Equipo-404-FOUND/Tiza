@@ -147,7 +147,6 @@ public class CorreccionService : ICorreccionService
         // ── Inferencia con reintento ante formato inválido (máximo 1 reintento) ──
         LlmCompletionResult? llmResult = null;
         DatosEvaluacion? datosValidados = null;
-        var reintentoRealizado = false;
 
         for (int intento = 1; intento <= 2; intento++)
         {
