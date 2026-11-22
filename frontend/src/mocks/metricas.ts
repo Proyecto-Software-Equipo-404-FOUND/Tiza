@@ -2,7 +2,7 @@ import { http, HttpResponse } from 'msw';
 import type { MetricasEvaluacion } from '@/features/metricas/tipos';
 import { ALUMNO_1_A_ID, ALUMNO_2_A_ID } from './datos';
 import { evaluaciones } from './evaluaciones';
-import { rolDelToken } from './misExamenes';
+import { rolDelToken } from './token';
 
 // Datos falsos con la forma de MetricasEvaluacion (contracts/openapi/evaluaciones-v1.json, S3-EV-05).
 // Solo cuentan las notas aprobadas. El tercer alumno no existe en Identidad: la pantalla muestra un nombre de reemplazo.

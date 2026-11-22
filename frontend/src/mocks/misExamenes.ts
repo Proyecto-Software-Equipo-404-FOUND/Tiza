@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import type { MiExamen } from '@/features/mis-examenes/tipos';
+import { rolDelToken } from './token';
 
 // Datos falsos con la forma de MiExamen (contracts/openapi/evaluaciones-v1.json), del más nuevo al más viejo
 const examenes: MiExamen[] = [
@@ -29,19 +30,6 @@ const examenes: MiExamen[] = [
     puntajeMaximo: 5,
   },
 ];
-
-// El rol viaja en el JWT (claim role). Si no se puede leer se trata como sin sesión.
-export function rolDelToken(request: Request): string | null {
-  const encabezado = request.headers.get('Authorization');
-  const carga = encabezado?.replace('Bearer ', '').split('.')[1];
-  if (!carga) return null;
-  try {
-    const json = atob(carga.replace(/-/g, '+').replace(/_/g, '/'));
-    return (JSON.parse(json) as { role?: string }).role ?? null;
-  } catch {
-    return null;
-  }
-}
 
 export const handlersMisExamenes = [
   http.get('*/api/v1/alumnos/me/evaluaciones', ({ request }) => {

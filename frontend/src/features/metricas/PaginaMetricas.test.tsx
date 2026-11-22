@@ -97,6 +97,21 @@ describe('PaginaMetricas', () => {
     expect(within(dato).getByText('40 % de acierto promedio')).toBeInTheDocument();
   });
 
+  it('un enunciado largo se corta en la tarjeta, pero queda completo en el title', () => {
+    const largo = 'Explicá con tus palabras qué es un sismo, cómo se mide su magnitud y por qué algunos son más destructivos';
+    simular({
+      data: {
+        ...metricas,
+        preguntas: metricas.preguntas.map((p) => (p.preguntaId === metricas.preguntaMasDificilId ? { ...p, enunciado: largo } : p)),
+      },
+    });
+    renderizar();
+    const dato = screen.getByText('Pregunta más difícil').closest('div') as HTMLElement;
+    const texto = within(dato).getByText(largo);
+    expect(texto).toHaveAttribute('title', largo);
+    expect(texto).toHaveClass('line-clamp-2');
+  });
+
   it('lista cada pregunta con su barra y marca solo la más difícil', () => {
     simular({ data: metricas });
     renderizar();

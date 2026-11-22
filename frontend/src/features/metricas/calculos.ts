@@ -1,4 +1,4 @@
-import { formatearNumero } from '@/features/revision-notas/formato';
+import { formatearNumero } from '@/shared/lib/numeros';
 import type { MetricasEvaluacion, MetricaPregunta } from './tipos';
 
 export type Diferencia = { texto: string; tono: 'arriba' | 'abajo' | 'igual' };

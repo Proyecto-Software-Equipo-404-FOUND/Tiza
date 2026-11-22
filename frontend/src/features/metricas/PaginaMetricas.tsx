@@ -6,7 +6,7 @@ import { Spinner } from '@/shared/components/Spinner';
 import { Tabla, type Columna } from '@/shared/components/Tabla';
 import { Tarjeta } from '@/shared/components/Tarjeta';
 import { useEvaluacion } from '@/features/evaluaciones/hooks/useEvaluacion';
-import { formatearNota, formatearNumero } from '@/features/revision-notas/formato';
+import { formatearNota, formatearNumero } from '@/shared/lib/numeros';
 import { useNombresAlumnos } from '@/features/revision-notas/hooks/useNombresAlumnos';
 import { describirDiferencia, porcentajeParaBarra, preguntaMasDificil } from './calculos';
 import { useMetricas } from './hooks/useMetricas';
@@ -18,11 +18,20 @@ const estiloDiferencia = {
   igual: 'text-tiza-bosque/70',
 } as const;
 
-function Dato({ etiqueta, valor, detalle }: { etiqueta: string; valor: string; detalle?: string }) {
+type PropsDato = { etiqueta: string; valor: string; detalle?: string; acortar?: boolean };
+
+// `acortar`: un texto largo (el enunciado de una pregunta) se corta en 2 líneas y se ve completo al apoyar el mouse
+// y en la lista «Por pregunta», así la tarjeta no se agranda
+function Dato({ etiqueta, valor, detalle, acortar = false }: PropsDato) {
   return (
     <div className='flex flex-col gap-1 rounded-2xl border border-tiza-borde bg-white p-5 shadow-tarjeta'>
       <p className='text-sm font-semibold text-tiza-bosque/70'>{etiqueta}</p>
-      <p className='font-heading text-2xl font-extrabold text-tiza-bosque'>{valor}</p>
+      <p
+        title={acortar ? valor : undefined}
+        className={`font-heading font-extrabold text-tiza-bosque ${acortar ? 'line-clamp-2 break-words text-lg' : 'text-2xl'}`}
+      >
+        {valor}
+      </p>
       {detalle && <p className='text-sm text-tiza-bosque/70'>{detalle}</p>}
     </div>
   );
@@ -75,6 +84,7 @@ function Contenido({ metricas, nombreDe }: { metricas: MetricasEvaluacion; nombr
         <Dato
           etiqueta='Pregunta más difícil'
           valor={masDificil ? masDificil.enunciado : '—'}
+          acortar
           detalle={masDificil ? `${formatearNumero(masDificil.porcentaje)} % de acierto promedio` : undefined}
         />
         <Dato
