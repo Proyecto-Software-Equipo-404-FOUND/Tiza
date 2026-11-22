@@ -194,7 +194,6 @@ public class CorreccionService : ICorreccionService
 
             if (intento == 1)
             {
-                reintentoRealizado = true;
                 _logger.LogInformation("[Barandas IA] Reintentando llamada al LLM (intento 2 de 2)...");
             }
         }
