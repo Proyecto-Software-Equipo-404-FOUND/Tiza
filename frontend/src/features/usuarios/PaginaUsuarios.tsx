@@ -14,6 +14,7 @@ import { Tabla, type Columna } from '@/shared/components/Tabla';
 import { Tarjeta } from '@/shared/components/Tarjeta';
 import { useAviso } from '@/shared/components/Aviso';
 import { listarUsuarios, registrarUsuario, type RolNuevo, type UsuarioDeLaLista } from './api/usuarios';
+import { ImportarAlumnosCsv } from './ImportarAlumnosCsv';
 
 // Mismos límites que valida Identidad (RegisterRequest). BCrypt corta la contraseña en 72 bytes.
 const esquema = z.object({
@@ -213,6 +214,8 @@ export function PaginaUsuarios() {
           </Boton>
         </form>
       </Tarjeta>
+
+      <ImportarAlumnosCsv />
 
       <Tarjeta titulo='Usuarios de la institución'>
         {cargando ? (

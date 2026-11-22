@@ -24,3 +24,19 @@ export async function listarUsuarios(rol: RolNuevo): Promise<UsuarioDeLaLista[]>
   const usuarios = await pedir<UsuarioResumen[]>(`/api/v1/identidad/usuarios?rol=${rol}`);
   return usuarios.map((u) => ({ id: u.id, nombre: `${u.nombre} ${u.apellido}`.trim(), email: u.email, rol }));
 }
+
+// Respuesta de POST /api/usuarios/alumnos/importacion (ResultadoImportacion, S2-ID-02)
+export type ErrorDeFila = { fila: number; motivo: string };
+export type ResultadoImportacion = { creados: number; omitidos: number; errores: ErrorDeFila[] };
+
+// Solo Administrador. CSV en UTF-8 con columnas nombre,apellido,email (máximo 200 filas), enviado como
+// multipart/form-data en el campo «archivo». Las filas con error no frenan a las demás; un email que ya
+// existe se omite. Cada alumno nuevo recibe por email la invitación para definir su contraseña.
+export function importarAlumnos(archivo: File) {
+  const formulario = new FormData();
+  formulario.append('archivo', archivo);
+  return pedir<ResultadoImportacion>('/api/v1/identidad/usuarios/alumnos/importacion', {
+    method: 'POST',
+    body: formulario,
+  });
+}
