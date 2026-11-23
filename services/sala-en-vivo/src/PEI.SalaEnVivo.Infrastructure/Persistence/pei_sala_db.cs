@@ -24,6 +24,8 @@ namespace PEI.SalaEnVivo.Infrastructure.Persistence
 
             modelBuilder.Entity<ParticipanteSala>(p =>
             {
+                p.Property(x => x.NombreInvitado).HasMaxLength(60);
+
                 p.HasOne(x => x.Sala)
                     .WithMany()
                     .HasForeignKey(x => x.SalaId);

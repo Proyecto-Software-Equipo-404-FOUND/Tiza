@@ -150,6 +150,32 @@ describe('useSalaDocente', () => {
     expect(vista.result.current.pregunta?.indice).toBe(1);
   });
 
+  it('salaIniciada usa el reloj del servidor para el desfase del cronómetro', () => {
+    const { vista, emitir } = preparar();
+    const limite = enSegundos(1800);
+    emitir('salaIniciada', {
+      salaId: SALA,
+      iniciadaUtc: new Date().toISOString(),
+      totalPreguntas: 3,
+      fechaLimiteUtc: limite,
+      servidorUtc: new Date(Date.now() + 5000).toISOString(),
+    });
+    expect(vista.result.current.fechaLimiteSala).toBe(limite);
+    expect(vista.result.current.desfaseMs).toBeGreaterThan(4000);
+    expect(vista.result.current.desfaseMs).toBeLessThan(6000);
+  });
+
+  it('salaIniciada sin servidorUtc no cambia el desfase', () => {
+    const { vista, emitir } = preparar();
+    emitir('salaIniciada', {
+      salaId: SALA,
+      iniciadaUtc: new Date().toISOString(),
+      totalPreguntas: 3,
+      fechaLimiteUtc: enSegundos(1800),
+    });
+    expect(vista.result.current.desfaseMs).toBe(0);
+  });
+
   it('solo se puede avanzar mientras no sea la última pregunta', () => {
     const { vista, emitir } = preparar();
     emitir('preguntaActual', pregunta({ indice: 2, totalPreguntas: 3 }));

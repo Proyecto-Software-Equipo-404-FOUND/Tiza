@@ -45,8 +45,8 @@ export function FormularioAbrirSala({ cargando, error, onAbrir }: Props) {
     <Tarjeta titulo='Abrir sala'>
       <form onSubmit={enviar} noValidate className='flex flex-col gap-4'>
         <p className='text-tiza-bosque/80'>
-          Se crea una sala con un PIN para que los alumnos entren. El tiempo empieza a correr cuando la abrís:
-          al vencer, ya no se puede entrar ni responder.
+          Se crea una sala con un PIN para que los alumnos entren. El tiempo del examen empieza a correr cuando la
+          iniciás; si no la iniciás, la sala vence a las 24 horas.
         </p>
         <Campo
           etiqueta={`Capacidad máxima (${CAPACIDAD_MINIMA} a ${CAPACIDAD_MAXIMA} alumnos)`}

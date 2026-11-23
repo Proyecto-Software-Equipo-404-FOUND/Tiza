@@ -25,6 +25,15 @@ const salaVigente = (): SalaCreada => ({
   capacidadMaxima: 40,
 });
 
+// Como la devuelve el backend nuevo: sin fecha de vencimiento hasta que el docente inicia la sala
+const salaSinIniciar = (): SalaCreada => ({
+  id: SALA_ID,
+  codigoPIN: 654321,
+  fechaVencimiento: null,
+  capacidadMaxima: 40,
+  duracionMinutos: 90,
+});
+
 const enSegundos = (s: number) => new Date(Date.now() + s * 1000).toISOString();
 
 const pregunta = (indice: number) => ({
@@ -73,8 +82,8 @@ function renderizar() {
 }
 
 // Retoma una sala guardada y espera a que el panel termine de unirse
-async function renderizarPanel() {
-  guardarSala(EVALUACION, docente.id, salaVigente());
+async function renderizarPanel(sala: SalaCreada = salaVigente()) {
+  guardarSala(EVALUACION, docente.id, sala);
   const entorno = renderizar();
   await waitFor(() => expect(entorno.conexion.invocar).toHaveBeenCalledWith('ObtenerEstadoSala'));
   return entorno;
@@ -350,5 +359,71 @@ describe('PaginaSalaDocente', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Sí, abrir otra' }));
     expect(screen.getByRole('heading', { name: 'Abrir sala' })).toBeInTheDocument();
+  });
+
+  it('antes de iniciar muestra la duración completa quieta y no un reloj corriendo', async () => {
+    const { simular } = await renderizarPanel(salaSinIniciar());
+
+    act(() =>
+      simular('estadoSala', {
+        salaId: SALA_ID,
+        estado: 'Activa',
+        fechaLimiteUtc: null,
+        duracionMinutos: 90,
+        iniciadaUtc: null,
+        servidorUtc: new Date().toISOString(),
+      }),
+    );
+
+    expect(screen.getByRole('timer', { name: 'Duración: 90:00' })).toBeInTheDocument();
+    expect(screen.queryByRole('timer', { name: /^Sala:/ })).not.toBeInTheDocument();
+  });
+
+  it('si la sala guardada no trae duracionMinutos, usa la que informa el servidor en estadoSala', async () => {
+    const { simular } = await renderizarPanel({ ...salaSinIniciar(), duracionMinutos: undefined });
+
+    act(() =>
+      simular('estadoSala', {
+        salaId: SALA_ID,
+        estado: 'Activa',
+        fechaLimiteUtc: null,
+        duracionMinutos: 75,
+        iniciadaUtc: null,
+        servidorUtc: new Date().toISOString(),
+      }),
+    );
+
+    expect(screen.getByRole('timer', { name: 'Duración: 75:00' })).toBeInTheDocument();
+    expect(screen.queryByRole('timer', { name: /^Sala:/ })).not.toBeInTheDocument();
+  });
+
+  it('mientras no llega el estado de la sala no muestra ningún reloj', async () => {
+    await renderizarPanel(salaSinIniciar());
+
+    expect(screen.queryByRole('timer')).not.toBeInTheDocument();
+  });
+
+  it('al iniciar, el reloj de la sala cuenta desde el límite que manda el servidor', async () => {
+    const { simular } = await renderizarPanel(salaSinIniciar());
+
+    act(() =>
+      simular('salaIniciada', {
+        salaId: SALA_ID,
+        iniciadaUtc: new Date().toISOString(),
+        totalPreguntas: 3,
+        fechaLimiteUtc: enSegundos(5400),
+        servidorUtc: new Date().toISOString(),
+      }),
+    );
+
+    expect(screen.queryByRole('timer', { name: /^Duración:/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('timer', { name: /^Sala: (89|90):\d\d$/ })).toBeInTheDocument();
+  });
+
+  it('con el backend anterior (sala sin duracionMinutos) sigue mostrando el tiempo de la sala', async () => {
+    await renderizarPanel();
+
+    expect(screen.queryByRole('timer', { name: /^Duración:/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('timer', { name: /^Sala: (119|120):\d\d$/ })).toBeInTheDocument();
   });
 });

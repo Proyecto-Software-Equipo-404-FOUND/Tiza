@@ -4,7 +4,10 @@ export type EstadoDeSala = 'Activa' | 'EnCurso' | 'Finalizada';
 export type SalaCreada = {
   id: string;
   codigoPIN: number;
-  fechaVencimiento: string;
+  // NUEVO: null hasta que el docente inicia la sala (S3-SA-02, #239)
+  fechaVencimiento: string | null;
+  // NUEVO: minutos que dura el examen desde que se inicia. Opcional: una sala guardada antes del Sprint 3 no lo trae
+  duracionMinutos?: number;
   capacidadMaxima: number;
 };
 
@@ -29,6 +32,9 @@ export type EstadoSalaEvento = {
   fechaLimiteUtc: string | null;
   preguntaActual?: PreguntaActual | null;
   servidorUtc?: string;
+  // NUEVO (S3-SA-02, #239)
+  duracionMinutos?: number;
+  iniciadaUtc?: string | null;
 };
 
 // Evento `salaIniciada` (sección 6.2)
@@ -37,9 +43,11 @@ export type SalaIniciadaEvento = {
   iniciadaUtc: string;
   totalPreguntas: number;
   fechaLimiteUtc: string;
+  // NUEVO: hora del servidor al emitir, para calcular el desfase del reloj (S3-SA-02, #239)
+  servidorUtc?: string;
 };
 
-// Evento `salaFinalizada` (sección 6.6). Todavía no lo emite el hub (S2-SA-03, #140).
+// Evento `salaFinalizada` (sección 6.6). Lo emite el hub al finalizar la sala (S2-SA-03, #140).
 export type SalaFinalizadaEvento = {
   salaId: string;
   finalizadaUtc: string;

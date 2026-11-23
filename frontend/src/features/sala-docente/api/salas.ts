@@ -18,8 +18,9 @@ export type DatosAbrirSala = {
 };
 
 // La institución sale del token (claim institucion_id): no se manda ni en el cuerpo ni en un header.
-// duracionMinutos: cuánto queda abierta la sala desde que se crea (5 a 240, el servidor usa 120 si no llega).
-// Responde 201 con { id, codigoPIN, fechaVencimiento, capacidadMaxima }.
+// duracionMinutos: cuánto dura el examen desde que el docente inicia la sala (5 a 240, el servidor usa 120 si no llega).
+// Responde 201 con { id, codigoPIN, fechaVencimiento, capacidadMaxima, duracionMinutos }: fechaVencimiento es null
+// hasta que se inicia la sala, y una sala que nunca se inicia deja de valer a las 24 h.
 export const abrirSala = (datos: DatosAbrirSala) =>
   pedir<SalaCreada>('/api/v1/salas', {
     method: 'POST',
