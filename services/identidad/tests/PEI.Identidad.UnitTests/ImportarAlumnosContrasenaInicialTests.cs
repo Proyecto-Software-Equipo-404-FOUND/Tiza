@@ -78,6 +78,7 @@ public sealed class ImportarAlumnosContrasenaInicialTests
     [Theory]
     [InlineData("corta1")]
     [InlineData("ééééééééééééééééééééééééééééééééééééé")] // 37 caracteres = 74 bytes
+    [InlineData("        ")] // solo espacios (8): antes daba 500    
     public void ContrasenaFueraDeLasReglas_Invalida(string contrasena)
     {
         Assert.NotNull(ImportarAlumnosHandler.ValidarContrasenaInicial(contrasena));
