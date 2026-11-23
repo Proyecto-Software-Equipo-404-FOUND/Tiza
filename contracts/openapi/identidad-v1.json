@@ -825,6 +825,24 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/DemasiadosIntentos"
+          },
+          "503": {
+            "description": "Identidad no pudo consultar a Sala en vivo para verificar el PIN. Se puede reintentar.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "No pudimos verificar la sala. Probá de nuevo en unos segundos.",
+                  "status": 503,
+                  "type": "SALA_NO_DISPONIBLE"
+                }
+              }
+            }
           }
         }
       }
