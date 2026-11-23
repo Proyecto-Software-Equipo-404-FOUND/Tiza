@@ -69,7 +69,8 @@ namespace PEI.SalaEnVivo.Api.Controllers
                 InstitucionId = institucionId,
                 EvaluacionId = request.EvaluacionId,
                 CapacidadMaxima = request.CapacidadMaxima,
-                DuracionMinutos = request.DuracionMinutos ?? CrearSalaCommand.DuracionPorDefecto
+                DuracionMinutos = request.DuracionMinutos ?? CrearSalaCommand.DuracionPorDefecto,
+                PermitirInvitados = request.PermitirInvitados
             };
 
             try
@@ -81,8 +82,11 @@ namespace PEI.SalaEnVivo.Api.Controllers
                     {
                         Id = sala.Id,
                         CodigoPIN = sala.CodigoPIN,
-                        FechaVencimiento = sala.FechaVencimiento,
-                        CapacidadMaxima = sala.CapacidadMaxima
+                        // S3-SA-02 (#239): null hasta que el docente inicia la sala.
+                        FechaVencimiento = sala.FueIniciada ? sala.FechaVencimiento : (DateTime?)null,
+                        DuracionMinutos = sala.DuracionMinutos,
+                        CapacidadMaxima = sala.CapacidadMaxima,
+                        PermitirInvitados = sala.PermitirInvitados
                     });
             }
             catch (KeyNotFoundException ex)

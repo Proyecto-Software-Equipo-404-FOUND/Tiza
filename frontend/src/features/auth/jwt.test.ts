@@ -27,6 +27,22 @@ describe('usuarioDesdeToken', () => {
     expect(usuarioDesdeToken(token)).toMatchObject({ id: 'u2', rol: 'alumno', nombre: 'Ana' });
   });
 
+  it('acepta el token del invitado: rol Invitado, sin email, con sala_id y name', () => {
+    const token = crear({
+      sub: 'inv-1',
+      institucion_id: 'i1',
+      role: 'Invitado',
+      sala_id: 'sala-1',
+      name: 'Lucia Fernandez',
+    });
+    expect(usuarioDesdeToken(token)).toEqual({
+      id: 'inv-1',
+      institucionId: 'i1',
+      rol: 'invitado',
+      nombre: 'Lucia Fernandez',
+    });
+  });
+
   it('falla si falta un dato o si no es un token', () => {
     expect(() => usuarioDesdeToken(crear({ UsuarioId: 'u1' }))).toThrow();
     expect(() => usuarioDesdeToken('abc')).toThrow();

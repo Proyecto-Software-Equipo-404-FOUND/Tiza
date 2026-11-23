@@ -9,11 +9,18 @@ export const DURACION_MINIMA = 5;
 export const DURACION_MAXIMA = 240;
 export const DURACION_POR_DEFECTO = 60;
 
-export type DatosAbrirSala = { evaluacionId: string; capacidadMaxima: number; duracionMinutos: number };
+export type DatosAbrirSala = {
+  evaluacionId: string;
+  capacidadMaxima: number;
+  duracionMinutos: number;
+  /** Si la sala admite invitados (sin cuenta). El servidor usa false si no llega */
+  permitirInvitados?: boolean;
+};
 
 // La institución sale del token (claim institucion_id): no se manda ni en el cuerpo ni en un header.
-// duracionMinutos: cuánto queda abierta la sala desde que se crea (5 a 240, el servidor usa 120 si no llega).
-// Responde 201 con { id, codigoPIN, fechaVencimiento, capacidadMaxima }.
+// duracionMinutos: cuánto dura el examen desde que el docente inicia la sala (5 a 240, el servidor usa 120 si no llega).
+// Responde 201 con { id, codigoPIN, fechaVencimiento, capacidadMaxima, duracionMinutos }: fechaVencimiento es null
+// hasta que se inicia la sala, y una sala que nunca se inicia deja de valer a las 24 h.
 export const abrirSala = (datos: DatosAbrirSala) =>
   pedir<SalaCreada>('/api/v1/salas', {
     method: 'POST',
@@ -21,6 +28,8 @@ export const abrirSala = (datos: DatosAbrirSala) =>
       evaluacionId: datos.evaluacionId,
       capacidadMaxima: datos.capacidadMaxima,
       duracionMinutos: datos.duracionMinutos,
+      // Solo se manda cuando se activa: el contrato usa false por defecto
+      ...(datos.permitirInvitados ? { permitirInvitados: true } : {}),
     }),
   });
 

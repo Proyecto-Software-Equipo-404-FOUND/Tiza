@@ -14,15 +14,18 @@ namespace PEI.SalaEnVivo.Application.UseCases.Salas.Handlers
         private readonly ISalaRepository _salaRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IEvaluacionesClient _evaluacionesClient;
+        private readonly ISalaCronometroService? _cronometroService;
 
         public IniciarSalaCommandHandler(
             ISalaRepository salaRepository,
             IUnitOfWork unitOfWork,
-            IEvaluacionesClient evaluacionesClient)
+            IEvaluacionesClient evaluacionesClient,
+            ISalaCronometroService? cronometroService = null)
         {
             _salaRepository = salaRepository;
             _unitOfWork = unitOfWork;
             _evaluacionesClient = evaluacionesClient;
+            _cronometroService = cronometroService;
         }
 
         public async Task<ResultadoControlSala<ResultadoInicioSalaDto>> Handle(
@@ -52,6 +55,14 @@ namespace PEI.SalaEnVivo.Application.UseCases.Salas.Handlers
                     "La sala ya finalizó.");
             }
 
+            // S3-SA-02 (#239): una sala creada y nunca iniciada vence a las 24 h (Sala.EsperaMaximaSinIniciar).
+            if (!sala.FueIniciada && sala.Estado == "Activa" && sala.FechaVencimiento <= DateTime.UtcNow)
+            {
+                return ResultadoControlSala<ResultadoInicioSalaDto>.Error(
+                    "SALA_VENCIDA",
+                    "La sala venció sin iniciarse (más de 24 horas). Creá una sala nueva.");
+            }
+
             var evaluacion = await ObtenerEvaluacionAsync(sala.EvaluacionId, sala.InstitucionId, cancellationToken);
 
             if (evaluacion == null || evaluacion.Preguntas.Count == 0)
@@ -67,7 +78,8 @@ namespace PEI.SalaEnVivo.Application.UseCases.Salas.Handlers
 
             if (!yaIniciada)
             {
-                sala.Iniciar();
+                // S3-SA-02 (#239): acá arranca el reloj del examen.
+                sala.Iniciar(DateTime.UtcNow);
             }
 
             if (!yaIniciada || sala.PreguntaActualId == null || sala.IndicePreguntaActual != indice)
@@ -76,7 +88,13 @@ namespace PEI.SalaEnVivo.Application.UseCases.Salas.Handlers
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
             }
 
-            var iniciadaUtc = DateTime.UtcNow;
+            if (!yaIniciada && _cronometroService != null)
+            {
+                // El cronómetro cachea el vencimiento en Redis: se pisa el plazo previo al inicio.
+                await _cronometroService.EstablecerVencimientoAsync(sala.Id, sala.FechaVencimiento, cancellationToken);
+            }
+
+            var iniciadaUtc = sala.IniciadaUtc ?? DateTime.UtcNow;
             var preguntaActual = PreguntaActualMapper.Crear(
                 sala.Id,
                 preguntas,
