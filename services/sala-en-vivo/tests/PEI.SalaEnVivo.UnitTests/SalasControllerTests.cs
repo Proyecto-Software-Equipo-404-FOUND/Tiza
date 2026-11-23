@@ -5,6 +5,7 @@ using PEI.SalaEnVivo.Api.Controllers;
 using PEI.SalaEnVivo.Application.DTOs.Evaluaciones;
 using PEI.SalaEnVivo.Application.DTOs.Salas;
 using PEI.SalaEnVivo.Application.UseCases.Salas.Handlers;
+using PEI.SalaEnVivo.Domain.Entities;
 using Xunit;
 
 namespace PEI.SalaEnVivo.UnitTests
@@ -176,7 +177,7 @@ namespace PEI.SalaEnVivo.UnitTests
         [Theory]
         [InlineData(null, 120)]
         [InlineData(45, 45)]
-        public async Task CrearSala_Duracion_DefineElVencimiento(int? duracion, int minutosEsperados)
+        public async Task CrearSala_Duracion_SeGuardaYElRelojNoCorreHastaIniciar(int? duracion, int minutosEsperados)
         {
             var evaluacionId = Guid.NewGuid();
             _evaluacionesClient.Evaluaciones[evaluacionId] = new EvaluacionPreguntasDto(
@@ -189,12 +190,15 @@ namespace PEI.SalaEnVivo.UnitTests
             var result = await controller.CrearSala(
                 new CrearSalaRequestDto(evaluacionId, 30, duracion), CancellationToken.None);
 
-            Assert.IsType<CreatedResult>(result);
-            var vencimiento = _salaRepository.Salas[0].FechaVencimiento;
-            Assert.InRange(
-                vencimiento,
-                antes.AddMinutes(minutosEsperados).AddSeconds(-5),
-                DateTime.UtcNow.AddMinutes(minutosEsperados).AddSeconds(5));
+            // S3-SA-02 (#239): la duración se guarda; el vencimiento del examen se calcula al iniciar.
+            var creado = Assert.IsType<CreatedResult>(result);
+            var sala = _salaRepository.Salas[0];
+            Assert.Equal(minutosEsperados, sala.DuracionMinutos);
+            Assert.Null(sala.IniciadaUtc);
+            Assert.True(sala.FechaVencimiento >= antes.Add(Sala.EsperaMaximaSinIniciar).AddSeconds(-5));
+
+            var fechaVencimiento = creado.Value!.GetType().GetProperty("FechaVencimiento")!.GetValue(creado.Value);
+            Assert.Null(fechaVencimiento);
         }
     }
 }

@@ -24,7 +24,7 @@ try {
   assert.equal(second.estado, 'Duplicada');
   assert.equal(second.idempotencyKey, payload.idempotencyKey);
   // Comparar a la precisión de almacenamiento de PostgreSQL, no a ticks de .NET.
-  const persistedTime = value => value.replace(/(\.\d{6})\d+Z$/, '$1Z');
+  const persistedTime = value => value.replace(/\.(\d+)Z$/, (_, f) => `.${f.padEnd(6, '0').slice(0, 6)}Z`); // .79159Z = .791590Z
   assert.equal(persistedTime(second.recibidaUtc), persistedTime(first.recibidaUtc));
   const after = await hub.invoke('ObtenerEstadoSala');
   assert.equal(after.ultimaSecuencia, payload.secuencia);

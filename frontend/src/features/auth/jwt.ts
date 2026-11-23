@@ -2,7 +2,7 @@ import type { Rol, Usuario } from '@/shared/api/tipos';
 
 type Claims = Record<string, unknown>;
 
-const ROLES: Rol[] = ['alumno', 'docente', 'administrador'];
+const ROLES: Rol[] = ['alumno', 'docente', 'administrador', 'invitado'];
 
 function decodificar(token: string): Claims {
   const carga = token.split('.')[1];
@@ -21,7 +21,8 @@ function leer(claims: Claims, ...nombres: string[]) {
   return undefined;
 }
 
-// Claims reales de Identidad: sub, institucion_id y role (Docente, Alumno, Administrador).
+// Claims reales de Identidad: sub, institucion_id y role (Docente, Alumno, Administrador, Invitado).
+// El Invitado trae además sala_id y name, y no trae email (contrato identidad-v1, S3-SA-01).
 // Se aceptan también los nombres anteriores para no romper tokens de prueba.
 export function usuarioDesdeToken(token: string): Usuario {
   const claims = decodificar(token);

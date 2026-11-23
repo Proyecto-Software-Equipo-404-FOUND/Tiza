@@ -1,10 +1,10 @@
 import { crearConexionFalsa } from '@/shared/realtime/conexionFalsa';
 import type { ConexionSala } from '@/shared/realtime/tipos';
 import type { EstadoDeSala, PreguntaActual } from '@/features/sala-docente/tipos';
+import { DURACION_POR_DEFECTO_MINUTOS, duracionesDeSalas } from './salas';
 
 const TOTAL_PREGUNTAS = 3;
 const SEGUNDOS_POR_PREGUNTA = 90;
-const SEGUNDOS_DE_SALA = 1800;
 
 const ALUMNOS = [1, 2, 3, 4].map((n) => ({
   alumnoId: `aaaaaaaa-0000-4000-8000-00000000000${n}`,
@@ -34,6 +34,9 @@ type EstadoGuardado = {
   indice: number;
   fechaLimiteSala: string | null;
   conectados: string[];
+  // Opcionales: una sala guardada antes de este cambio no los trae
+  duracionMinutos?: number;
+  iniciadaUtc?: string | null;
 };
 const claveDe = (salaId: string) => `tiza-demo-sala-${salaId}`;
 
@@ -57,7 +60,8 @@ function guardar(salaId: string, datos: EstadoGuardado) {
 // Sala de mentira para la demo del panel del docente.
 // Al unirse el docente, «entran» 4 alumnos de a uno (el 2 entra dos veces, como una reconexión)
 // y el 4 se desconecta a los pocos segundos (evento `alumnoSalio`).
-// Al iniciar, llegan respuestas y alertas de foco simuladas (una amarilla y una roja).
+// Al iniciar, el reloj de la sala arranca (dura lo que se eligió al abrirla) y llegan respuestas y alertas de foco
+// simuladas (una amarilla y una roja).
 // Si se recarga la página no se repite nada: se restaura la sala y se manda la foto de presencia
 // (`alumnosConectados`), como hace el hub real cuando el docente se reconecta.
 // Errores del hub como el real: «CODIGO: mensaje».
@@ -68,13 +72,15 @@ export function crearConexionDemoDocente(): ConexionSala {
   let estado: EstadoDeSala = 'Activa';
   let indice = 0;
   let fechaLimiteSala: string | null = null;
+  let iniciadaUtc: string | null = null;
+  let duracionMinutos = DURACION_POR_DEFECTO_MINUTOS;
   let alumnosSimulados = false;
   const ingresaron = new Set<string>();
 
   const sigueEn = (esperado: EstadoDeSala) => estado === esperado;
 
   const persistir = () => {
-    if (salaId) guardar(salaId, { estado, indice, fechaLimiteSala, conectados: [...ingresaron] });
+    if (salaId) guardar(salaId, { estado, indice, fechaLimiteSala, conectados: [...ingresaron], duracionMinutos, iniciadaUtc });
   };
 
   const ingresar = (posicion: number) => {
@@ -137,11 +143,14 @@ export function crearConexionDemoDocente(): ConexionSala {
     setTimeout(() => sigueEn('EnCurso') && respuesta(1), 11000);
   };
 
+  // Como el contrato: antes de iniciar no hay fecha límite (null) y se informa la duración
   const emitirEstado = () =>
     simular('estadoSala', {
       salaId,
       estado,
       fechaLimiteUtc: fechaLimiteSala,
+      duracionMinutos,
+      iniciadaUtc,
       preguntaActual: indice > 0 ? preguntaNumero(salaId, indice) : null,
       ultimaSecuencia: 0,
       preguntasRespondidas: [],
@@ -164,6 +173,8 @@ export function crearConexionDemoDocente(): ConexionSala {
           estado = guardado.estado;
           indice = guardado.indice;
           fechaLimiteSala = guardado.fechaLimiteSala;
+          duracionMinutos = guardado.duracionMinutos ?? duracionesDeSalas.get(salaId) ?? DURACION_POR_DEFECTO_MINUTOS;
+          iniciadaUtc = guardado.iniciadaUtc ?? null;
           alumnosSimulados = true;
           guardado.conectados.forEach((id) => ingresaron.add(id));
           simular('alumnosConectados', {
@@ -177,6 +188,7 @@ export function crearConexionDemoDocente(): ConexionSala {
           });
           return undefined;
         }
+        duracionMinutos = duracionesDeSalas.get(salaId) ?? DURACION_POR_DEFECTO_MINUTOS;
         persistir();
         simularAlumnos();
         return undefined;
@@ -194,13 +206,16 @@ export function crearConexionDemoDocente(): ConexionSala {
         if (sigueEn('EnCurso')) return undefined; // idempotente
         estado = 'EnCurso';
         indice = 1;
-        fechaLimiteSala = enSegundos(SEGUNDOS_DE_SALA);
+        // El reloj de la sala arranca acá: inicio + duración elegida al abrirla
+        iniciadaUtc = new Date().toISOString();
+        fechaLimiteSala = enSegundos(duracionMinutos * 60);
         persistir();
         simular('salaIniciada', {
           salaId,
-          iniciadaUtc: new Date().toISOString(),
+          iniciadaUtc,
           totalPreguntas: TOTAL_PREGUNTAS,
           fechaLimiteUtc: fechaLimiteSala,
+          servidorUtc: new Date().toISOString(),
         });
         simular('preguntaActual', preguntaNumero(salaId, indice));
         simularActividad();

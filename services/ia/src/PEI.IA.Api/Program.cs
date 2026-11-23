@@ -1,6 +1,7 @@
 using Microsoft.OpenApi.Models;
 using PEI.BuildingBlocks.Errors;
 using PEI.BuildingBlocks.Logging;
+using PEI.IA.Application.Guardrails;
 using PEI.IA.Application.Interfaces;
 using PEI.IA.Application.Prompts;
 using PEI.IA.Application.Services;
@@ -29,6 +30,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddSingleton<ILlmClient, PollyResilientLlmClient>();
 
 // ── Servicios de aplicación ──
+builder.Services.AddSingleton<IBarandaSeguridad, BarandaSeguridad>();
 builder.Services.AddSingleton<IPromptBuilder, PromptBuilder>();
 builder.Services.AddScoped<ICorreccionService, CorreccionService>();
 
