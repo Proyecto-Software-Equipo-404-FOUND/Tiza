@@ -67,6 +67,91 @@ export const evaluaciones: Evaluacion[] = [
     fechaActualizacion: '2026-10-24T10:00:00Z',
     version: 1,
   },
+  {
+    id: 'e0000000-0000-4000-8000-000000000003',
+    institucionId: INSTITUCION_A,
+    titulo: 'Quiz 1: Redes y Telecomunicaciones',
+    tipo: 'Quiz',
+    estado: 'Borrador',
+    cohorteId: null,
+    preguntasJson: {
+      version: 1,
+      preguntas: [
+        {
+          id: 'f0000000-0000-4000-8000-000000000010',
+          enunciado: 'Clasificá cada protocolo según su capa en el modelo TCP/IP:',
+          tipo: 'BucketSort',
+          puntajeMaximo: 1.5,
+          puntajePorItem: 0.3,
+          cestas: [
+            { id: 'capa_aplicacion', titulo: 'Capa de Aplicación', icono: '🌐' },
+            { id: 'capa_red_transporte', titulo: 'Red y Transporte', icono: '🔀' },
+          ],
+          itemsBucket: [
+            { id: 'it_http', texto: 'HTTP / HTTPS', cestaCorrecta: 'capa_aplicacion' },
+            { id: 'it_ip', texto: 'Protocolo IP', cestaCorrecta: 'capa_red_transporte' },
+            { id: 'it_dns', texto: 'DNS', cestaCorrecta: 'capa_aplicacion' },
+            { id: 'it_tcp', texto: 'TCP / UDP', cestaCorrecta: 'capa_red_transporte' },
+            { id: 'it_smtp', texto: 'SMTP (Correo)', cestaCorrecta: 'capa_aplicacion' },
+          ],
+        },
+        {
+          id: 'f0000000-0000-4000-8000-000000000011',
+          enunciado: 'Determiná si cada afirmación sobre telecomunicaciones y modulación es Verdadera o Falsa:',
+          tipo: 'ClasificadorRapido',
+          puntajeMaximo: 1.5,
+          puntajePorItem: 0.3,
+          afirmaciones: [
+            { id: 'af_1', texto: 'La modulación AM varía la amplitud de la portadora manteniendo su frecuencia constante.', esVerdadera: true },
+            { id: 'af_2', texto: 'En el modelo OSI, la dirección MAC opera en la Capa de Red (Capa 3).', esVerdadera: false },
+            { id: 'af_3', texto: 'La fibra óptica transmite señales en el espectro de la luz visible o infrarroja.', esVerdadera: true },
+            { id: 'af_4', texto: 'A mayor frecuencia de una onda electromagnética, mayor es su longitud de onda.', esVerdadera: false },
+            { id: 'af_5', texto: 'El espectro electromagnético de radiofrecuencia es un recurso natural finito y regulado.', esVerdadera: true },
+          ],
+        },
+        {
+          id: 'f0000000-0000-4000-8000-000000000012',
+          enunciado: 'Asociá cada concepto de modulación y capa física con su definición correspondiente:',
+          tipo: 'Emparejamiento',
+          puntajeMaximo: 1.5,
+          puntajePorItem: 0.3,
+          pares: [
+            { conceptoId: 'c1', conceptoTexto: 'Modulación QAM', definicionId: 'd1', definicionTexto: 'Combina variación de amplitud y fase de la portadora.' },
+            { conceptoId: 'c2', conceptoTexto: 'Ancho de Banda', definicionId: 'd2', definicionTexto: 'Rango de frecuencias que puede transportar el canal.' },
+            { conceptoId: 'c3', conceptoTexto: 'Capa Física', definicionId: 'd3', definicionTexto: 'Transmisión de cadenas de bits sobre el medio de transmisión.' },
+            { conceptoId: 'c4', conceptoTexto: 'Modulación FM', definicionId: 'd4', definicionTexto: 'Varía la frecuencia de la portadora según la moduladora.' },
+            { conceptoId: 'c5', conceptoTexto: 'Atenuación', definicionId: 'd5', definicionTexto: 'Pérdida paulatina de potencia de la señal con la distancia.' },
+          ],
+        },
+        {
+          id: 'f0000000-0000-4000-8000-000000000013',
+          enunciado: 'Ordená las capas del Modelo OSI desde la capa inferior (Capa 1) hacia la superior (Capa 4):',
+          tipo: 'Ordenamiento',
+          puntajeMaximo: 1,
+          itemsOrden: [
+            { id: 'l1', texto: 'Capa 1: Capa Física (señales eléctricas/ópticas y bits)', ordenCorrecto: 1 },
+            { id: 'l2', texto: 'Capa 2: Capa de Enlace de Datos (tramas y direcciones MAC)', ordenCorrecto: 2 },
+            { id: 'l3', texto: 'Capa 3: Capa de Red (paquetes y enrutamiento IP)', ordenCorrecto: 3 },
+            { id: 'l4', texto: 'Capa 4: Capa de Transporte (segmentos, TCP/UDP)', ordenCorrecto: 4 },
+          ],
+        },
+        {
+          id: 'f0000000-0000-4000-8000-000000000014',
+          enunciado: '¿Qué protocolo de la capa de transporte proporciona una entrega confiable y orientada a la conexión?',
+          tipo: 'OpcionMultiple',
+          puntajeMaximo: 2,
+          opciones: [
+            { id: 'op_tcp', texto: 'TCP (Transmission Control Protocol)', esCorrecta: true },
+            { id: 'op_udp', texto: 'UDP (User Datagram Protocol)', esCorrecta: false },
+            { id: 'op_icmp', texto: 'ICMP (Internet Control Message Protocol)', esCorrecta: false },
+          ],
+        },
+      ],
+    },
+    fechaCreacion: '2026-11-20T10:00:00Z',
+    fechaActualizacion: '2026-11-20T10:00:00Z',
+    version: 1,
+  },
 ];
 
 // Como el servicio real: sin X-Institucion-Id responde 400 y solo muestra lo de esa institución

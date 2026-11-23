@@ -17,18 +17,45 @@ export type EstadoDeSala = 'Activa' | 'EnCurso' | 'Finalizada';
 
 export type OpcionPregunta = { id: string; texto: string };
 
-// Evento `preguntaActual` (sección 6.3). No trae la respuesta correcta ni la rúbrica.
+/* Tipos específicos para dinámicas gamificadas de Quiz en tiempo real */
+export type CestaPregunta = { id: string; titulo: string; icono: string };
+export type ItemBucketPregunta = { id: string; texto: string; cestaCorrecta?: string };
+export type AfirmacionPregunta = { id: string; texto: string; esVerdadera?: boolean };
+export type ParPregunta = {
+  conceptoId: string;
+  conceptoTexto: string;
+  definicionId: string;
+  definicionTexto: string;
+};
+export type ItemOrdenPregunta = { id: string; texto: string; ordenCorrecto?: number };
+
+export type TipoPreguntaSala =
+  | 'OpcionMultiple'
+  | 'Abierta'
+  | 'BucketSort'
+  | 'ClasificadorRapido'
+  | 'Emparejamiento'
+  | 'Ordenamiento';
+
+/* Evento `preguntaActual` (sección 6.3). */
 export type PreguntaActual = {
   salaId: string;
   preguntaId: string;
   indice: number;
   totalPreguntas: number;
-  tipo: 'OpcionMultiple' | 'Abierta';
+  tipo: TipoPreguntaSala;
   enunciado: string;
   opciones: OpcionPregunta[] | null;
   puntajeMaximo: number;
   fechaInicioUtc: string;
   fechaLimiteUtc: string;
+  /* Atributos para dinámicas gamificadas */
+  puntajePorItem?: number;
+  cestas?: CestaPregunta[];
+  itemsBucket?: ItemBucketPregunta[];
+  afirmaciones?: AfirmacionPregunta[];
+  pares?: ParPregunta[];
+  itemsOrden?: ItemOrdenPregunta[];
 };
 
 // Evento `estadoSala` (sección 6.5). Los campos de recuperación son opcionales por si

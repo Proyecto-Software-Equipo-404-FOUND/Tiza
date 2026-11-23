@@ -87,6 +87,7 @@ export function FormularioEvaluacion({ inicial, textoEnviar, enviando, error, on
                 key={pregunta.id}
                 pregunta={pregunta}
                 numero={indice + 1}
+                tipoEvaluacion={borrador.tipo}
                 errores={errores}
                 deshabilitado={enviando}
                 onCambiar={(cambiada) =>
