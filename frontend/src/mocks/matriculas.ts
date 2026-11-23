@@ -1,4 +1,5 @@
 import { http, HttpResponse } from 'msw';
+import { cohortes } from './cohortes';
 import { INSTITUCION_A, usuarios } from './datos';
 
 // Datos falsos de matrícula con la forma de los contratos de Cursos e Identidad.
@@ -20,6 +21,12 @@ const matriculas: Array<{
   fechaAlta: string;
   estado: 'Activa' | 'Baja';
 }> = [];
+
+// S3-CU-02: ¿alguna comisión del curso tiene matrículas activas?
+export const cursoTieneAlumnosActivos = (cursoId: string) =>
+  matriculas.some(
+    (m) => m.estado === 'Activa' && cohortes.some((c) => c.id === m.cohorteId && c.cursoId === cursoId),
+  );
 
 export const handlersMatriculas = [
   // GET /api/usuarios (S2-ID-10) por el gateway; acá solo se atiende el filtro rol=Alumno
@@ -71,6 +78,29 @@ export const handlersMatriculas = [
     // Para probar el conflicto: matricular dos veces al mismo alumno devuelve 409
     if (matriculas.some((m) => m.cohorteId === cohorteId && m.alumnoId === alumnoId)) {
       return HttpResponse.json({ title: 'Conflicto', status: 409 }, { status: 409 });
+    }
+    // S3-CU-04: un alumno solo puede estar en una comisión activa por curso
+    const cursoId = cohortes.find((c) => c.id === cohorteId)?.cursoId;
+    const matriculaEnOtra = matriculas.find(
+      (m) =>
+        m.alumnoId === alumnoId &&
+        m.estado === 'Activa' &&
+        m.cohorteId !== cohorteId &&
+        cohortes.some((c) => c.id === m.cohorteId && c.cursoId === cursoId),
+    );
+    if (matriculaEnOtra) {
+      // Como el contrato: el 409 suma la comisión donde el alumno ya está activo
+      const actual = cohortes.find((c) => c.id === matriculaEnOtra.cohorteId);
+      return HttpResponse.json(
+        {
+          title: 'El alumno ya está en otra comisión de este curso.',
+          status: 409,
+          type: 'ALUMNO_EN_OTRA_COMISION',
+          cohorteActualId: matriculaEnOtra.cohorteId,
+          cohorteActualNombre: actual?.nombre ?? null,
+        },
+        { status: 409 },
+      );
     }
     const nueva = {
       id: crypto.randomUUID(),
