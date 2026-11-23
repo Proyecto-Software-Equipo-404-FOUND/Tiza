@@ -25,6 +25,9 @@ namespace PEI.SalaEnVivo.Domain.Entities
         public static readonly TimeSpan EsperaMaximaSinIniciar = TimeSpan.FromHours(24);
 
         public bool FueIniciada => IniciadaUtc.HasValue;
+
+        /// <summary>S3-SA-01 (#231): si es true, se puede entrar con PIN + nombre sin cuenta (rol Invitado).</summary>
+        public bool PermitirInvitados { get; set; }
         public int CodigoPIN { get; set; }
         public string Estado { get; set; } = string.Empty;
         public int CapacidadMaxima { get; set; }

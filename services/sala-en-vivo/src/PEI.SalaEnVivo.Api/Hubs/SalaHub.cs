@@ -18,6 +18,7 @@ namespace PEI.SalaEnVivo.Api.Hubs
     public sealed class SalaHub : Hub
     {
         private const string RolDocente = "Docente";
+        private const string RolInvitado = "Invitado";
         private readonly ISender _sender;
         private readonly IPresenciaSalaService _presencia;
         private readonly ILogger<SalaHub> _logger;
@@ -51,6 +52,25 @@ namespace PEI.SalaEnVivo.Api.Hubs
                 throw new HubException("Institución no válida.");
             }
 
+            // S3-SA-01 (#231): el invitado trae role = Invitado, sala_id y name en su token.
+            var esInvitado = string.Equals(LeerRol(user), RolInvitado, StringComparison.OrdinalIgnoreCase);
+            Guid? salaIdInvitado = null;
+            string? nombreInvitado = null;
+            if (esInvitado)
+            {
+                if (!Guid.TryParse(user?.FindFirst("sala_id")?.Value, out var salaDelToken))
+                {
+                    throw new HubException("NO_AUTORIZADO: El token de invitado no indica la sala.");
+                }
+
+                salaIdInvitado = salaDelToken;
+                nombreInvitado = (user?.FindFirst("name")?.Value ?? user?.FindFirst(ClaimTypes.Name)?.Value)?.Trim();
+                if (string.IsNullOrWhiteSpace(nombreInvitado))
+                {
+                    throw new HubException("NO_AUTORIZADO: El token de invitado no trae el nombre.");
+                }
+            }
+
             try
             {
                 var salaId = await _sender.Send(
@@ -58,7 +78,10 @@ namespace PEI.SalaEnVivo.Api.Hubs
                         pin,
                         alumnoId,
                         institucionId,
-                        ObtenerTokenAcceso()),
+                        ObtenerTokenAcceso(),
+                        esInvitado,
+                        salaIdInvitado,
+                        nombreInvitado),
                     Context.ConnectionAborted);
 
                 Context.Items["SalaId"] = salaId;
@@ -78,7 +101,7 @@ namespace PEI.SalaEnVivo.Api.Hubs
                     estado,
                     Context.ConnectionAborted);
 
-                await NotificarIngresoAlumnoAsync(salaId, alumnoId, registroPresencia);
+                await NotificarIngresoAlumnoAsync(salaId, alumnoId, registroPresencia, nombreInvitado);
             }
             catch (UnauthorizedAccessException)
             {
@@ -174,8 +197,8 @@ namespace PEI.SalaEnVivo.Api.Hubs
 
                     await Clients.Caller.SendAsync(
                         "alumnosConectados",
-                        await _presencia.ObtenerPresenciaAsync(
-                            estado.SalaId,
+                        await PresenciaConInvitadosAsync(
+                            await _presencia.ObtenerPresenciaAsync(estado.SalaId, Context.ConnectionAborted),
                             Context.ConnectionAborted),
                         Context.ConnectionAborted);
                 }
@@ -222,8 +245,8 @@ namespace PEI.SalaEnVivo.Api.Hubs
 
             var (salaId, _) = ObtenerContextoDocente();
 
-            return await _presencia.ObtenerPresenciaAsync(
-                salaId,
+            return await PresenciaConInvitadosAsync(
+                await _presencia.ObtenerPresenciaAsync(salaId, Context.ConnectionAborted),
                 Context.ConnectionAborted);
         }
 
@@ -263,8 +286,8 @@ namespace PEI.SalaEnVivo.Api.Hubs
 
             await Clients.Caller.SendAsync(
                 "alumnosConectados",
-                await _presencia.ObtenerPresenciaAsync(
-                    salaIdValidada,
+                await PresenciaConInvitadosAsync(
+                    await _presencia.ObtenerPresenciaAsync(salaIdValidada, Context.ConnectionAborted),
                     Context.ConnectionAborted),
                 Context.ConnectionAborted);
         }
@@ -536,12 +559,13 @@ namespace PEI.SalaEnVivo.Api.Hubs
         private async Task NotificarIngresoAlumnoAsync(
             Guid salaId,
             Guid alumnoId,
-            RegistroPresenciaDto registro)
+            RegistroPresenciaDto registro,
+            string? nombreInvitado = null)
         {
             // El conteo sale del registro atómico del script Lua. La lectura completa
             // del hash queda solo para componer el snapshot de alumnosConectados.
-            var presencia = await _presencia.ObtenerPresenciaAsync(
-                salaId,
+            var presencia = await PresenciaConInvitadosAsync(
+                await _presencia.ObtenerPresenciaAsync(salaId, CancellationToken.None),
                 CancellationToken.None);
 
             await Clients.Group($"{salaId}:docentes").SendAsync(
@@ -551,6 +575,9 @@ namespace PEI.SalaEnVivo.Api.Hubs
                     salaId,
                     alumnoId,
                     alias = registro.Alumno.Alias,
+                    // S3-SA-01 (#231): el panel muestra el nombre del invitado en lugar del alias.
+                    esInvitado = nombreInvitado != null,
+                    nombre = nombreInvitado,
                     totalConectados = registro.TotalConectados,
                     ingresoUtc = registro.Alumno.IngresoUtc
                 },
@@ -594,6 +621,36 @@ namespace PEI.SalaEnVivo.Api.Hubs
             }
 
             return institucionId;
+        }
+
+        private static string? LeerRol(ClaimsPrincipal? user) =>
+            user?.FindFirst(ClaimTypes.Role)?.Value ?? user?.FindFirst("role")?.Value;
+
+        /// <summary>
+        /// S3-SA-01 (#231): marca a los invitados en la presencia que ve el docente (esInvitado + nombre).
+        /// Los nombres salen de ParticipanteSala; si no se pueden leer, la presencia va como estaba.
+        /// </summary>
+        private async Task<PresenciaSalaDto> PresenciaConInvitadosAsync(PresenciaSalaDto presencia, CancellationToken cancellationToken)
+        {
+            var repositorio = Context.GetHttpContext()?.RequestServices.GetService<IParticipanteSalaRepository>();
+            if (repositorio == null || presencia.Alumnos.Count == 0)
+            {
+                return presencia;
+            }
+
+            var nombres = await repositorio.ObtenerNombresInvitadosAsync(presencia.SalaId, cancellationToken);
+            if (nombres.Count == 0)
+            {
+                return presencia;
+            }
+
+            var alumnos = presencia.Alumnos
+                .Select(a => nombres.TryGetValue(a.AlumnoId, out var nombre)
+                    ? a with { EsInvitado = true, Nombre = nombre }
+                    : a)
+                .ToList();
+
+            return presencia with { Alumnos = alumnos };
         }
 
         private bool EsDocente()
@@ -648,7 +705,7 @@ namespace PEI.SalaEnVivo.Api.Hubs
 
                         await Clients.Group($"{salaId}:docentes").SendAsync(
                             "alumnosConectados",
-                            presencia,
+                            await PresenciaConInvitadosAsync(presencia, CancellationToken.None),
                             CancellationToken.None);
                     }
                 }
