@@ -34,6 +34,8 @@ public class PromptBuilderTests
         Assert.Contains(rubricaJson, userPrompt);
         Assert.Contains("10", userPrompt);
         Assert.Contains(respuestaAlumno, userPrompt);
+        Assert.Contains("<respuesta_estudiante>", userPrompt);
+        Assert.Contains("</respuesta_estudiante>", userPrompt);
 
         // Verificar que no queden placeholders sin sustituir
         Assert.DoesNotContain("{ENUNCIADO}", userPrompt);

@@ -27,6 +27,10 @@ export function Layout() {
   const { usuario, salir } = useSesion();
   const clienteQuery = useQueryClient();
   const navegar = useNavigate();
+  const rol = usuario?.rol;
+  // El invitado solo ve la sala: nada de Inicio, cursos ni evaluaciones
+  const esInvitado = rol === 'invitado';
+  const esPersonal = rol === 'docente' || rol === 'administrador';
 
   const cerrarSesion = () => {
     salir();
@@ -57,20 +61,22 @@ export function Layout() {
           aria-label='Principal'
           className='flex gap-2 overflow-x-auto border-b border-tiza-borde bg-white/60 p-3 md:min-h-[calc(100vh-4.5rem)] md:w-60 md:shrink-0 md:flex-col md:border-b-0 md:border-r md:p-4'
         >
-          <ItemMenu to='/' end icono={<Home className='h-5 w-5' aria-hidden='true' />}>
-            Inicio
-          </ItemMenu>
-          {usuario?.rol === 'alumno' && (
+          {!esInvitado && (
+            <ItemMenu to='/' end icono={<Home className='h-5 w-5' aria-hidden='true' />}>
+              Inicio
+            </ItemMenu>
+          )}
+          {(rol === 'alumno' || esInvitado) && (
             <ItemMenu to='/sala' icono={<Radio className='h-5 w-5' aria-hidden='true' />}>
               Sala en vivo
             </ItemMenu>
           )}
-          {usuario?.rol === 'alumno' && (
+          {rol === 'alumno' && (
             <ItemMenu to='/mis-examenes' icono={<FileText className='h-5 w-5' aria-hidden='true' />}>
               Mis exámenes
             </ItemMenu>
           )}
-          {usuario?.rol !== 'alumno' && (
+          {esPersonal && (
             <>
               <ItemMenu to='/cursos' icono={<GraduationCap className='h-5 w-5' aria-hidden='true' />}>
                 Cursos
@@ -78,7 +84,7 @@ export function Layout() {
               <ItemMenu to='/evaluaciones' icono={<ClipboardList className='h-5 w-5' aria-hidden='true' />}>
                 Evaluaciones
               </ItemMenu>
-              {usuario?.rol === 'administrador' && (
+              {rol === 'administrador' && (
                 <ItemMenu to='/usuarios' icono={<UserPlus className='h-5 w-5' aria-hidden='true' />}>
                   Usuarios
                 </ItemMenu>

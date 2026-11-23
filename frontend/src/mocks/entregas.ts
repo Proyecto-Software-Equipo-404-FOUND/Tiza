@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw';
-import { ALUMNO_1_A_ID, ALUMNO_2_A_ID } from './datos';
-import type { EntregaDetalle, EntregaResumen, UsuarioResumen } from '@/features/revision-notas/tipos';
+import { ALUMNO_1_A_ID, ALUMNO_2_A_ID, DOCENTE_A_ID } from './datos';
+import type { EditarNotaRequest, EntregaDetalle, EntregaResumen, UsuarioResumen } from '@/features/revision-notas/tipos';
 
 // Datos falsos con la forma de contracts/openapi/evaluaciones-v1.json (Resultados) y identidad-v1.json
 const EVALUACION_ID = 'e0000000-0000-4000-8000-000000000001';
@@ -142,6 +142,9 @@ function resumen(entrega: EntregaDetalle): EntregaResumen {
   return copia as EntregaResumen;
 }
 
+const problema = (status: number, title: string, type?: string) =>
+  HttpResponse.json({ title, status, ...(type ? { type } : {}), errores: [] }, { status });
+
 const sinInstitucion = () =>
   HttpResponse.json({ title: 'Petición inválida', status: 400, detail: 'Falta la institución.' }, { status: 400 });
 
@@ -158,6 +161,55 @@ export const handlersEntregas = [
     return entrega
       ? HttpResponse.json(entrega)
       : HttpResponse.json({ title: 'Entrega no encontrada.', status: 404, errores: [] }, { status: 404 });
+  }),
+
+  // Contrato S3-EV-03 (PR #253, planificado): el docente edita el puntaje de una pregunta
+  http.put('*/api/v1/evaluaciones/:id/entregas/:entregaId/respuestas/:preguntaId/nota', async ({ params, request }) => {
+    if (!request.headers.get('X-Institucion-Id')) return sinInstitucion();
+    const entrega = params.id === EVALUACION_ID ? entregas.find((e) => e.entregaId === params.entregaId) : undefined;
+    const pregunta = entrega?.respuestas.find((r) => r.preguntaId === params.preguntaId);
+    if (!entrega || !pregunta) return problema(404, 'Entrega o pregunta no encontrada.');
+    if (entrega.estadoNota === 'Aprobada') {
+      return problema(409, 'La nota ya está aprobada y no se puede editar.', 'NOTA_YA_APROBADA');
+    }
+    const { puntaje, comentario } = (await request.json()) as EditarNotaRequest;
+    if (typeof puntaje !== 'number' || puntaje < 0 || puntaje > pregunta.puntajeMaximo) {
+      return problema(400, `El puntaje tiene que estar entre 0 y ${pregunta.puntajeMaximo}.`, 'PUNTAJE_FUERA_DE_RANGO');
+    }
+    pregunta.puntajeDocente = puntaje;
+    pregunta.comentarioDocente = comentario ?? null;
+    pregunta.estadoCorreccion = 'Editada';
+    entrega.estadoNota = 'Editada';
+    return HttpResponse.json(pregunta);
+  }),
+
+  // Contrato S3-EV-03: aprueba la nota final. Vale puntajeDocente, si no la automática o la sugerida por la IA.
+  http.post('*/api/v1/evaluaciones/:id/entregas/:entregaId/aprobacion', ({ params, request }) => {
+    if (!request.headers.get('X-Institucion-Id')) return sinInstitucion();
+    const entrega = params.id === EVALUACION_ID ? entregas.find((e) => e.entregaId === params.entregaId) : undefined;
+    if (!entrega) return problema(404, 'Entrega no encontrada.');
+    if (entrega.estadoNota === 'Aprobada') return problema(409, 'La nota ya está aprobada.', 'NOTA_YA_APROBADA');
+
+    let notaFinal = 0;
+    let puntajeMaximo = 0;
+    for (const respuesta of entrega.respuestas) {
+      puntajeMaximo += respuesta.puntajeMaximo;
+      const nota = respuesta.puntajeDocente ?? respuesta.puntajeObtenido ?? respuesta.notaSugerida ?? null;
+      if (nota == null && respuesta.tipo === 'Abierta' && respuesta.respuesta) {
+        return problema(409, 'Hay preguntas abiertas sin corregir.', 'FALTAN_CORRECCIONES');
+      }
+      notaFinal += nota ?? 0;
+    }
+    entrega.estadoNota = 'Aprobada';
+    entrega.notaFinal = Math.round(notaFinal * 100) / 100;
+    entrega.fechaAprobacionUtc = new Date().toISOString();
+    return HttpResponse.json({
+      entregaId: entrega.entregaId,
+      notaFinal: entrega.notaFinal,
+      puntajeMaximo,
+      aprobadaPorId: DOCENTE_A_ID,
+      fechaAprobacionUtc: entrega.fechaAprobacionUtc,
+    });
   }),
 
   // Por el gateway llega a Identidad como GET /api/usuarios?rol=Alumno

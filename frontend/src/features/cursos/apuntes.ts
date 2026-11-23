@@ -13,6 +13,20 @@ export type Material = {
   fechaSubidaUtc: string;
 };
 
+// Según contracts/openapi/cursos-v1.json (TextoMaterialDto), S3-CU-03 (#229).
+// `tieneTexto` no es obligatorio en el contrato: es false si el PDF no tiene texto extraíble (escaneado).
+export type TextoMaterial = {
+  materialId: string;
+  titulo: string;
+  cantidadPaginas: number;
+  texto: string;
+  tieneTexto?: boolean;
+};
+
+// Si el servidor no manda `tieneTexto`, se considera que hay texto cuando `texto` no está vacío
+export const textoDisponible = (material: TextoMaterial): boolean =>
+  material.tieneTexto ?? material.texto.trim() !== '';
+
 // Límite del contrato (RN-MAT-03): 10 MB
 export const TAMANO_MAXIMO_BYTES = 10 * 1024 * 1024;
 export const TITULO_MAXIMO = 150;

@@ -6,6 +6,7 @@ import { PaginaApuntes } from './PaginaApuntes';
 import { useCurso } from '../hooks/useCurso';
 import { useMateriales } from '../hooks/useMateriales';
 import { useEliminarMaterial } from '../hooks/useEliminarMaterial';
+import { useTextoMaterial } from '../hooks/useTextoMaterial';
 import { useAviso } from '@/shared/components/Aviso';
 import { ApiError } from '@/shared/api/cliente';
 import { etiquetaEstado, formatearTamano, type Material } from '../apuntes';
@@ -14,6 +15,7 @@ import { CURSO_1_ID, DOCENTE_A_ID, INSTITUCION_A } from '@/mocks/datos';
 vi.mock('../hooks/useCurso', () => ({ useCurso: vi.fn() }));
 vi.mock('../hooks/useMateriales', () => ({ useMateriales: vi.fn() }));
 vi.mock('../hooks/useEliminarMaterial', () => ({ useEliminarMaterial: vi.fn() }));
+vi.mock('../hooks/useTextoMaterial', () => ({ useTextoMaterial: vi.fn() }));
 vi.mock('@/shared/components/Aviso', () => ({ useAviso: vi.fn() }));
 vi.mock('../components/FormularioApunte', () => ({
   FormularioApunte: () => <div>formulario</div>,
@@ -58,6 +60,19 @@ function simular(estado: Partial<EstadoMateriales>) {
     mutate: mutar,
     isPending: false,
   } as unknown as ReturnType<typeof useEliminarMaterial>);
+  vi.mocked(useTextoMaterial).mockReturnValue({
+    data: {
+      materialId: material.id,
+      titulo: material.titulo,
+      cantidadPaginas: 18,
+      texto: 'Las estructuras de control permiten decidir qué se ejecuta.',
+      tieneTexto: true,
+    },
+    isPending: false,
+    isError: false,
+    error: null,
+    refetch: vi.fn(),
+  } as unknown as ReturnType<typeof useTextoMaterial>);
   vi.mocked(useAviso).mockReturnValue({ mostrar } as unknown as ReturnType<typeof useAviso>);
   return { mutar, mostrar };
 }
@@ -185,4 +200,36 @@ describe('PaginaApuntes', () => {
       await userEvent.click(screen.getByRole('button', { name: 'Sí, eliminar' }));
       expect(mostrar).not.toHaveBeenCalled();
     });
+
+  it('«Ver texto» abre la vista previa del apunte listo', async () => {
+    simular({ data: [material] });
+    renderizar();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ver texto de Unidad 1 - Introducción' }));
+
+    expect(screen.getByRole('dialog', { name: 'Texto de «Unidad 1 - Introducción»' })).toBeInTheDocument();
+    expect(screen.getByText('Las estructuras de control permiten decidir qué se ejecuta.')).toBeInTheDocument();
+  });
+
+  it('cerrar la vista previa vuelve a la lista', async () => {
+    simular({ data: [material] });
+    renderizar();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ver texto de Unidad 1 - Introducción' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Cerrar' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('no ofrece «Ver texto» mientras el apunte se procesa o si tuvo error', () => {
+    simular({
+      data: [
+        { ...material, id: 'a', titulo: 'En proceso', estado: 'Procesando' },
+        { ...material, id: 'b', titulo: 'Fallido', estado: 'Error' },
+      ],
+    });
+    renderizar();
+
+    expect(screen.queryByRole('button', { name: /Ver texto/ })).not.toBeInTheDocument();
+  });
 });

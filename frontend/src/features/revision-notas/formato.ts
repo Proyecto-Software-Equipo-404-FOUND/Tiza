@@ -26,7 +26,7 @@ export const formatearFechaHora = (iso: string) =>
 
 export const etiquetaEstadoEntrega: Record<EstadoEntrega, string> = {
   PendienteCorreccion: 'Pendiente de corrección',
-  Corregida: 'Corregida',
+  Corregida: 'Nota sugerida',
   CorreccionManual: 'Corrección manual',
 };
 

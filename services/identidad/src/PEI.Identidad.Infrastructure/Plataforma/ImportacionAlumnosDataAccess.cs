@@ -20,12 +20,33 @@ public sealed class ImportacionAlumnosDataAccess(
     public const string ProtectionPurpose = PlataformaDataAccess.ProtectionPurpose;
     private readonly Uri activationUri = options.GetActivationUri(environment.IsDevelopment());
 
-    public async Task<ResultadoPersistenciaAlumno> CrearPendienteAsync(
+    public Task<ResultadoPersistenciaAlumno> CrearPendienteAsync(
         Guid administradorId,
         Guid institucionId,
         string nombre,
         string apellido,
         string email,
+        CancellationToken ct) =>
+        CrearAsync(administradorId, institucionId, nombre, apellido, email, passwordHash: null, ct);
+
+    // S2-ID-02 (#135): con contraseña inicial el alumno queda activo y no se genera invitación.
+    public Task<ResultadoPersistenciaAlumno> CrearActivoAsync(
+        Guid administradorId,
+        Guid institucionId,
+        string nombre,
+        string apellido,
+        string email,
+        string passwordHash,
+        CancellationToken ct) =>
+        CrearAsync(administradorId, institucionId, nombre, apellido, email, passwordHash, ct);
+
+    private async Task<ResultadoPersistenciaAlumno> CrearAsync(
+        Guid administradorId,
+        Guid institucionId,
+        string nombre,
+        string apellido,
+        string email,
+        string? passwordHash,
         CancellationToken ct)
     {
         await using var tx = await db.Database.BeginTransactionAsync(ct);
@@ -52,8 +73,19 @@ public sealed class ImportacionAlumnosDataAccess(
             }
 
             var usuarioId = Guid.NewGuid();
-            var invitacionId = Guid.NewGuid();
             var ahora = DateTime.UtcNow;
+
+            if (passwordHash is not null)
+            {
+                await db.Database.ExecuteSqlInterpolatedAsync($"""
+                    INSERT INTO "Usuario" ("Id","InstitucionId","Email","PasswordHash","Nombre","Apellido","Rol","FechaCreacion","Activo")
+                    VALUES ({usuarioId},{institucionId},{email},{passwordHash},{nombre},{apellido},{IdentityRoles.Alumno},{ahora},TRUE)
+                    """, ct);
+                await tx.CommitAsync(ct);
+                return new(normalizado, ResultadoAltaAlumno.Creado);
+            }
+
+            var invitacionId = Guid.NewGuid();
             var token = Microsoft.IdentityModel.Tokens.Base64UrlEncoder.Encode(RandomNumberGenerator.GetBytes(32));
             var hash = PlataformaDataAccess.HashToken(token);
             var link = new UriBuilder(activationUri) { Fragment = $"token={token}" }.Uri.ToString();

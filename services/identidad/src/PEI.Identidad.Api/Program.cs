@@ -59,6 +59,18 @@ builder.Services.AddScoped<ObtenerUsuarioHandler>();
 builder.Services.AddScoped<IUsuariosModificacionDataAccess, UsuariosModificacionDataAccess>();
 builder.Services.AddScoped<PEI.Identidad.Application.UseCases.Usuarios.Estado.DarBajaUsuarioHandler>();
 builder.Services.AddScoped<PEI.Identidad.Application.UseCases.Usuarios.Estado.ReactivarUsuarioHandler>();
+// S3-SA-01 (#231): ingreso de invitado. Identidad consulta a Sala en vivo por el endpoint interno.
+builder.Services.AddSingleton(new PEI.Identidad.Infrastructure.Invitados.SalaInvitadosOptions
+{
+    ApiKey = builder.Configuration["ServiciosInternos:ApiKey"] ?? ""
+});
+builder.Services.AddHttpClient<PEI.Identidad.Application.UseCases.Auth.Invitado.ISalaInvitadosClient, PEI.Identidad.Infrastructure.Invitados.SalaInvitadosClient>(c =>
+{
+    c.BaseAddress = new Uri((builder.Configuration["Sala:BaseUrl"] ?? "http://localhost:5104").TrimEnd('/') + "/");
+    c.Timeout = TimeSpan.FromSeconds(5);
+});
+builder.Services.AddScoped<PEI.Identidad.Application.UseCases.Auth.Invitado.IInvitadoTokenIssuer, JwtTokenService>();
+builder.Services.AddScoped<PEI.Identidad.Application.UseCases.Auth.Invitado.IngresoInvitadoHandler>();
 builder.Services.AddIdentityAuthentication(builder.Configuration, builder.Environment);
 if (builder.Configuration.GetValue<bool>("DevelopmentTools:EnableTestTokens"))
 {

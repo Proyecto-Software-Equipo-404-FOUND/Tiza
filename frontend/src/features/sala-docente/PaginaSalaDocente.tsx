@@ -44,8 +44,27 @@ function PanelSala({ sala, conexion: conexionInyectada, onAbrirOtra }: PropsPane
   const { estado, reintentar } = useConexionSala(conexion);
   const [modal, setModal] = useState<'finalizar' | 'otra' | null>(null);
 
-  const { fase, alumnos, totalConectados, pregunta, fechaLimiteSala, desfaseMs, motivoCierre } = sala_;
+  const {
+    fase,
+    recibioEstado,
+    alumnos,
+    totalConectados,
+    pregunta,
+    fechaLimiteSala,
+    duracionMinutosServidor,
+    desfaseMs,
+    motivoCierre,
+  } = sala_;
   const finalizada = fase === 'finalizada';
+  // Hasta que llega el primer estadoSala, `fase` es solo el valor inicial: al recargar en plena sala no hay que
+  // mostrar la duración quieta. Solo aplica si la sala trae duracionMinutos (una sala sin él ya tiene su fecha límite).
+  const esperandoEstado = fase === 'espera' && !recibioEstado && !!sala.duracionMinutos;
+  // La duración de la sala guardada manda; si no la trae (sala guardada antes del Sprint 3), se usa la que informa el
+  // servidor en estadoSala
+  const duracionMinutos = sala.duracionMinutos ?? duracionMinutosServidor ?? undefined;
+  // Hasta que el docente inicia, el reloj no corre: se muestra la duración completa (el fin se fija al iniciar)
+  const duracionEnEspera = fase === 'espera' && duracionMinutos ? duracionMinutos * 60 : undefined;
+  const limiteDeSala = fechaLimiteSala ?? sala.fechaVencimiento;
 
   const pedirOtraSala = () => {
     if (finalizada) onAbrirOtra();
@@ -70,17 +89,15 @@ function PanelSala({ sala, conexion: conexionInyectada, onAbrirOtra }: PropsPane
         <Tarjeta titulo='Conducción'>
           <div className='flex flex-col gap-4'>
             <div className='flex flex-wrap gap-2'>
-              <CronometroPanel
-                etiqueta='Sala'
-                limiteUtc={fechaLimiteSala ?? sala.fechaVencimiento}
-                desfaseMs={desfaseMs}
-              />
+              {esperandoEstado ? null : duracionEnEspera !== undefined ? (
+                <CronometroPanel etiqueta='Duración' limiteUtc={null} desfaseMs={0} fijoSegundos={duracionEnEspera} />
+              ) : (
+                <CronometroPanel etiqueta='Sala' limiteUtc={limiteDeSala} desfaseMs={desfaseMs} />
+              )}
               {/* Hoy cada pregunta vence junto con la sala: el segundo reloj se muestra solo si difiere */}
-              {fase === 'enCurso' &&
-                pregunta?.fechaLimiteUtc &&
-                pregunta.fechaLimiteUtc !== (fechaLimiteSala ?? sala.fechaVencimiento) && (
-                  <CronometroPanel etiqueta='Pregunta' limiteUtc={pregunta.fechaLimiteUtc} desfaseMs={desfaseMs} />
-                )}
+              {fase === 'enCurso' && pregunta?.fechaLimiteUtc && pregunta.fechaLimiteUtc !== limiteDeSala && (
+                <CronometroPanel etiqueta='Pregunta' limiteUtc={pregunta.fechaLimiteUtc} desfaseMs={desfaseMs} />
+              )}
             </div>
 
             {fase === 'enCurso' && pregunta && (
@@ -155,7 +172,7 @@ function PanelSala({ sala, conexion: conexionInyectada, onAbrirOtra }: PropsPane
                 <span
                   className={`min-w-0 break-words font-bold ${alumno.desconectado ? 'text-tiza-bosque/60' : 'text-tiza-bosque'}`}
                 >
-                  {alumno.alias}
+                  {alumno.esInvitado && alumno.nombre ? alumno.nombre : alumno.alias}
                 </span>
                 <span className='flex flex-wrap items-center gap-2'>
                   {alumno.desconectado && (
@@ -222,9 +239,9 @@ export function PaginaSalaDocente({ conexion }: Props) {
   const [sala, setSala] = useState<SalaCreada | null>(() => recuperarSala(evaluacionId, usuarioId));
   const abrir = useAbrirSala();
 
-  const alAbrir = (capacidadMaxima: number, duracionMinutos: number) =>
+  const alAbrir = (capacidadMaxima: number, duracionMinutos: number, permitirInvitados: boolean) =>
     abrir.mutate(
-      { evaluacionId, capacidadMaxima, duracionMinutos },
+      { evaluacionId, capacidadMaxima, duracionMinutos, permitirInvitados },
       {
         onSuccess: (creada) => {
           guardarSala(evaluacionId, usuarioId, creada);

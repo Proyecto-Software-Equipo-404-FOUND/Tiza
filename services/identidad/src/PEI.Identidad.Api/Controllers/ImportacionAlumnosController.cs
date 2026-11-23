@@ -20,9 +20,15 @@ public sealed class ImportacionAlumnosController(ImportarAlumnosHandler importar
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status413PayloadTooLarge)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> Importar([FromForm(Name = "archivo")] IFormFile? archivo, CancellationToken ct)
+    public async Task<IActionResult> Importar(
+        [FromForm(Name = "archivo")] IFormFile? archivo,
+        [FromForm(Name = "contrasenaInicial")] string? contrasenaInicial,
+        CancellationToken ct)
     {
         if (archivo is null) return BadRequest(new ProblemDetails { Status = 400, Title = "Debe enviar el archivo en el campo archivo." });
+        // S2-ID-02 (#135): opcional. Si viene, los alumnos quedan activos con esa contraseña (sin mail de activación).
+        if (!string.IsNullOrEmpty(contrasenaInicial) && ImportarAlumnosHandler.ValidarContrasenaInicial(contrasenaInicial) is { } motivo)
+            return BadRequest(new ProblemDetails { Status = 400, Title = motivo, Type = "CONTRASENA_INICIAL_INVALIDA" });
         if (archivo.Length > CsvAlumnosParser.MaximoBytes)
             return BadRequest(new ProblemDetails { Status = 400, Title = "El archivo supera el máximo de 1 MiB." });
         if (tenant.InstitucionId is not Guid institucionId || institucionId == Guid.Empty ||
@@ -36,7 +42,7 @@ public sealed class ImportacionAlumnosController(ImportarAlumnosHandler importar
             var bytes = GC.AllocateUninitializedArray<byte>(checked((int)archivo.Length));
             await stream.ReadExactlyAsync(bytes.AsMemory(), ct);
             var filas = CsvAlumnosParser.Parse(bytes);
-            return Ok(await importar.HandleAsync(administradorId, institucionId, filas, ct));
+            return Ok(await importar.HandleAsync(administradorId, institucionId, filas, ct, contrasenaInicial));
         }
         catch (CsvImportFormatException exception)
         {

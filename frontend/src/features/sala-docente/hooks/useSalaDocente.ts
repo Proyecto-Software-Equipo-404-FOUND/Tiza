@@ -24,12 +24,16 @@ type Lista = { alumnos: AlumnoPanel[]; idsVistos: ReadonlySet<string> };
  */
 export function useSalaDocente(conexion: ConexionSala, salaId: string) {
   const [fase, setFase] = useState<FaseSalaDocente>('espera');
+  // Falso hasta que llega el primer estadoSala: antes de eso `fase` es solo el valor inicial, no el real
+  const [recibioEstado, setRecibioEstado] = useState(false);
   const [lista, setLista] = useState<Lista>({ alumnos: [], idsVistos: new Set() });
   const [totalConectados, setTotalConectados] = useState(0);
   const [pregunta, setPregunta] = useState<PreguntaActual | null>(null);
   // Alumnos que ya respondieron, por pregunta (llega con el evento respuestaRegistrada)
   const [respondieron, setRespondieron] = useState<Record<string, ReadonlySet<string>>>({});
   const [fechaLimiteSala, setFechaLimiteSala] = useState<string | null>(null);
+  // Duración de la sala que informa el servidor en estadoSala: respaldo cuando la sala guardada no la trae
+  const [duracionMinutosServidor, setDuracionMinutosServidor] = useState<number | null>(null);
   const [desfaseMs, setDesfaseMs] = useState(0);
   const [motivoCierre, setMotivoCierre] = useState<SalaFinalizadaEvento['motivo'] | null>(null);
   const [sincronizando, setSincronizando] = useState(false);
@@ -66,12 +70,17 @@ export function useSalaDocente(conexion: ConexionSala, salaId: string) {
       const estado = carga as EstadoSalaEvento;
       setPregunta(estado.preguntaActual ?? null);
       setFechaLimiteSala(estado.fechaLimiteUtc ?? null);
+      setDuracionMinutosServidor(estado.duracionMinutos ?? null);
       if (estado.servidorUtc) setDesfaseMs(calcularDesfaseMs(estado.servidorUtc));
       setFase(estado.estado === 'EnCurso' ? 'enCurso' : estado.estado === 'Finalizada' ? 'finalizada' : 'espera');
+      setRecibioEstado(true);
     });
     conexion.escuchar('salaIniciada', (carga) => {
       if (!activo) return;
-      setFechaLimiteSala((carga as SalaIniciadaEvento).fechaLimiteUtc);
+      const evento = carga as SalaIniciadaEvento;
+      setFechaLimiteSala(evento.fechaLimiteUtc);
+      // El reloj del servidor llega con el inicio: así el tiempo restante coincide con el de los alumnos
+      if (evento.servidorUtc) setDesfaseMs(calcularDesfaseMs(evento.servidorUtc));
       setFase('enCurso');
     });
     conexion.escuchar('preguntaActual', (carga) => {
@@ -158,10 +167,12 @@ export function useSalaDocente(conexion: ConexionSala, salaId: string) {
 
   return {
     fase,
+    recibioEstado,
     alumnos: lista.alumnos,
     totalConectados,
     pregunta,
     fechaLimiteSala,
+    duracionMinutosServidor,
     desfaseMs,
     motivoCierre,
     sincronizando,
