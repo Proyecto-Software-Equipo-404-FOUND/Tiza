@@ -122,7 +122,10 @@ public class DesgloseCriterioTests
         public Task GuardarCalificacionDocenteAsync(CalificacionDocente calificacion, CancellationToken ct) =>
             Task.CompletedTask;
 
-        public Task GuardarCambiosAsync(CancellationToken ct) => Task.CompletedTask;    
+        public Task GuardarCambiosAsync(CancellationToken ct) => Task.CompletedTask;
+
+        public Task<List<(EntregaExamen Entrega, Evaluacion Evaluacion)>> ListarEntregasPorAlumnoAsync(Guid alumnoId, CancellationToken ct) => 
+            Task.FromResult(new List<(EntregaExamen Entrega, Evaluacion Evaluacion)>());    
 
         private EntregaExamen CrearEntrega() => new()
         {

@@ -455,7 +455,7 @@
           "Usuarios"
         ],
         "summary": "[Planificado S2-ID-02, #135] Alta masiva de alumnos desde un CSV.",
-        "description": "Solo Administrador. CSV con columnas nombre,apellido,email (máximo 200 filas). Crea los alumnos en la institución del token; las filas con error no frenan a las demás; un email existente se omite. Cada alumno recibe la invitación por el outbox para definir su contraseña.",
+        "description": "Solo Administrador. CSV con columnas nombre,apellido,email (máximo 200 filas). Crea los alumnos en la institución del token; las filas con error no frenan a las demás; un email existente se omite. Cada alumno recibe la invitación por el outbox para definir su contraseña. S2-ID-02 (#135): con contrasenaInicial los alumnos quedan activos; una contraseña inicial inválida responde 400 con type CONTRASENA_INICIAL_INVALIDA.  Máximo 200 alumnos sin contar la fila de títulos. errores[].fila se numera como en el archivo: la fila 1 son los títulos y el primer alumno es la fila 2.",
         "operationId": "ImportarAlumnos",
         "responses": {
           "200": {
@@ -514,6 +514,11 @@
                     "type": "string",
                     "format": "binary",
                     "description": "Archivo .csv en UTF-8."
+                  },
+                  "contrasenaInicial": {
+                    "type": "string",
+                    "minLength": 8,
+                    "description": "S2-ID-02 (#135), opcional. Si viene, los alumnos nuevos quedan activos con esta contraseña y no se genera el mail de activación (pueden iniciar sesión enseguida). Mismas reglas que el registro: 8 caracteres o más y 72 bytes o menos. Si no viene, se mantiene el alta pendiente con activación por mail. Recomendación: que cada alumno la cambie cuando exista el cambio de contraseña."
                   }
                 }
               }

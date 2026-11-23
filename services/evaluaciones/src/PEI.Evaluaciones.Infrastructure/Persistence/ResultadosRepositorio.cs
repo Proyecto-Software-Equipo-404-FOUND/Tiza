@@ -113,4 +113,17 @@ public class ResultadosRepositorio : IResultadosRepositorio
     }
 
     public Task GuardarCambiosAsync(CancellationToken ct) => _contexto.SaveChangesAsync(ct);
+
+    public async Task<List<(EntregaExamen Entrega, Evaluacion Evaluacion)>> ListarEntregasPorAlumnoAsync(Guid alumnoId, CancellationToken ct)
+    {
+        var filas = await (
+            from entrega in _contexto.EntregasExamen
+            join evaluacion in _contexto.Evaluaciones on entrega.EvaluacionId equals evaluacion.Id
+            where entrega.AlumnoId == alumnoId
+            orderby entrega.FechaEntrega descending
+            select new { entrega, evaluacion }
+        ).AsNoTracking().ToListAsync(ct);
+
+        return filas.Select(x => (x.entrega, x.evaluacion)).ToList();
+    }
 }
