@@ -34,7 +34,11 @@ export function PaginaResultados() {
       titulo: 'Estado',
       celda: (entrega) => (
         <span className='flex flex-col items-start gap-1'>
-          <InsigniaEstadoEntrega estado={entrega.estado} />
+          <InsigniaEstadoEntrega
+            estado={entrega.estado}
+            aprobada={entrega.estadoNota === 'Aprobada'}
+            sinRespuestas={entrega.respondioAlgo === false}
+          />
           {entrega.respondioAlgo === false && <span className='text-xs text-tiza-bosque/70'>No respondió</span>}
         </span>
       ),
@@ -61,6 +65,21 @@ export function PaginaResultados() {
           </span>
         ) : (
           <span className='text-tiza-bosque/70'>Pendiente</span>
+        );
+      },
+    },
+    {
+      titulo: 'Nota final',
+      celda: (entrega) => {
+        if (entrega.estadoNota !== 'Aprobada') return <span className='text-tiza-bosque/70'>Sin corregir</span>;
+        const maximo = (entrega.puntajeMaximoMultipleChoice ?? 0) + (entrega.puntajeMaximoAbiertas ?? 0);
+        return (
+          <span className='flex flex-col items-start'>
+            <span className='font-bold'>{formatearNota(entrega.notaFinal, maximo) ?? '—'}</span>
+            {entrega.fechaAprobacionUtc && (
+              <span className='text-xs text-tiza-bosque/70'>Corregida el {formatearFechaHora(entrega.fechaAprobacionUtc)}</span>
+            )}
+          </span>
         );
       },
     },

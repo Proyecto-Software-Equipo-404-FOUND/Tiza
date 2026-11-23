@@ -73,7 +73,7 @@ describe('PaginaResultados', () => {
     simular({ data: [base] });
     renderizar();
     const f = within(fila('Pérez, Ana'));
-    expect(f.getByText('Corregida')).toBeInTheDocument();
+    expect(f.getByText('Nota sugerida')).toBeInTheDocument();
     expect(f.getByText('1 / 2')).toBeInTheDocument();
     expect(f.getByText('3,5 / 4')).toBeInTheDocument();
     expect(f.getByText('Sugerida')).toBeInTheDocument();
@@ -126,6 +126,8 @@ describe('PaginaResultados', () => {
     simular({ data: [{ ...base, respondioAlgo: false }] });
     renderizar();
     expect(screen.getByText('No respondió')).toBeInTheDocument();
+    expect(screen.getByText('Sin nota sugerida')).toBeInTheDocument();
+    expect(screen.queryByText('Nota sugerida')).not.toBeInTheDocument();
   });
 
   it('a quien no respondió nada no le muestra «0 / 4» como nota de la IA', () => {
@@ -146,6 +148,30 @@ describe('PaginaResultados', () => {
     simular({ data: [base] });
     renderizar();
     expect(screen.getByText(/no es la nota final/)).toBeInTheDocument();
+  });
+
+  it('con la nota aprobada muestra «Corregida» y la nota final, aunque el estado siga pendiente', () => {
+    simular({
+      data: [{ ...base, estado: 'PendienteCorreccion', notaFinal: 4.5, estadoNota: 'Aprobada' }],
+    });
+    renderizar();
+    expect(screen.getByText('Corregida')).toBeInTheDocument();
+    expect(screen.queryByText('Pendiente de corrección')).not.toBeInTheDocument();
+    expect(screen.getByText('4,5 / 6')).toBeInTheDocument();
+  });
+
+  it('con la nota aprobada muestra debajo cuándo se corrigió', () => {
+    simular({
+      data: [{ ...base, notaFinal: 4.5, estadoNota: 'Aprobada', fechaAprobacionUtc: '2026-11-20T15:30:00Z' }],
+    });
+    renderizar();
+    expect(screen.getByText(/Corregida el .*20\/11\/26/)).toBeInTheDocument();
+  });
+
+  it('sin corregir, la columna de nota final dice «Sin corregir»', () => {
+    simular({ data: [base] });
+    renderizar();
+    expect(screen.getByText('Sin corregir')).toBeInTheDocument();
   });
 
   it('muestra el spinner mientras carga', () => {

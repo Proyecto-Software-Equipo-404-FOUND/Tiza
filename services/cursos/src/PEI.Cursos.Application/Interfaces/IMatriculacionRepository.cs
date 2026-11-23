@@ -13,6 +13,9 @@ public interface IMatriculacionRepository
     Task<Matriculacion?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<bool> ExisteActivaEnOtraCohorteAsync(Guid cursoId, Guid alumnoId, Guid cohorteId, CancellationToken cancellationToken = default);
 
+    // Evalúa si existen matrículas activas asociadas a cualquiera de las cohortes del curso especificado.
+    Task<bool> ExisteActivaEnCursoAsync(Guid cursoId, CancellationToken cancellationToken = default);
+
     /// <summary>Comisión (id y nombre) donde el alumno tiene matrícula activa en el mismo curso, sin contar cohorteId. Null si no hay.</summary>
     Task<(Guid Id, string Nombre)?> ObtenerCohorteActivaEnOtraAsync(Guid cursoId, Guid alumnoId, Guid cohorteId, CancellationToken cancellationToken = default);
 

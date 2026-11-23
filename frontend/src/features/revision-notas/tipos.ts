@@ -18,9 +18,17 @@ export type EntregaResumen = {
   puntajeMaximoAbiertas?: number | null;
   fechaEntregaUtc: string;
   alertasFoco: AlertasFocoResumen;
+  /** Sugerida: solo hay nota automática o de la IA. Editada: el docente cambió algún puntaje. Aprobada: nota cerrada. */
+  estadoNota?: EstadoNota;
+  /** Solo cuando estadoNota = Aprobada */
+  notaFinal?: number | null;
+  /** Cuándo se aprobó; solo cuando estadoNota = Aprobada */
+  fechaAprobacionUtc?: string | null;
 };
 
-export type EstadoCorreccion = 'Automatica' | 'SugeridaIA' | 'PendienteIA' | 'Manual' | 'SinRespuesta';
+export type EstadoCorreccion = 'Automatica' | 'SugeridaIA' | 'PendienteIA' | 'Manual' | 'SinRespuesta' | 'Editada';
+
+export type EstadoNota = 'Sugerida' | 'Editada' | 'Aprobada';
 
 export type DesgloseCriterio = { criterio?: string; puntaje?: number; comentario?: string };
 
@@ -36,6 +44,9 @@ export type RespuestaEntrega = {
   notaSugerida?: number | null;
   justificacionIA?: string | null;
   desglosePorCriterio?: DesgloseCriterio[] | null;
+  /** Puntaje que puso el docente al editar; si existe, manda sobre la nota automática y la de la IA (S3-EV-03). */
+  puntajeDocente?: number | null;
+  comentarioDocente?: string | null;
   estadoCorreccion?: EstadoCorreccion;
 };
 
@@ -51,6 +62,16 @@ export type AlertaFocoDetalle = {
 export type EntregaDetalle = EntregaResumen & {
   respuestas: RespuestaEntrega[];
   alertas: AlertaFocoDetalle[];
+};
+
+// Contrato S3-EV-03 (PR #253): el docente edita una pregunta a la vez y después aprueba sin cuerpo.
+export type EditarNotaRequest = { puntaje: number; comentario?: string | null };
+export type NotaAprobada = {
+  entregaId: string;
+  notaFinal: number;
+  puntajeMaximo: number;
+  aprobadaPorId: string;
+  fechaAprobacionUtc: string;
 };
 
 export type UsuarioResumen = {
