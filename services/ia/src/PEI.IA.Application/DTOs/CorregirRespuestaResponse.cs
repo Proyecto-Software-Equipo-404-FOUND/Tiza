@@ -33,6 +33,15 @@ public class CorregirRespuestaResponse
 
     /// <summary>Latencia de la llamada al LLM en milisegundos.</summary>
     public long LatenciaMs { get; set; }
+
+    /// <summary>Indica si la corrección requiere revisión del docente.</summary>
+    public bool RequiereRevisionDocente { get; set; }
+
+    /// <summary>Indica si se detectó sospecha de engaño o inyección de prompt.</summary>
+    public bool SospechaEngano { get; set; }
+
+    /// <summary>Motivo detallado si requiere revisión.</summary>
+    public string? MotivoRevision { get; set; }
 }
 
 /// <summary>

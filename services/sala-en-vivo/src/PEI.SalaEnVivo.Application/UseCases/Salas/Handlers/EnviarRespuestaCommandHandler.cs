@@ -95,17 +95,7 @@ namespace PEI.SalaEnVivo.Application.UseCases.Salas.Handlers
                     reintentable: false, correlationId: cid);
             }
 
-            // 4. Cronómetro del servidor
-            var vencida = await _cronometroService.EstaVencidaAsync(command.SalaId, DateTime.UtcNow, cancellationToken);
-            if (vencida)
-            {
-                return ResultadoEnvioRespuestaDto.Rechazada(
-                    command.PreguntaId, command.IdempotencyKey, command.Secuencia,
-                    "TIEMPO_AGOTADO", "El tiempo límite de la sala o de la pregunta ha expirado.",
-                    reintentable: false, correlationId: cid);
-            }
-
-            // 5. Estado de la sala
+            // 4. Estado de la sala (antes del reloj: una sala inexistente responde SALA_NO_ENCONTRADA, no TIEMPO_AGOTADO)
             var sala = await _salaRepository.ObtenerPorIdAsync(command.SalaId, cancellationToken);
             if (sala == null)
             {
@@ -128,6 +118,16 @@ namespace PEI.SalaEnVivo.Application.UseCases.Salas.Handlers
                 return ResultadoEnvioRespuestaDto.Rechazada(
                     command.PreguntaId, command.IdempotencyKey, command.Secuencia,
                     "SALA_FINALIZADA", "La sala ya ha sido finalizada y no acepta nuevas respuestas.",
+                    reintentable: false, correlationId: cid);
+            }
+
+            // 5. Cronómetro del servidor
+            var vencida = await _cronometroService.EstaVencidaAsync(command.SalaId, DateTime.UtcNow, cancellationToken);
+            if (vencida)
+            {
+                return ResultadoEnvioRespuestaDto.Rechazada(
+                    command.PreguntaId, command.IdempotencyKey, command.Secuencia,
+                    "TIEMPO_AGOTADO", "El tiempo límite de la sala o de la pregunta ha expirado.",
                     reintentable: false, correlationId: cid);
             }
 
