@@ -10,6 +10,7 @@ import { handlersEntregas } from './entregas';
 import { handlersMetricas } from './metricas';
 import { handlersMisExamenes } from './misExamenes';
 import { handlersMateriales } from './materiales';
+import { handlersInvitado } from './invitado';
 
 export const handlers = [
   // Primero: atiende solo rol=Docente y deja pasar el resto a los otros handlers de la misma ruta
@@ -122,4 +123,5 @@ export const handlers = [
   ...handlersMisExamenes,
   ...handlersMetricas,
   ...handlersMateriales,
+  ...handlersInvitado,
 ];

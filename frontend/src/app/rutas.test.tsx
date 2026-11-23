@@ -97,8 +97,11 @@ const iniciarComo = (rol: Rol) =>
     }),
   );
 
-function mostrar(ruta: string) {
-  const router = createMemoryRouter(rutas, { initialEntries: [ruta] });
+// `state` simula lo que la pantalla anterior le pasa a la ruta por el router (el invitado llega con su PIN)
+function mostrar(ruta: string, state?: unknown) {
+  const router = createMemoryRouter(rutas, {
+    initialEntries: [state === undefined ? ruta : { pathname: ruta, state }],
+  });
   return render(
     <Proveedores>
       <SesionProvider>
@@ -308,4 +311,71 @@ describe('rutas de la aplicación', () => {
     mostrar('/evaluaciones/ev-1/resultados/en-1');
     expect(screen.getByText('No tenés permiso para ver esta página.')).toBeInTheDocument();
   });
+});
+
+describe('rutas del invitado', () => {
+  it('sin sesión, /invitado muestra la pantalla de ingreso de invitado', () => {
+    mostrar('/invitado');
+    expect(screen.getByRole('heading', { name: 'Entrar como invitado' })).toBeInTheDocument();
+  });
+
+  it('un invitado entra a la sala en vivo y en el menú ve solo ese enlace', async () => {
+    iniciarComo('invitado');
+    mostrar('/sala');
+    expect(await screen.findByRole('heading', { level: 1, name: 'Sala en vivo' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Sala en vivo' })).toBeInTheDocument();
+    for (const enlace of ['Inicio', 'Mis exámenes', 'Cursos', 'Evaluaciones', 'Usuarios']) {
+      expect(screen.queryByRole('link', { name: enlace })).not.toBeInTheDocument();
+    }
+  });
+
+  it.each(['/mis-examenes', '/cursos', '/evaluaciones', '/usuarios', '/evaluaciones/ev-1/sala'])(
+    'un invitado no entra a %s',
+    (ruta) => {
+      iniciarComo('invitado');
+      mostrar(ruta);
+      expect(screen.getByText('No tenés permiso para ver esta página.')).toBeInTheDocument();
+    },
+  );
+
+  it('al invitado que llega desde su ingreso se le muestra el PIN ya escrito', async () => {
+    iniciarComo('invitado');
+    mostrar('/sala', { pin: '482913' });
+    expect(await screen.findByLabelText('PIN')).toHaveValue('482913');
+  });
+
+  it('un alumno no recibe el PIN precargado aunque llegue con uno en el state', async () => {
+    iniciarComo('alumno');
+    mostrar('/sala', { pin: '482913' });
+    expect(await screen.findByLabelText('PIN')).toHaveValue('');
+  });
+
+  it('un invitado que llega sin PIN o con un PIN que no es de 6 dígitos ve el campo vacío', async () => {
+    iniciarComo('invitado');
+    mostrar('/sala', { pin: '12ab' });
+    expect(await screen.findByLabelText('PIN')).toHaveValue('');
+  });
+
+describe('sesión vencida al recargar', () => {
+  it('un invitado con el token vencido vuelve a su ingreso con el aviso de acceso vencido', () => {
+    guardarToken(
+      crearTokenFalso(
+        { id: 'inv-1', nombre: 'Lucia Fernandez', rol: 'invitado', institucionId: INSTITUCION_A },
+        { exp: 1, salaId: 'sala-1' },
+      ),
+    );
+    mostrar('/sala');
+    expect(screen.getByRole('heading', { name: 'Entrar como invitado' })).toBeInTheDocument();
+    expect(screen.getByText('Tu acceso como invitado venció. Volvé a ingresar con el PIN y tu nombre.')).toBeInTheDocument();
+  });
+
+  it('un docente con el token vencido y sin refresh sigue yendo al login', () => {
+    guardarToken(
+      crearTokenFalso({ id: DOCENTE_A_ID, nombre: 'Docente A', rol: 'docente', institucionId: INSTITUCION_A }, { exp: 1 }),
+    );
+    mostrar('/cursos');
+    expect(screen.getByRole('heading', { name: 'Ingresar a Tiza' })).toBeInTheDocument();
+  });
+});
+
 });

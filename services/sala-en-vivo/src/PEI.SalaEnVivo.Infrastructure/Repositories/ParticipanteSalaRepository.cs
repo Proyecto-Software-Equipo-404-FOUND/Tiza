@@ -51,5 +51,13 @@ namespace PEI.SalaEnVivo.Infrastructure.Repositories
         {
             return _context.ParticipanteSala.CountAsync(p => p.SalaId == salaId, cancellationToken);
         }
+
+        public async Task<IReadOnlyDictionary<Guid, string>> ObtenerNombresInvitadosAsync(Guid salaId, CancellationToken cancellationToken = default)
+        {
+            return await _context.ParticipanteSala
+                .AsNoTracking()
+                .Where(p => p.SalaId == salaId && p.NombreInvitado != null)
+                .ToDictionaryAsync(p => p.AlumnoId, p => p.NombreInvitado!, cancellationToken);
+        }
     }
 }
