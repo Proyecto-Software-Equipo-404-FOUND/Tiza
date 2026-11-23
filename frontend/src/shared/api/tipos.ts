@@ -1,4 +1,4 @@
-export type Rol = 'alumno' | 'docente' | 'administrador';
+export type Rol = 'alumno' | 'docente' | 'administrador' | 'invitado';
 
 export type Usuario = {
   id: string;
@@ -14,4 +14,5 @@ export type ResultadoPaginado<T> = { items: T[]; totalItems: number; pagina: num
 
 export type Cohorte = { id: string; cursoId: string; docenteId: string; nombre: string; periodo: string; activo: boolean; fechaCreacionUtc: string; };
 
-export type ProblemDetails = { title?: string; status: number; detail?: string };
+// `type` lleva el código del error de negocio (por ejemplo NOTA_YA_APROBADA)
+export type ProblemDetails = { title?: string; status: number; detail?: string; type?: string };

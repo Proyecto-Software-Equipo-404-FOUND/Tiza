@@ -104,4 +104,41 @@ export const handlersMateriales = [
     materiales.splice(indice, 1);
     return new HttpResponse(null, { status: 204 });
   }),
+
+  // Vista previa del texto (S3-CU-03, #229). Trucos según el título: "prohibido" -> 403, "escaneado" -> sin texto
+  http.get('*/api/v1/cursos/:cursoId/materiales/:id/texto', ({ params }) => {
+    const material = materiales.find((m) => m.id === params.id && m.cursoId === params.cursoId);
+    if (!material) return problema(404, 'Material no encontrado.');
+    if (material.titulo.toLowerCase().includes('prohibido')) {
+      return problema(403, 'Solo el docente del curso o un administrador pueden ver el texto.');
+    }
+    if (material.estado !== 'Listo') {
+      return HttpResponse.json(
+        { title: 'El apunte todavía se está procesando.', status: 409, type: 'MATERIAL_NO_LISTO' },
+        { status: 409 },
+      );
+    }
+    if (material.titulo.toLowerCase().includes('escaneado')) {
+      return HttpResponse.json({
+        materialId: material.id,
+        titulo: material.titulo,
+        cantidadPaginas: material.cantidadPaginas,
+        texto: '',
+        tieneTexto: false,
+      });
+    }
+    const paginas = Array.from(
+      { length: Math.min(material.cantidadPaginas, 5) },
+      (_, i) =>
+        `Página ${i + 1}\nLas estructuras de control permiten decidir qué instrucciones se ejecutan y cuántas veces. ` +
+        'Este texto es de ejemplo y lo genera el mock para probar la vista previa.',
+    );
+    return HttpResponse.json({
+      materialId: material.id,
+      titulo: material.titulo,
+      cantidadPaginas: material.cantidadPaginas,
+      texto: paginas.join('\n\n'),
+      tieneTexto: true,
+    });
+  }),
 ];

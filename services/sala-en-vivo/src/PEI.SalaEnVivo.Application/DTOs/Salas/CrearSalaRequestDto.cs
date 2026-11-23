@@ -7,5 +7,6 @@ namespace PEI.SalaEnVivo.Application.DTOs.Salas
     public sealed record CrearSalaRequestDto(
         Guid EvaluacionId,
         int CapacidadMaxima = 40,
-        int? DuracionMinutos = null);
+        int? DuracionMinutos = null,
+        bool PermitirInvitados = false);
 }
