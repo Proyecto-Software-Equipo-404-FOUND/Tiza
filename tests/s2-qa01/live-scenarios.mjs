@@ -100,7 +100,7 @@ export async function runScenarios({ root, env, password, container, command, la
     const retry = await student.invoke('EnviarRespuesta', payload);
     assert.equal(first.estado, 'Aceptada'); assert.equal(retry.estado, 'Duplicada');
     // .NET emite 7 decimales; PostgreSQL persiste microsegundos (6).
-    const persistedTime = value => value.replace(/(\.\d{6})\d+Z$/, '$1Z');
+    const persistedTime = value => value.replace(/\.(\d+)Z$/, (_, f) => `.${f.padEnd(6, '0').slice(0, 6)}Z`); // .79159Z = .791590Z
     assert.equal(persistedTime(retry.recibidaUtc), persistedTime(first.recibidaUtc));
     const sql = async (db, query) => command('docker', ['exec', container, 'psql', '-U', 's2live', '-d', db, '-Atc', query]);
     assert.equal(await sql('pei_sala_s2live', `SELECT count(*) FROM "RespuestasSala" WHERE "SalaId"='${sala.id}'`), '1');

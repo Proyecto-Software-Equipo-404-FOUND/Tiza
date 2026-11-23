@@ -7,5 +7,7 @@ namespace PEI.SalaEnVivo.Application.DTOs.Salas
         int UltimaSecuencia,
         IReadOnlyList<Guid> PreguntasRespondidas,
         DateTime ServidorUtc,
-        DateTime? FechaLimiteUtc);
+        DateTime? FechaLimiteUtc,
+        int? DuracionMinutos = null,
+        DateTime? IniciadaUtc = null);
 }

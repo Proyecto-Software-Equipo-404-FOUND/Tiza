@@ -49,4 +49,19 @@ describe('almacenSala', () => {
     olvidarSala('ev-1');
     expect(recuperarSala('ev-1', 'doc-1', AHORA)).toBeNull();
   });
+
+    it('retoma una sala que todavía no se inició (sin fecha de vencimiento)', () => {
+    const ahora = Date.parse('2026-11-05T12:00:00.000Z');
+    guardarSala('ev-1', 'doc-1', sala({ fechaVencimiento: null, duracionMinutos: 45 }), ahora);
+    expect(recuperarSala('ev-1', 'doc-1', ahora + 60 * 60 * 1000)).toMatchObject({
+      fechaVencimiento: null,
+      duracionMinutos: 45,
+    });
+  });
+
+  it('descarta una sala sin iniciar pasadas 24 horas desde que se guardó', () => {
+    const ahora = Date.parse('2026-11-05T12:00:00.000Z');
+    guardarSala('ev-1', 'doc-1', sala({ fechaVencimiento: null }), ahora);
+    expect(recuperarSala('ev-1', 'doc-1', ahora + 24 * 60 * 60 * 1000 + 1)).toBeNull();
+  });
 });

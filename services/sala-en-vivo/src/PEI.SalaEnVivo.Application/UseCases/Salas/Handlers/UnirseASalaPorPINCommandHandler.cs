@@ -45,7 +45,25 @@ namespace PEI.SalaEnVivo.Application.UseCases.Salas.Handlers
                     throw new UnauthorizedAccessException("La sala pertenece a otra institución.");
                 }
 
-                await ValidarMatriculaAsync(sala, command, cancellationToken);
+                if (command.EsInvitado)
+                {
+                    // S3-SA-01 (#231): el invitado no tiene matrícula. Solo entra si la sala lo permite
+                    // y si su token se emitió para esta sala (claim sala_id).
+                    if (command.SalaIdInvitado != sala.Id)
+                    {
+                        throw new UnauthorizedAccessException("El token de invitado es de otra sala.");
+                    }
+
+                    if (!sala.PermitirInvitados)
+                    {
+                        throw new InvalidOperationException(
+                            "SALA_SIN_INVITADOS: Esta sala no admite invitados. Pedile al docente que te habilite.");
+                    }
+                }
+                else
+                {
+                    await ValidarMatriculaAsync(sala, command, cancellationToken);
+                }
 
                 bool existeAlumnoEnSala = await _participanteSalaRepository.ExisteAlumnoEnSalaAsync(sala.Id, command.AlumnoId, cancellationToken);
 
@@ -62,7 +80,8 @@ namespace PEI.SalaEnVivo.Application.UseCases.Salas.Handlers
                 var participante = new ParticipanteSala
                 {
                     SalaId = sala.Id,
-                    AlumnoId = command.AlumnoId
+                    AlumnoId = command.AlumnoId,
+                    NombreInvitado = command.EsInvitado ? command.NombreInvitado : null
                 };
 
                 await _participanteSalaRepository.AddAsync(participante, cancellationToken);

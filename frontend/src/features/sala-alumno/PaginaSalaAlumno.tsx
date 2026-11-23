@@ -28,9 +28,13 @@ type Props = {
   conexion?: ConexionSala;
   /** Solo para pruebas: reemplaza la espera entre reintentos */
   esperar?: (ms: number) => Promise<void>;
+  /** El invitado no tiene cuenta: al terminar se le avisa que no va a ver su nota en Tiza */
+  esInvitado?: boolean;
+  /** El invitado ya escribió el PIN en su pantalla de ingreso: se muestra precargado */
+  pinInicial?: string;
 };
 
-export function PaginaSalaAlumno({ conexion: conexionInyectada, esperar }: Props) {
+export function PaginaSalaAlumno({ conexion: conexionInyectada, esperar, esInvitado = false, pinInicial }: Props) {
   // La conexión tiene que ser estable entre renders (ver useConexionSala)
   const [conexion] = useState(() => conexionInyectada ?? crearConexionSala());
   const { estado, reintentar } = useConexionSala(conexion);
@@ -58,7 +62,7 @@ export function PaginaSalaAlumno({ conexion: conexionInyectada, esperar }: Props
   });
   const enSala = fase === 'espera' || fase === 'enCurso';
   const enEsperaDeRed = respuestaEnEspera && (estado !== 'conectado' || recuperando);
-  const [pin, setPin] = useState('');
+  const [pin, setPin] = useState(pinInicial ?? '');
   const [errorPin, setErrorPin] = useState<string | undefined>();
   const [aceptoAviso, setAceptoAviso] = useState(false);
   const [errorAviso, setErrorAviso] = useState<string | undefined>();
@@ -71,6 +75,8 @@ export function PaginaSalaAlumno({ conexion: conexionInyectada, esperar }: Props
     if (!resultado.success || !aceptoAviso) return;
     void unirse(Number(resultado.data));
   };
+
+  const subtituloCierre = motivoCierre === 'TiempoAgotado' ? 'Se terminó el tiempo.' : 'Tu docente cerró la sala.';
 
   return (
     <main className='mx-auto flex max-w-xl flex-col gap-6 p-6'>
@@ -171,15 +177,25 @@ export function PaginaSalaAlumno({ conexion: conexionInyectada, esperar }: Props
         />
       )}
 
-      {fase === 'finalizada' && (
-        <Tarjeta
-          titulo='Examen entregado'
-          subtitulo={
-            motivoCierre === 'TiempoAgotado' ? 'Se terminó el tiempo.' : 'Tu docente cerró la sala.'
-          }
-          icono={circulo(<Flag className='h-6 w-6' aria-hidden='true' />)}
-        />
-      )}
+      {fase === 'finalizada' &&
+        (esInvitado ? (
+          <Tarjeta
+            titulo='Examen entregado'
+            subtitulo={subtituloCierre}
+            icono={circulo(<Flag className='h-6 w-6' aria-hidden='true' />)}
+          >
+            <p className='text-tiza-bosque/80'>
+              Tus respuestas quedaron registradas. Como ingresaste como invitado, no vas a poder consultar tu nota en
+              Tiza: pedísela a tu docente.
+            </p>
+          </Tarjeta>
+        ) : (
+          <Tarjeta
+            titulo='Examen entregado'
+            subtitulo={subtituloCierre}
+            icono={circulo(<Flag className='h-6 w-6' aria-hidden='true' />)}
+          />
+        ))}
     </main>
   );
 }
