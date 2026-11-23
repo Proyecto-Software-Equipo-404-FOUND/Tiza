@@ -5,7 +5,10 @@ import { evaluaciones } from './evaluaciones';
 const CAPACIDAD_MINIMA = 1;
 const CAPACIDAD_MAXIMA = 100;
 const CAPACIDAD_POR_DEFECTO = 40;
-const VIGENCIA_MS = 2 * 60 * 60 * 1000; // la sala vence a las 2 h
+export const DURACION_POR_DEFECTO_MINUTOS = 120; // lo que usa el servidor si no llega duracionMinutos
+
+// Duración de cada sala creada (por id): la usa la conexión de demo del docente al iniciar la sala
+export const duracionesDeSalas = new Map<string, number>();
 
 // PIN entero de 6 cifras (100000–999999), como el contrato
 function generarPin(): number {
@@ -16,7 +19,7 @@ const peticionInvalida = (title: string) =>
   HttpResponse.json({ title, status: 400 }, { status: 400 });
 
 export const handlersSalas = [
-  // 201 → { id, codigoPIN, fechaVencimiento, capacidadMaxima }.
+  // 201 → { id, codigoPIN, fechaVencimiento (null hasta que se inicia la sala), capacidadMaxima, duracionMinutos }.
   // Errores como el contrato: 400 (cuerpo inválido), 404 (evaluación inexistente o no publicada).
   http.post('*/api/v1/salas', async ({ request }) => {
     const cuerpo = (await request.json()) as { evaluacionId?: string; capacidadMaxima?: number; duracionMinutos?: number };
@@ -32,14 +35,17 @@ export const handlersSalas = [
       return HttpResponse.json({ title: 'Evaluación no encontrada.', status: 404 }, { status: 404 });
     }
 
+    const id = crypto.randomUUID();
+    const duracionMinutos = cuerpo.duracionMinutos ?? DURACION_POR_DEFECTO_MINUTOS;
+    duracionesDeSalas.set(id, duracionMinutos);
+
     return HttpResponse.json(
       {
-        id: crypto.randomUUID(),
+        id,
         codigoPIN: generarPin(),
-        fechaVencimiento: new Date(
-          Date.now() + (cuerpo.duracionMinutos ? cuerpo.duracionMinutos * 60_000 : VIGENCIA_MS),
-        ).toISOString(),
+        fechaVencimiento: null,
         capacidadMaxima: capacidad,
+        duracionMinutos,
       },
       { status: 201 },
     );
