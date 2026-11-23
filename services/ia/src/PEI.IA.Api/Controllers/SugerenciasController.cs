@@ -82,7 +82,7 @@ public class SugerenciasController : ControllerBase
         }
 
         // Validación de rol si se encuentra presente en los claims del token
-        var rol = User.Claims.FirstOrDefault(c => c.Type == "rol" || c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
+        var rol = User?.Claims?.FirstOrDefault(c => c.Type == "rol" || c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
         if (!string.IsNullOrWhiteSpace(rol) &&
             !rol.Equals("Docente", StringComparison.OrdinalIgnoreCase) &&
             !rol.Equals("Administrador", StringComparison.OrdinalIgnoreCase))
