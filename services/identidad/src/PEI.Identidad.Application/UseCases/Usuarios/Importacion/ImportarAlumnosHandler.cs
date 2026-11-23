@@ -13,7 +13,7 @@ public sealed class ImportarAlumnosHandler(IImportacionAlumnosDataAccess data, I
 
     /// <summary>null si la contraseña inicial es válida; si no, el motivo.</summary>
     public static string? ValidarContrasenaInicial(string contrasena) =>
-        contrasena.Length < ContrasenaMinima || System.Text.Encoding.UTF8.GetByteCount(contrasena) > ContrasenaMaximaBytes
+        string.IsNullOrWhiteSpace(contrasena) || contrasena.Length < ContrasenaMinima || System.Text.Encoding.UTF8.GetByteCount(contrasena) > ContrasenaMaximaBytes    
             ? $"La contraseña inicial tiene que tener al menos {ContrasenaMinima} caracteres (y no más de {ContrasenaMaximaBytes} bytes)."
             : null;
 
