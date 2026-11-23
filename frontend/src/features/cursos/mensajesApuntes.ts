@@ -16,3 +16,19 @@ export function mensajeApuntes(error: unknown): string {
   }
   return mensajeDeError(error);
 }
+
+// Vista previa del texto. El 409 se resuelve por el status: el backend todavía puede mandarlo sin `type` (#262)
+export function mensajeTextoApunte(error: unknown): string {
+  if (error instanceof ApiError) {
+    if (error.estado === 409) {
+      return 'El apunte todavía se está procesando o falló la extracción. Probá de nuevo en unos minutos.';
+    }
+    if (error.estado === 403) {
+      return error.detalle?.title ?? 'Solo el docente del curso o un administrador pueden ver el texto.';
+    }
+    if (error.estado === 404) {
+      return error.detalle?.title ?? 'No se encontró el apunte.';
+    }
+  }
+  return mensajeDeError(error);
+}
