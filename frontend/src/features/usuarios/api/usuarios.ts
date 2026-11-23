@@ -29,12 +29,14 @@ export async function listarUsuarios(rol: RolNuevo): Promise<UsuarioDeLaLista[]>
 export type ErrorDeFila = { fila: number; motivo: string };
 export type ResultadoImportacion = { creados: number; omitidos: number; errores: ErrorDeFila[] };
 
-// Solo Administrador. CSV en UTF-8 con columnas nombre,apellido,email (máximo 200 filas), enviado como
-// multipart/form-data en el campo «archivo». Las filas con error no frenan a las demás; un email que ya
-// existe se omite. Cada alumno nuevo recibe por email la invitación para definir su contraseña.
-export function importarAlumnos(archivo: File) {
+// Solo Administrador. CSV en UTF-8 con columnas nombre,apellido,email (máximo 200 alumnos sin contar los títulos, 1 MiB),
+// enviado como multipart/form-data en el campo «archivo». Las filas con error no frenan a las demás; un email que ya
+// existe se omite. Sin `contrasenaInicial`, cada alumno nuevo recibe por email la invitación para definir su contraseña;
+// con ella (opcional, S2-ID-02 #135) los alumnos quedan activos y pueden entrar enseguida.
+export function importarAlumnos(archivo: File, contrasenaInicial?: string) {
   const formulario = new FormData();
   formulario.append('archivo', archivo);
+  if (contrasenaInicial) formulario.append('contrasenaInicial', contrasenaInicial);
   return pedir<ResultadoImportacion>('/api/v1/identidad/usuarios/alumnos/importacion', {
     method: 'POST',
     body: formulario,

@@ -45,4 +45,18 @@ describe('api de usuarios', () => {
     expect(opciones?.body).toBeInstanceOf(FormData);
     expect((opciones?.body as FormData).get('archivo')).toBe(archivo);
   });
+
+  it('envía la contraseña inicial solo si se indicó', async () => {
+    vi.mocked(pedir).mockResolvedValue({ creados: 1, omitidos: 0, errores: [] });
+    const archivo = new File(['nombre,apellido,email'], 'alumnos.csv', { type: 'text/csv' });
+
+    await importarAlumnos(archivo, 'clave1234');
+    await importarAlumnos(archivo, '');
+    await importarAlumnos(archivo);
+
+    const cuerpos = vi.mocked(pedir).mock.calls.map(([, opciones]) => opciones?.body as FormData);
+    expect(cuerpos[0]?.get('contrasenaInicial')).toBe('clave1234');
+    expect(cuerpos[1]?.has('contrasenaInicial')).toBe(false);
+    expect(cuerpos[2]?.has('contrasenaInicial')).toBe(false);
+  });
 });

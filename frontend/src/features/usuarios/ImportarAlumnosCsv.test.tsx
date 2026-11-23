@@ -116,6 +116,8 @@ describe('ImportarAlumnosCsv', () => {
     expect(ejemplo).toHaveTextContent('nombre,apellido,email');
     expect(ejemplo).toHaveTextContent('Ana,Paz,ana.paz@correo.com');
     expect(screen.getByText(/Hasta 200 alumnos por archivo \(sin contar la fila de títulos\)/)).toBeInTheDocument();
+    expect(screen.getByText(/separadas por comas/)).toBeInTheDocument();
+    expect(screen.getByText(/de hasta 1 MiB/)).toBeInTheDocument();
   });
 
   it('si no se creó ninguno no muestra el aviso de éxito', async () => {
@@ -132,15 +134,26 @@ describe('ImportarAlumnosCsv', () => {
     expect(mostrarAviso).not.toHaveBeenCalled();
   });
 
-  it('muestra el detalle del servidor cuando el archivo es inválido (400)', async () => {
+  it('muestra el motivo que manda el servidor en el title cuando el archivo es inválido (400)', async () => {
     vi.mocked(api.importarAlumnos).mockRejectedValue(
-      new ApiError(400, { title: 'x', status: 400, detail: 'El archivo supera los 200 alumnos.' }),
+      new ApiError(400, { title: 'El encabezado debe ser exactamente nombre,apellido,email.', status: 400 }),
     );
     mostrar();
     await userEvent.upload(screen.getByLabelText('Archivo CSV'), csv());
     await userEvent.click(screen.getByRole('button', { name: 'Importar CSV' }));
 
-    expect(await screen.findByText('El archivo supera los 200 alumnos.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('El encabezado debe ser exactamente nombre,apellido,email.'),
+    ).toBeInTheDocument();
+  });
+
+  it('explica el error 413 (archivo demasiado grande)', async () => {
+    vi.mocked(api.importarAlumnos).mockRejectedValue(new ApiError(413, null));
+    mostrar();
+    await userEvent.upload(screen.getByLabelText('Archivo CSV'), csv());
+    await userEvent.click(screen.getByRole('button', { name: 'Importar CSV' }));
+
+    expect(await screen.findByText('El archivo es demasiado grande. El máximo es 1 MiB.')).toBeInTheDocument();
   });
 
   it('explica el error 415', async () => {
@@ -150,6 +163,57 @@ describe('ImportarAlumnosCsv', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Importar CSV' }));
 
     expect(await screen.findByText('El archivo tiene que ser un .csv en UTF-8.')).toBeInTheDocument();
+  });
+
+  it('sin contraseña inicial no manda ninguna y avisa que reciben un email', async () => {
+    vi.mocked(api.importarAlumnos).mockResolvedValue({ creados: 2, omitidos: 0, errores: [] });
+    mostrar();
+    await userEvent.upload(screen.getByLabelText('Archivo CSV'), csv());
+    await userEvent.click(screen.getByRole('button', { name: 'Importar CSV' }));
+
+    expect(await screen.findByText(/Reciben un email para definir su contraseña/)).toBeInTheDocument();
+    expect(vi.mocked(api.importarAlumnos).mock.calls[0]?.[1]).toBeUndefined();
+  });
+
+  it('con contraseña inicial la manda, avisa que ya pueden entrar y la limpia al terminar', async () => {
+    vi.mocked(api.importarAlumnos).mockResolvedValue({ creados: 2, omitidos: 0, errores: [] });
+    mostrar();
+    await userEvent.upload(screen.getByLabelText('Archivo CSV'), csv());
+    await userEvent.type(screen.getByLabelText('Contraseña inicial (opcional)'), 'clave1234');
+    await userEvent.click(screen.getByRole('button', { name: 'Importar CSV' }));
+
+    expect(await screen.findByText(/Ya pueden iniciar sesión con la contraseña inicial/)).toBeInTheDocument();
+    expect(screen.queryByText(/Reciben un email/)).not.toBeInTheDocument();
+    expect(vi.mocked(api.importarAlumnos).mock.calls[0]?.[1]).toBe('clave1234');
+    expect(screen.getByLabelText('Contraseña inicial (opcional)')).toHaveValue('');
+  });
+
+  it('no manda el archivo si la contraseña inicial es muy corta', async () => {
+    mostrar();
+    await userEvent.upload(screen.getByLabelText('Archivo CSV'), csv());
+    await userEvent.type(screen.getByLabelText('Contraseña inicial (opcional)'), 'corta');
+    await userEvent.click(screen.getByRole('button', { name: 'Importar CSV' }));
+
+    expect(await screen.findByText('Mínimo 8 caracteres')).toBeInTheDocument();
+    expect(api.importarAlumnos).not.toHaveBeenCalled();
+  });
+
+  it('rechaza una contraseña inicial de más de 72 bytes', async () => {
+    mostrar();
+    await userEvent.upload(screen.getByLabelText('Archivo CSV'), csv());
+    await userEvent.type(screen.getByLabelText('Contraseña inicial (opcional)'), 'ñ'.repeat(40));
+    await userEvent.click(screen.getByRole('button', { name: 'Importar CSV' }));
+
+    expect(await screen.findByText('Máximo 72 bytes')).toBeInTheDocument();
+    expect(api.importarAlumnos).not.toHaveBeenCalled();
+  });
+
+  it('permite mostrar y ocultar la contraseña inicial', async () => {
+    mostrar();
+    const campo = screen.getByLabelText('Contraseña inicial (opcional)');
+    expect(campo).toHaveAttribute('type', 'password');
+    await userEvent.click(screen.getByRole('button', { name: 'Mostrar la contraseña inicial de la importación' }));
+    expect(campo).toHaveAttribute('type', 'text');
   });
 
   it('elegir otro archivo limpia el resultado anterior', async () => {
