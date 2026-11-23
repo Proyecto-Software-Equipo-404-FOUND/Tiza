@@ -9,6 +9,8 @@ public sealed record GetMetricasEvaluacionQuery(
     Guid InstitucionId) : IRequest<ResultadoOperacion<MetricasEvaluacionDto>>;
 
 public sealed record MetricasEvaluacionDto(
+    Guid EvaluacionId,
+    int CantidadEntregas,
     decimal? Promedio,
     decimal PuntajeMaximo,
     int CantidadAprobadas,
@@ -56,6 +58,8 @@ public sealed class GetMetricasEvaluacionHandler
         var todasLasEntregas = await _repositorio.ListarEntregasPorEvaluacionAsync(
             request.EvaluacionId, request.InstitucionId, cancellationToken);
 
+        var cantidadEntregas = todasLasEntregas.Count;
+
         // Regla contrato S3-CT-01: solo cuentan las entregas con nota Aprobada
         var entregasAprobadas = todasLasEntregas
             .Where(e => e.EstadoNota == EstadoNotaEntrega.Aprobada)
@@ -65,6 +69,8 @@ public sealed class GetMetricasEvaluacionHandler
         {
             return ResultadoOperacion<MetricasEvaluacionDto>.Ok(
                 new MetricasEvaluacionDto(
+                    EvaluacionId: request.EvaluacionId,
+                    CantidadEntregas: cantidadEntregas,
                     Promedio: null,
                     PuntajeMaximo: puntajeMaximoExamen,
                     CantidadAprobadas: 0,
@@ -89,12 +95,11 @@ public sealed class GetMetricasEvaluacionHandler
             .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.FechaEdicionUtc).First().PuntajeDocente);
 
         var sumaPorPregunta = preguntas.ToDictionary(p => p.Id, _ => 0m);
-        var resultadosAlumnos = new List<(Guid AlumnoId, decimal NotaFinal)>();
+        var notasAlumnos = new List<(Guid AlumnoId, decimal NotaFinal)>();
 
         foreach (var entrega in entregasAprobadas)
         {
             var respuestas = ParsearRespuestas(entrega.RespuestasJson);
-            decimal notaAlumno = 0m;
 
             foreach (var pregunta in preguntas)
             {
@@ -105,18 +110,18 @@ public sealed class GetMetricasEvaluacionHandler
                     docentePorEntregaPregunta,
                     iaPorEntregaPregunta);
 
-                notaAlumno += puntajePregunta;
                 sumaPorPregunta[pregunta.Id] += puntajePregunta;
             }
 
-            resultadosAlumnos.Add((entrega.AlumnoId, Math.Round(notaAlumno, 2)));
+            var notaFinalAlumno = Math.Round(entrega.NotaFinal ?? 0m, 2);
+            notasAlumnos.Add((entrega.AlumnoId, notaFinalAlumno));
         }
 
         var cantidadAprobadas = entregasAprobadas.Count;
         var promedioExamen = Math.Round(
-            resultadosAlumnos.Average(r => r.NotaFinal), 2);
+            notasAlumnos.Average(n => n.NotaFinal), 2);
 
-        // Métricas para TODAS las preguntas
+        // Métricas para TODAS las preguntas (se mantiene el cálculo por pregunta)
         var metricasPreguntas = new List<MetricaPreguntaDto>();
         foreach (var pregunta in preguntas)
         {
@@ -142,15 +147,17 @@ public sealed class GetMetricasEvaluacionHandler
                 .PreguntaId
             : null;
 
-        var alumnosDto = resultadosAlumnos
-            .Select(r => new MetricaAlumnoDto(
-                AlumnoId: r.AlumnoId,
-                NotaFinal: r.NotaFinal,
-                DiferenciaConPromedio: Math.Round(r.NotaFinal - promedioExamen, 2)))
+        var alumnosDto = notasAlumnos
+            .Select(n => new MetricaAlumnoDto(
+                AlumnoId: n.AlumnoId,
+                NotaFinal: n.NotaFinal,
+                DiferenciaConPromedio: Math.Round(n.NotaFinal - promedioExamen, 2)))
             .ToList();
 
         return ResultadoOperacion<MetricasEvaluacionDto>.Ok(
             new MetricasEvaluacionDto(
+                EvaluacionId: request.EvaluacionId,
+                CantidadEntregas: cantidadEntregas,
                 Promedio: promedioExamen,
                 PuntajeMaximo: puntajeMaximoExamen,
                 CantidadAprobadas: cantidadAprobadas,

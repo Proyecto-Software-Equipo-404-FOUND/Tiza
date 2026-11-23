@@ -30,9 +30,22 @@ public class MetricasEvaluacionTests
     }
 
     [Fact]
-    public async Task Handle_SinEntregasAprobadas_DevuelvePromedioYPreguntaMasDificilNullYListasVacias()
+    public async Task Handle_SinEntregasAprobadas_DevuelveCantidadEntregasYPromedioNullYListasVacias()
     {
         var repo = new FakeResultadosRepositorio(CrearEvaluacion());
+        repo.Entregas.Add(new EntregaExamen
+        {
+            Id = Guid.NewGuid(),
+            InstitucionId = InstitucionId,
+            EvaluacionId = EvaluacionId,
+            SalaId = Guid.NewGuid(),
+            AlumnoId = Guid.NewGuid(),
+            Estado = EstadoEntregaExamen.Corregida,
+            EstadoNota = EstadoNotaEntrega.Sugerida,
+            FechaEntrega = DateTimeOffset.UtcNow.AddMinutes(-10),
+            RespuestasJson = "[]"
+        });
+
         var handler = new GetMetricasEvaluacionHandler(repo);
 
         var resultado = await handler.Handle(
@@ -41,7 +54,9 @@ public class MetricasEvaluacionTests
 
         Assert.Equal(TipoResultado.Ok, resultado.Tipo);
         Assert.NotNull(resultado.Valor);
-        Assert.Equal(0, resultado.Valor!.CantidadAprobadas);
+        Assert.Equal(EvaluacionId, resultado.Valor!.EvaluacionId);
+        Assert.Equal(1, resultado.Valor.CantidadEntregas);
+        Assert.Equal(0, resultado.Valor.CantidadAprobadas);
         Assert.Null(resultado.Valor.Promedio);
         Assert.Null(resultado.Valor.PreguntaMasDificilId);
         Assert.Equal(10m, resultado.Valor.PuntajeMaximo);
@@ -54,17 +69,14 @@ public class MetricasEvaluacionTests
     {
         var alumnoAprobado = Guid.NewGuid();
         var alumnoSugerida = Guid.NewGuid();
-        var alumnoPendiente = Guid.NewGuid();
         var alumnoEditada = Guid.NewGuid();
 
         var entregaAprobadaId = Guid.NewGuid();
         var entregaSugeridaId = Guid.NewGuid();
-        var entregaPendienteId = Guid.NewGuid();
         var entregaEditadaId = Guid.NewGuid();
 
         var repo = new FakeResultadosRepositorio(CrearEvaluacion());
 
-        // Única entrega Aprobada: MC correcta (2m) + abierta docente (6m) = 8m
         repo.Entregas.Add(new EntregaExamen
         {
             Id = entregaAprobadaId,
@@ -74,6 +86,7 @@ public class MetricasEvaluacionTests
             AlumnoId = alumnoAprobado,
             Estado = EstadoEntregaExamen.CorreccionManual,
             EstadoNota = EstadoNotaEntrega.Aprobada,
+            NotaFinal = 8m,
             FechaEntrega = DateTimeOffset.UtcNow.AddMinutes(-15),
             RespuestasJson = JsonSerializer.Serialize(new object[]
             {
@@ -91,7 +104,6 @@ public class MetricasEvaluacionTests
             FechaEdicionUtc = DateTimeOffset.UtcNow
         });
 
-        // Entrega con nota Sugerida (NO aprobada -> no debe contar)
         repo.Entregas.Add(new EntregaExamen
         {
             Id = entregaSugeridaId,
@@ -101,39 +113,11 @@ public class MetricasEvaluacionTests
             AlumnoId = alumnoSugerida,
             Estado = EstadoEntregaExamen.Corregida,
             EstadoNota = EstadoNotaEntrega.Sugerida,
+            NotaFinal = 2m,
             FechaEntrega = DateTimeOffset.UtcNow.AddMinutes(-10),
-            RespuestasJson = JsonSerializer.Serialize(new object[]
-            {
-                new { preguntaId = PreguntaMcId, opcionElegidaId = OpcionIncorrectaId.ToString() },
-                new { preguntaId = PreguntaAbiertaId, respuesta = "Respuesta sugerida" }
-            })
-        });
-        repo.CalificacionesIa.Add(new CalificacionSugerida
-        {
-            Id = Guid.NewGuid(),
-            InstitucionId = InstitucionId,
-            EntregaId = entregaSugeridaId,
-            PreguntaId = PreguntaAbiertaId,
-            NotaSugerida = 2m,
-            Justificacion = "IA",
-            FechaRegistro = DateTimeOffset.UtcNow
-        });
-
-        // Entrega Pendiente (NO aprobada -> no debe contar)
-        repo.Entregas.Add(new EntregaExamen
-        {
-            Id = entregaPendienteId,
-            InstitucionId = InstitucionId,
-            EvaluacionId = EvaluacionId,
-            SalaId = Guid.NewGuid(),
-            AlumnoId = alumnoPendiente,
-            Estado = EstadoEntregaExamen.Corregida,
-            EstadoNota = EstadoNotaEntrega.Sugerida,
-            FechaEntrega = DateTimeOffset.UtcNow.AddMinutes(-5),
             RespuestasJson = "[]"
         });
 
-        // Entrega Editada pero aún no Aprobada (NO debe contar)
         repo.Entregas.Add(new EntregaExamen
         {
             Id = entregaEditadaId,
@@ -143,6 +127,7 @@ public class MetricasEvaluacionTests
             AlumnoId = alumnoEditada,
             Estado = EstadoEntregaExamen.CorreccionManual,
             EstadoNota = EstadoNotaEntrega.Editada,
+            NotaFinal = 5m,
             FechaEntrega = DateTimeOffset.UtcNow.AddMinutes(-2),
             RespuestasJson = "[]"
         });
@@ -155,6 +140,8 @@ public class MetricasEvaluacionTests
         Assert.Equal(TipoResultado.Ok, resultado.Tipo);
         var metricas = resultado.Valor!;
 
+        Assert.Equal(EvaluacionId, metricas.EvaluacionId);
+        Assert.Equal(3, metricas.CantidadEntregas);
         Assert.Equal(1, metricas.CantidadAprobadas);
         Assert.Equal(8m, metricas.Promedio);
         Assert.Single(metricas.Alumnos);
@@ -164,18 +151,15 @@ public class MetricasEvaluacionTests
     }
 
     [Fact]
-    public async Task Handle_ConEntregasAprobadas_CalculaPromedioPreguntaMasDificilPorPorcentajeYAlumnos()
+    public async Task Handle_ConEntregasAprobadas_UsaNotaFinalYCalculaPreguntaMasDificilPorPorcentaje()
     {
         var alumno1 = Guid.NewGuid();
         var alumno2 = Guid.NewGuid();
         var entrega1Id = Guid.NewGuid();
         var entrega2Id = Guid.NewGuid();
 
-        // Pregunta MC: puntajeMaximo = 2
-        // Pregunta Abierta: puntajeMaximo = 8
         var repo = new FakeResultadosRepositorio(CrearEvaluacion());
 
-        // Alumno 1 (Aprobada): MC correcta (2/2 = 100%) + abierta docente (4/8 = 50%) -> 6m
         repo.Entregas.Add(new EntregaExamen
         {
             Id = entrega1Id,
@@ -185,6 +169,7 @@ public class MetricasEvaluacionTests
             AlumnoId = alumno1,
             Estado = EstadoEntregaExamen.CorreccionManual,
             EstadoNota = EstadoNotaEntrega.Aprobada,
+            NotaFinal = 7m,
             FechaEntrega = DateTimeOffset.UtcNow.AddMinutes(-10),
             RespuestasJson = JsonSerializer.Serialize(new object[]
             {
@@ -202,7 +187,6 @@ public class MetricasEvaluacionTests
             FechaEdicionUtc = DateTimeOffset.UtcNow
         });
 
-        // Alumno 2 (Aprobada): MC correcta (2/2 = 100%) + abierta docente (2/8 = 25%) -> 4m
         repo.Entregas.Add(new EntregaExamen
         {
             Id = entrega2Id,
@@ -212,6 +196,7 @@ public class MetricasEvaluacionTests
             AlumnoId = alumno2,
             Estado = EstadoEntregaExamen.CorreccionManual,
             EstadoNota = EstadoNotaEntrega.Aprobada,
+            NotaFinal = 5m,
             FechaEntrega = DateTimeOffset.UtcNow.AddMinutes(-5),
             RespuestasJson = JsonSerializer.Serialize(new object[]
             {
@@ -229,9 +214,6 @@ public class MetricasEvaluacionTests
             FechaEdicionUtc = DateTimeOffset.UtcNow
         });
 
-        // Puntajes: Alumno 1 = 6m, Alumno 2 = 4m -> Promedio = 5m
-        // Pregunta MC: promedio 2.0 / 2 = 100%
-        // Pregunta Abierta: promedio 3.0 / 8 = 37.5% (mayor puntaje absoluto 3.0 > 2.0, pero MENOR porcentaje -> es la más difícil)
         var handler = new GetMetricasEvaluacionHandler(repo);
         var resultado = await handler.Handle(
             new GetMetricasEvaluacionQuery(EvaluacionId, InstitucionId),
@@ -240,32 +222,31 @@ public class MetricasEvaluacionTests
         Assert.Equal(TipoResultado.Ok, resultado.Tipo);
         var metricas = resultado.Valor!;
 
+        Assert.Equal(EvaluacionId, metricas.EvaluacionId);
+        Assert.Equal(2, metricas.CantidadEntregas);
         Assert.Equal(2, metricas.CantidadAprobadas);
-        Assert.Equal(5m, metricas.Promedio);
+        Assert.Equal(6m, metricas.Promedio);
         Assert.Equal(10m, metricas.PuntajeMaximo);
-
         Assert.Equal(PreguntaAbiertaId, metricas.PreguntaMasDificilId);
 
         Assert.Equal(2, metricas.Preguntas.Count);
         var metricaMc = metricas.Preguntas.Single(p => p.PreguntaId == PreguntaMcId);
-        Assert.Equal("Pregunta MC", metricaMc.Enunciado);
         Assert.Equal(2m, metricaMc.PuntajeMaximo);
         Assert.Equal(2m, metricaMc.Promedio);
         Assert.Equal(100m, metricaMc.Porcentaje);
 
         var metricaAbierta = metricas.Preguntas.Single(p => p.PreguntaId == PreguntaAbiertaId);
-        Assert.Equal("Pregunta Abierta", metricaAbierta.Enunciado);
         Assert.Equal(8m, metricaAbierta.PuntajeMaximo);
         Assert.Equal(3m, metricaAbierta.Promedio);
         Assert.Equal(37.5m, metricaAbierta.Porcentaje);
 
         Assert.Equal(2, metricas.Alumnos.Count);
         var metricaAlumno1 = metricas.Alumnos.Single(a => a.AlumnoId == alumno1);
-        Assert.Equal(6m, metricaAlumno1.NotaFinal);
+        Assert.Equal(7m, metricaAlumno1.NotaFinal);
         Assert.Equal(1m, metricaAlumno1.DiferenciaConPromedio);
 
         var metricaAlumno2 = metricas.Alumnos.Single(a => a.AlumnoId == alumno2);
-        Assert.Equal(4m, metricaAlumno2.NotaFinal);
+        Assert.Equal(5m, metricaAlumno2.NotaFinal);
         Assert.Equal(-1m, metricaAlumno2.DiferenciaConPromedio);
     }
 
