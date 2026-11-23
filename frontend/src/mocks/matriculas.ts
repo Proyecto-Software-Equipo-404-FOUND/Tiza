@@ -28,7 +28,26 @@ export const cursoTieneAlumnosActivos = (cursoId: string) =>
     (m) => m.estado === 'Activa' && cohortes.some((c) => c.id === m.cohorteId && c.cursoId === cursoId),
   );
 
+const alumnosActivosDeLaCohorte = (cohorteId: string) =>
+  matriculas.filter((m) => m.estado === 'Activa' && m.cohorteId === cohorteId).length;
+
 export const handlersMatriculas = [
+  // DELETE de una comisión (contrato de Cursos): con matrículas activas responde 409, igual que el backend.
+  // Sin alumnos no devuelve nada, así sigue al mock de cohortes.ts, que hace la baja.
+  http.delete('*/api/v1/cursos/:cursoId/cohortes/:id', ({ params }) => {
+    const cantidad = alumnosActivosDeLaCohorte(String(params.id));
+    if (cantidad === 0) return undefined;
+    return HttpResponse.json(
+      {
+        title: 'No se puede dar de baja la comisión con alumnos matriculados.',
+        detail: `No se puede dar de baja la cohorte porque tiene ${cantidad} alumno(s) matriculado(s). Dalos de baja primero.`,
+        status: 409,
+      },
+      { status: 409 },
+    );
+  }),
+
+
   // GET /api/usuarios (S2-ID-10) por el gateway; acá solo se atiende el filtro rol=Alumno
   http.get('*/api/v1/identidad/usuarios', ({ request }) => {
     const rol = new URL(request.url).searchParams.get('rol');
