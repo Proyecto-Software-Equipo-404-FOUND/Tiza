@@ -6,33 +6,44 @@ import { tokenVencido, usuarioDesdeToken } from './jwt';
 
 type Sesion = {
   usuario: Usuario | null;
+  /** El token de un invitado venció (dura 4 h y no tiene refresh): se lo manda a su pantalla de ingreso, no al login */
+  invitadoVencido: boolean;
   entrar: (token: string, usuario?: Usuario) => Usuario;
   salir: () => void;
 };
 
+type Estado = { usuario: Usuario | null; invitadoVencido: boolean };
+
+const SIN_SESION: Estado = { usuario: null, invitadoVencido: false };
+
 const SesionContext = createContext<Sesion | null>(null);
 
 // Al recargar la página el token sigue en sessionStorage: de ahí se recupera el usuario
-function recuperarUsuario(): Usuario | null {
+function recuperarSesion(): Estado {
   const token = obtenerToken();
-  if (!token) return null;
+  if (!token) return SIN_SESION;
   try {
     // Con refreshToken, un accessToken vencido se renueva en el primer pedido
-    if (tokenVencido(token) && !obtenerTokenRenovacion()) throw new Error('Token vencido');
-    return usuarioDesdeToken(token);
+    if (tokenVencido(token) && !obtenerTokenRenovacion()) {
+      // El invitado no tiene refresh: vuelve a su ingreso. No se limpia el token acá (este inicializador puede
+      // correr dos veces en desarrollo): ingresarComoInvitado e iniciarSesion lo descartan antes de pedir.
+      if (usuarioDesdeToken(token).rol === 'invitado') return { usuario: null, invitadoVencido: true };
+      throw new Error('Token vencido');
+    }
+    return { usuario: usuarioDesdeToken(token), invitadoVencido: false };
   } catch {
     guardarToken(null);
-    return null;
+    return SIN_SESION;
   }
 }
 
 export function SesionProvider({ children }: { children: ReactNode }) {
-  const [usuario, setUsuario] = useState<Usuario | null>(recuperarUsuario);
+  const [estado, setEstado] = useState<Estado>(recuperarSesion);
 
   const entrar = useCallback((token: string, nuevo?: Usuario) => {
     const datos = nuevo ?? usuarioDesdeToken(token);
     guardarToken(token);
-    setUsuario(datos);
+    setEstado({ usuario: datos, invitadoVencido: false });
     return datos;
   }, []);
 
@@ -41,10 +52,13 @@ export function SesionProvider({ children }: { children: ReactNode }) {
     // Se avisa al servidor sin esperar la respuesta: la sesión local se cierra igual
     if (tokenRenovacion) void cerrarSesionEnServidor(tokenRenovacion).catch(() => undefined);
     guardarToken(null);
-    setUsuario(null);
+    setEstado(SIN_SESION);
   }, []);
 
-  const valor = useMemo(() => ({ usuario, entrar, salir }), [usuario, entrar, salir]);
+  const valor = useMemo(
+    () => ({ usuario: estado.usuario, invitadoVencido: estado.invitadoVencido, entrar, salir }),
+    [estado, entrar, salir],
+  );
 
   return <SesionContext.Provider value={valor}>{children}</SesionContext.Provider>;
 }

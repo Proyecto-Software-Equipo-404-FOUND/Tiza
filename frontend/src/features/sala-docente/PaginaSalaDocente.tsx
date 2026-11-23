@@ -172,7 +172,7 @@ function PanelSala({ sala, conexion: conexionInyectada, onAbrirOtra }: PropsPane
                 <span
                   className={`min-w-0 break-words font-bold ${alumno.desconectado ? 'text-tiza-bosque/60' : 'text-tiza-bosque'}`}
                 >
-                  {alumno.alias}
+                  {alumno.esInvitado && alumno.nombre ? alumno.nombre : alumno.alias}
                 </span>
                 <span className='flex flex-wrap items-center gap-2'>
                   {alumno.desconectado && (
@@ -239,9 +239,9 @@ export function PaginaSalaDocente({ conexion }: Props) {
   const [sala, setSala] = useState<SalaCreada | null>(() => recuperarSala(evaluacionId, usuarioId));
   const abrir = useAbrirSala();
 
-  const alAbrir = (capacidadMaxima: number, duracionMinutos: number) =>
+  const alAbrir = (capacidadMaxima: number, duracionMinutos: number, permitirInvitados: boolean) =>
     abrir.mutate(
-      { evaluacionId, capacidadMaxima, duracionMinutos },
+      { evaluacionId, capacidadMaxima, duracionMinutos, permitirInvitados },
       {
         onSuccess: (creada) => {
           guardarSala(evaluacionId, usuarioId, creada);

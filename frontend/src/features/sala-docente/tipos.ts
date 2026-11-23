@@ -59,6 +59,9 @@ export type AlumnoIngresoEvento = {
   salaId: string;
   alumnoId: string;
   alias: string;
+  // Solo para el docente: el invitado (sin cuenta) trae esInvitado y el nombre que escribió (contrato 13.1)
+  esInvitado?: boolean;
+  nombre?: string;
   totalConectados: number;
   ingresoUtc: string;
 };
@@ -68,7 +71,7 @@ export type AlumnoIngresoEvento = {
 export type AlumnosConectadosEvento = {
   salaId: string;
   totalConectados: number;
-  alumnos: { alumnoId: string; alias: string; ingresoUtc: string }[];
+  alumnos: { alumnoId: string; alias: string; esInvitado?: boolean; nombre?: string; ingresoUtc: string }[];
   actualizadoUtc: string;
 };
 
@@ -111,6 +114,9 @@ export type SeveridadFoco = 'ninguna' | 'amarilla' | 'roja';
 export type AlumnoPanel = {
   alumnoId: string;
   alias: string;
+  /** Invitado sin cuenta: el panel muestra su nombre en lugar del alias */
+  esInvitado?: boolean;
+  nombre?: string;
   ingresoUtc: string | null;
   alertas: number;
   peorSeveridad: SeveridadFoco;
