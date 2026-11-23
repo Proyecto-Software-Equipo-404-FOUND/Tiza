@@ -6,22 +6,24 @@ type Props = {
   etiqueta: string;
   limiteUtc: string | null | undefined;
   desfaseMs: number;
+  /** Duración que se muestra quieta (la sala todavía no empezó): no cuenta ni se marca como agotada */
+  fijoSegundos?: number;
 };
 
-export function CronometroPanel({ etiqueta, limiteUtc, desfaseMs }: Props) {
-  const calcular = () => segundosRestantes(limiteUtc, desfaseMs);
+export function CronometroPanel({ etiqueta, limiteUtc, desfaseMs, fijoSegundos }: Props) {
+  const calcular = () => (fijoSegundos !== undefined ? fijoSegundos : segundosRestantes(limiteUtc, desfaseMs));
   const [restante, setRestante] = useState(calcular);
 
   useEffect(() => {
     setRestante(calcular());
-    if (!limiteUtc) return;
+    if (fijoSegundos !== undefined || !limiteUtc) return;
     const intervalo = setInterval(() => setRestante(calcular()), 1000);
     return () => clearInterval(intervalo);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [limiteUtc, desfaseMs]);
+  }, [limiteUtc, desfaseMs, fijoSegundos]);
 
   const sinFecha = restante === null;
-  const agotado = restante !== null && restante <= 0;
+  const agotado = fijoSegundos === undefined && restante !== null && restante <= 0;
   const texto = sinFecha ? '—' : agotado ? 'Tiempo agotado' : formatearTiempo(restante);
 
   return (

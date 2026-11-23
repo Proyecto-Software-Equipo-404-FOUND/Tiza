@@ -29,6 +29,7 @@ const MENSAJES_ACCION: Record<string, string> = {
   PREGUNTA_INEXISTENTE: 'No se encontró la pregunta siguiente.',
   SALA_NO_INICIADA: 'Primero tenés que iniciar la sala.',
   SALA_FINALIZADA: 'La sala ya finalizó.',
+  SALA_VENCIDA: 'La sala venció sin iniciarse (pasaron más de 24 horas). Abrí una nueva.',
 };
 
 // Mensaje para Iniciar, Siguiente pregunta, Finalizar y para unirse a la sala

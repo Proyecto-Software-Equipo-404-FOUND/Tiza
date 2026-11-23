@@ -31,6 +31,29 @@ describe('abrirSala', () => {
     expect(opciones.headers).not.toHaveProperty('X-Institucion-Id');
   });
 
+  it('con permitirInvitados manda permitirInvitados: true en el cuerpo', async () => {
+    pedido.mockResolvedValue({ ok: true, status: 201, json: async () => ({}) });
+
+    await abrirSala({ evaluacionId: 'ev-1', capacidadMaxima: 30, duracionMinutos: 45, permitirInvitados: true });
+
+    const [, opciones] = pedido.mock.calls[0];
+    expect(JSON.parse(opciones.body)).toEqual({
+      evaluacionId: 'ev-1',
+      capacidadMaxima: 30,
+      duracionMinutos: 45,
+      permitirInvitados: true,
+    });
+  });
+
+  it('sin permitirInvitados (o en false) no manda el campo: el servidor usa false por defecto', async () => {
+    pedido.mockResolvedValue({ ok: true, status: 201, json: async () => ({}) });
+
+    await abrirSala({ evaluacionId: 'ev-1', capacidadMaxima: 30, duracionMinutos: 45, permitirInvitados: false });
+
+    const [, opciones] = pedido.mock.calls[0];
+    expect(JSON.parse(opciones.body)).not.toHaveProperty('permitirInvitados');
+  });
+
   it('si el servidor rechaza, lanza un ApiError con el estado', async () => {
     pedido.mockResolvedValue({
       ok: false,

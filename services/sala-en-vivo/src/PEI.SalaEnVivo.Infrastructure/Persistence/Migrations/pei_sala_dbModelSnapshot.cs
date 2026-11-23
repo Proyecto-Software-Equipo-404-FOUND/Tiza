@@ -73,6 +73,10 @@ namespace PEI.SalaEnVivo.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("AlumnoId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("NombreInvitado")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
                     b.Property<Guid>("SalaId")
                         .HasColumnType("uuid");
 
@@ -147,6 +151,9 @@ namespace PEI.SalaEnVivo.Infrastructure.Persistence.Migrations
                     b.Property<int>("CodigoPIN")
                         .HasColumnType("integer");
 
+                    b.Property<int>("DuracionMinutos")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("EntregaPendiente")
                         .HasColumnType("boolean");
 
@@ -163,6 +170,9 @@ namespace PEI.SalaEnVivo.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("FinalizadaUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("IniciadaUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("IndicePreguntaActual")
                         .HasColumnType("integer");
 
@@ -171,6 +181,9 @@ namespace PEI.SalaEnVivo.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("MotivoCierre")
                         .HasColumnType("text");
+
+                    b.Property<bool>("PermitirInvitados")
+                        .HasColumnType("boolean");
 
                     b.Property<Guid?>("PreguntaActualId")
                         .HasColumnType("uuid");

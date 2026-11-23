@@ -115,3 +115,34 @@ describe('renovación del token', () => {
     expect(fetchFalso).toHaveBeenCalledTimes(1);
   });
 });
+
+// El invitado no tiene refresh token (contrato identidad-v1): ante un 401 vuelve a su pantalla de ingreso
+const tokenDeInvitado = `cabecera.${btoa(JSON.stringify({ sub: 'inv-1', role: 'Invitado' }))}.firma`;
+
+describe('pedir ante un 401 de un invitado', () => {
+  it('no intenta renovar: limpia la sesión y lleva al ingreso de invitado con el aviso de acceso vencido', async () => {
+    guardarToken(tokenDeInvitado);
+    const fetchFalso = vi.fn().mockResolvedValue(json({}, 401));
+    vi.stubGlobal('fetch', fetchFalso);
+
+    await expect(pedir('/api/v1/salas')).rejects.toBeInstanceOf(ApiError);
+
+    expect(fetchFalso).toHaveBeenCalledTimes(1);
+    expect(asignar).toHaveBeenCalledWith('/invitado?vencido=1');
+    expect(asignar).not.toHaveBeenCalledWith('/login');
+    expect(obtenerToken()).toBeNull();
+  });
+
+  it('ni con un refreshToken viejo de otra sesión en la pestaña intenta renovar', async () => {
+    guardarToken(tokenDeInvitado);
+    guardarTokenRenovacion('refresh-de-otra-sesion');
+    const fetchFalso = vi.fn().mockResolvedValue(json({}, 401));
+    vi.stubGlobal('fetch', fetchFalso);
+
+    await expect(pedir('/api/v1/salas')).rejects.toBeInstanceOf(ApiError);
+
+    expect(fetchFalso).toHaveBeenCalledTimes(1);
+    expect(asignar).toHaveBeenCalledWith('/invitado?vencido=1');
+    expect(obtenerTokenRenovacion()).toBeNull();
+  });
+});

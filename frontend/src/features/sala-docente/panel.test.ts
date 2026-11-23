@@ -90,6 +90,23 @@ describe('registrarIngreso', () => {
     registrarIngreso(lista, ingreso({ alias: 'Otro' }));
     expect(lista[0].alias).toBe('Alumno 1');
   });
+
+  it('agrega al invitado con el nombre que escribió y conserva su alias', () => {
+    const resultado = registrarIngreso([], ingreso({ alias: 'Alumno 7', esInvitado: true, nombre: 'Lucía Fernández' }));
+    expect(resultado).toEqual([alumno({ alias: 'Alumno 7', esInvitado: true, nombre: 'Lucía Fernández' })]);
+  });
+
+  it('un alumno con cuenta no queda marcado como invitado ni trae nombre', () => {
+    const [resultado] = registrarIngreso([], ingreso({ esInvitado: false }));
+    expect(resultado).not.toHaveProperty('esInvitado');
+    expect(resultado).not.toHaveProperty('nombre');
+  });
+
+  it('completa el nombre de un invitado que había llegado solo por una alerta', () => {
+    const lista = [alumno({ alias: ALIAS_SIN_IDENTIFICAR, ingresoUtc: null, alertas: 1 })];
+    const [resultado] = registrarIngreso(lista, ingreso({ alias: 'Alumno 7', esInvitado: true, nombre: 'Lucía Fernández' }));
+    expect(resultado).toMatchObject({ alias: 'Alumno 7', esInvitado: true, nombre: 'Lucía Fernández', alertas: 1 });
+  });
 });
 
 describe('registrarAlerta', () => {
@@ -253,5 +270,38 @@ describe('aplicarFotoDePresencia', () => {
     const resultado = aplicarFotoDePresencia(lista, foto([]));
     expect(resultado).toHaveLength(1);
     expect(resultado[0]).toMatchObject({ desconectado: true, alertas: 1 });
+  });
+
+  it('con la lista vacía agrega al invitado con su nombre', () => {
+    const resultado = aplicarFotoDePresencia(
+      [],
+      foto([{ alumnoId: ALUMNO_1, alias: 'Alumno 7', esInvitado: true, nombre: 'Lucía Fernández', ingresoUtc: 'x' }]),
+    );
+    expect(resultado).toEqual([
+      {
+        alumnoId: ALUMNO_1,
+        alias: 'Alumno 7',
+        esInvitado: true,
+        nombre: 'Lucía Fernández',
+        ingresoUtc: 'x',
+        alertas: 0,
+        peorSeveridad: 'ninguna',
+      },
+    ]);
+  });
+
+  it('completa el nombre de un invitado que ya figuraba y conserva sus alertas', () => {
+    const lista = [alumno({ alias: ALIAS_SIN_IDENTIFICAR, alertas: 2, peorSeveridad: 'roja' })];
+    const resultado = aplicarFotoDePresencia(
+      lista,
+      foto([{ alumnoId: ALUMNO_1, alias: 'Alumno 7', esInvitado: true, nombre: 'Lucía Fernández', ingresoUtc: 'x' }]),
+    );
+    expect(resultado[0]).toMatchObject({
+      alias: 'Alumno 7',
+      esInvitado: true,
+      nombre: 'Lucía Fernández',
+      alertas: 2,
+      peorSeveridad: 'roja',
+    });
   });
 });
