@@ -84,7 +84,7 @@ namespace PEI.SalaEnVivo.Infrastructure.Services
             var sala = await _context.Sala
                 .AsNoTracking()
                 .Where(s => s.Id == salaId)
-                .Select(s => new { s.FechaVencimiento })
+                .Select(s => new { s.FechaVencimiento, s.IniciadaUtc, s.Estado })
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (sala == null)
@@ -92,8 +92,14 @@ namespace PEI.SalaEnVivo.Infrastructure.Services
                 return null;
             }
 
-            // Repoblar en Redis para subsiguientes lecturas si está disponible
-            await EstablecerVencimientoAsync(salaId, sala.FechaVencimiento, cancellationToken);
+            // S3-SA-02 (#239): el plazo previo al inicio (creación + 24 h) no se guarda en Redis,
+            // así IniciarSala nunca compite con un valor viejo cacheado. Sí se repuebla una vez iniciada
+            // (o en salas anteriores al Sprint 3, que no tienen IniciadaUtc).
+            var relojDeExamen = sala.IniciadaUtc.HasValue || sala.Estado != "Activa";
+            if (relojDeExamen)
+            {
+                await EstablecerVencimientoAsync(salaId, sala.FechaVencimiento, cancellationToken);
+            }
 
             return sala.FechaVencimiento;
         }

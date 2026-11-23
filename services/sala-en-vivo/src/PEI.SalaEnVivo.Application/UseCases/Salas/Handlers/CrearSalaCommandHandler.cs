@@ -58,7 +58,9 @@ namespace PEI.SalaEnVivo.Application.UseCases.Salas.Handlers
                 InstitucionId = command.InstitucionId,
                 EvaluacionId = command.EvaluacionId,
                 CodigoPIN = await CrearPIN(cancellationToken),
-                FechaVencimiento = DateTime.UtcNow.AddMinutes(command.DuracionMinutos),
+                // S3-SA-02 (#239): el reloj del examen arranca al iniciar la sala, no acá.
+                DuracionMinutos = command.DuracionMinutos,
+                FechaVencimiento = DateTime.UtcNow.Add(Sala.EsperaMaximaSinIniciar),
                 Estado = "Activa",
             };
             sala.SetCapacidadMaxima(command.CapacidadMaxima);

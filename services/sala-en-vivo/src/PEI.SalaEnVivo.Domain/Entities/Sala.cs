@@ -6,7 +6,25 @@ namespace PEI.SalaEnVivo.Domain.Entities
         public Guid InstitucionId { get; set; }
 
         public int[] Version { get; set; } = Array.Empty<int>();
+        /// <summary>
+        /// S3-SA-02 (#239): antes de iniciar es el plazo máximo para iniciar la sala
+        /// (creación + <see cref="EsperaMaximaSinIniciar"/>); al iniciar pasa a ser
+        /// el fin del examen (IniciadaUtc + DuracionMinutos).
+        /// </summary>
         public DateTime FechaVencimiento { get; set; }
+
+        /// <summary>S3-SA-02 (#239): minutos que dura el examen, contados desde que el docente lo inicia.</summary>
+        public int DuracionMinutos { get; set; } = DuracionPorDefectoMinutos;
+
+        /// <summary>S3-SA-02 (#239): momento en que el docente inició la sala. Null mientras no se inicia.</summary>
+        public DateTime? IniciadaUtc { get; set; }
+
+        public const int DuracionPorDefectoMinutos = 120;
+
+        /// <summary>Una sala creada y nunca iniciada deja de aceptar el PIN pasado este plazo.</summary>
+        public static readonly TimeSpan EsperaMaximaSinIniciar = TimeSpan.FromHours(24);
+
+        public bool FueIniciada => IniciadaUtc.HasValue;
         public int CodigoPIN { get; set; }
         public string Estado { get; set; } = string.Empty;
         public int CapacidadMaxima { get; set; }
@@ -34,9 +52,23 @@ namespace PEI.SalaEnVivo.Domain.Entities
         /// </summary>
         public bool EntregaPendiente { get; set; }
 
-        public void Iniciar()
+        /// <summary>
+        /// Pasa la sala a EnCurso. La primera vez fija IniciadaUtc y calcula el vencimiento
+        /// con la duración elegida (S3-SA-02, #239). Es idempotente: si ya estaba iniciada,
+        /// no vuelve a mover el reloj.
+        /// </summary>
+        public void Iniciar(DateTime? ahoraUtc = null)
         {
             Estado = "EnCurso";
+
+            if (IniciadaUtc.HasValue)
+            {
+                return;
+            }
+
+            var ahora = ahoraUtc ?? DateTime.UtcNow;
+            IniciadaUtc = ahora;
+            FechaVencimiento = ahora.AddMinutes(DuracionMinutos > 0 ? DuracionMinutos : DuracionPorDefectoMinutos);
         }
 
         /// <summary>
