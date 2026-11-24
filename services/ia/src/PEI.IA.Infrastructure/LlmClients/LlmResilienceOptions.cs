@@ -28,6 +28,15 @@ public class LlmResilienceOptions
         if (ex is TaskCanceledException or TimeoutException)
             return true;
 
+        // S3-IA-03: el filtro de contenido de Azure (gateway del profesor) rechaza con 400 algunos textos,
+        // por ejemplo una respuesta de alumno que intenta manipular la corrección. Se pasa al siguiente proveedor
+        // en vez de dejar la corrección sin nota (las barandas de la #280 igual marcan el intento al docente).
+        if (ex.Message.Contains("content_filter", StringComparison.OrdinalIgnoreCase) ||
+            ex.Message.Contains("content management policy", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
         if (ex is HttpRequestException httpEx)
         {
             // Errores de red / conexión rechazada
@@ -44,6 +53,7 @@ public class LlmResilienceOptions
 
         // Si el mensaje indica 429 o timeout en excepciones envueltas
         var msg = ex.Message;
+
         if (msg.Contains("429") || msg.Contains("Too Many Requests", StringComparison.OrdinalIgnoreCase) ||
             msg.Contains("timeout", StringComparison.OrdinalIgnoreCase))
         {

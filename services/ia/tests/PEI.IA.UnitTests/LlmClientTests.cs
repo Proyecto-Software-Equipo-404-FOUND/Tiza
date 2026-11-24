@@ -250,4 +250,15 @@ public class LlmClientTests
     {
         Assert.False(LlmResilienceOptions.EsFalloConmutable(new HttpRequestException("x", null, HttpStatusCode.BadRequest)));
     }
+
+    [Fact]
+    public void EsFalloConmutable_FiltroDeContenidoDeAzure_PasaAlSiguienteProveedor()
+    {
+        var ex = new HttpRequestException(
+            "Error del proveedor LLM GatewayUnaj: BadRequest - {\"error\":{\"message\":\"The response was filtered due to the prompt triggering Azure OpenAI's content management policy.\",\"code\":\"content_filter\"}}",
+            null,
+            HttpStatusCode.BadRequest);
+
+        Assert.True(LlmResilienceOptions.EsFalloConmutable(ex));
+    }
 }
