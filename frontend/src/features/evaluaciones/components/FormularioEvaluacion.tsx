@@ -1,4 +1,4 @@
-import { FileText, Plus } from 'lucide-react';
+import { FileText, Plus, Sparkles } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { ApiError } from '@/shared/api/cliente';
 import { mensajeDeError } from '@/shared/api/errores';
@@ -17,6 +17,7 @@ import {
   type EvaluacionBorrador,
 } from '../borrador';
 import { EditorPregunta } from './EditorPregunta';
+import { PanelSugerencias } from './PanelSugerencias';
 
 type Props = {
   inicial: EvaluacionBorrador;
@@ -33,6 +34,7 @@ type Props = {
 export function FormularioEvaluacion({ inicial, textoEnviar, enviando, error, onEnviar, onCancelar, onRecargar }: Props) {
   const [borrador, setBorrador] = useState<EvaluacionBorrador>(inicial);
   const [errores, setErrores] = useState<ErroresBorrador>({});
+  const [panelAbierto, setPanelAbierto] = useState(false);
 
   // Si la evaluación ya tiene un tipo fuera de la lista (datos viejos), se conserva como opción
   const tipos: string[] = TIPOS_EVALUACION.includes(borrador.tipo as (typeof TIPOS_EVALUACION)[number])
@@ -102,16 +104,35 @@ export function FormularioEvaluacion({ inicial, textoEnviar, enviando, error, on
             ))}
           </ol>
         )}
-        <Boton
-          type='button'
-          variante='secundario'
-          onClick={() => setBorrador({ ...borrador, preguntas: [...borrador.preguntas, nuevaPregunta()] })}
-          disabled={enviando}
-        >
-          <Plus className='mr-2 inline h-4 w-4' aria-hidden='true' />
-          Agregar pregunta
-        </Boton>
+        <div className='flex flex-wrap gap-3'>
+          <Boton
+            type='button'
+            variante='secundario'
+            onClick={() => setBorrador({ ...borrador, preguntas: [...borrador.preguntas, nuevaPregunta()] })}
+            disabled={enviando}
+          >
+            <Plus className='mr-2 inline h-4 w-4' aria-hidden='true' />
+            Agregar pregunta
+          </Boton>
+          <Boton
+            type='button'
+            variante='secundario'
+            onClick={() => setPanelAbierto(true)}
+            disabled={enviando || panelAbierto}
+          >
+            <Sparkles className='mr-2 inline h-4 w-4' aria-hidden='true' />
+            Sugerir con IA
+          </Boton>
+        </div>
       </Tarjeta>
+
+      {panelAbierto && (
+        <PanelSugerencias
+          deshabilitado={enviando}
+          onCerrar={() => setPanelAbierto(false)}
+          onAgregar={(nuevas) => setBorrador({ ...borrador, preguntas: [...borrador.preguntas, ...nuevas] })}
+        />
+      )}
 
       {hayErrores && <BannerError mensaje='Revisá los campos marcados antes de guardar.' />}
       {Boolean(error) && (

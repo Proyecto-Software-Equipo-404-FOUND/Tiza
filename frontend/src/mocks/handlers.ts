@@ -10,6 +10,7 @@ import { handlersEntregas } from './entregas';
 import { handlersMetricas } from './metricas';
 import { handlersMisExamenes } from './misExamenes';
 import { handlersMateriales } from './materiales';
+import { handlersSugerencias } from './sugerencias';
 import { handlersInvitado } from './invitado';
 
 export const handlers = [
@@ -130,5 +131,6 @@ export const handlers = [
   ...handlersMisExamenes,
   ...handlersMetricas,
   ...handlersMateriales,
+  ...handlersSugerencias,
   ...handlersInvitado,
 ];
