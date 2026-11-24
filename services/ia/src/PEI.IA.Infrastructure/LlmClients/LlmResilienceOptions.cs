@@ -34,8 +34,11 @@ public class LlmResilienceOptions
             if (httpEx.StatusCode is null)
                 return true;
 
-            // 429 Too Many Requests o 5xx Server Errors
+            // 429 Too Many Requests o 5xx Server Errors.
+            // S3-IA-03: también 401/403 (key inválida o tope de gasto del gateway agotado): se pasa al siguiente proveedor.
             return httpEx.StatusCode == HttpStatusCode.TooManyRequests
+                || httpEx.StatusCode == HttpStatusCode.Unauthorized
+                || httpEx.StatusCode == HttpStatusCode.Forbidden
                 || ((int)httpEx.StatusCode >= 500 && (int)httpEx.StatusCode <= 599);
         }
 

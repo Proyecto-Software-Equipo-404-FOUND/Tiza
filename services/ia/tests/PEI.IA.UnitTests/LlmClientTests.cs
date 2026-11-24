@@ -165,4 +165,89 @@ public class LlmClientTests
         await Assert.ThrowsAsync<HttpRequestException>(() =>
             client.CompletarAsync("Sys", "User"));
     }
+
+    // ── S3-IA-03: gateway del profesor (Azure OpenAI por API Management) ──
+
+    [Fact]
+    public async Task CompletarAsync_ProveedorAzure_MandaLaKeyEnApiKeyYLaVersionEnLaQuery()
+    {
+        HttpRequestMessage? enviado = null;
+        var handler = new MockHttpMessageHandler(req =>
+        {
+            enviado = req;
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    "{\"model\":\"gpt-4.1-mini\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"ok\"},\"finish_reason\":\"stop\"}]}",
+                    Encoding.UTF8, "application/json")
+            };
+        });
+
+        var config = new LlmProviderConfig
+        {
+            Provider = "GatewayUnaj",
+            ApiKey = "clave-de-prueba",
+            BaseUrl = "https://gateway.test/unaj-llm/openai/deployments/gpt-4.1-mini",
+            Model = "gpt-4.1-mini",
+            AuthHeader = "api-key",
+            ApiVersion = "2025-03-01-preview"
+        };
+        var client = new OpenAiCompatibleClient(new HttpClient(handler), config, NullLogger<OpenAiCompatibleClient>.Instance);
+
+        await client.CompletarAsync("Sys", "User");
+
+        Assert.NotNull(enviado);
+        Assert.Equal(
+            "https://gateway.test/unaj-llm/openai/deployments/gpt-4.1-mini/chat/completions?api-version=2025-03-01-preview",
+            enviado!.RequestUri!.ToString());
+        Assert.True(enviado.Headers.TryGetValues("api-key", out var valores));
+        Assert.Equal("clave-de-prueba", Assert.Single(valores!));
+        Assert.Null(enviado.Headers.Authorization);
+    }
+
+    [Fact]
+    public void ObtenerProveedoresOrdenados_GatewaySinKey_SeOmiteYQuedanLosGratis()
+    {
+        var settings = new LlmSettings
+        {
+            Providers = new List<LlmProviderConfig>
+            {
+                new() { Provider = "OpenRouter", Prioridad = 2 },
+                new() { Provider = "GatewayUnaj", Prioridad = 1, OmitirSinApiKey = true, ApiKey = "" }
+            }
+        };
+
+        var proveedores = settings.ObtenerProveedoresOrdenados();
+
+        Assert.Equal("OpenRouter", Assert.Single(proveedores).Provider);
+    }
+
+    [Fact]
+    public void ObtenerProveedoresOrdenados_GatewayConKey_VaPrimero()
+    {
+        var settings = new LlmSettings
+        {
+            Providers = new List<LlmProviderConfig>
+            {
+                new() { Provider = "OpenRouter", Prioridad = 2 },
+                new() { Provider = "GatewayUnaj", Prioridad = 1, OmitirSinApiKey = true, ApiKey = "k" }
+            }
+        };
+
+        Assert.Equal(new[] { "GatewayUnaj", "OpenRouter" }, settings.ObtenerProveedoresOrdenados().Select(p => p.Provider));
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.Unauthorized)]
+    [InlineData(HttpStatusCode.Forbidden)]
+    public void EsFalloConmutable_KeyInvalidaOTopeAgotado_PasaAlSiguienteProveedor(HttpStatusCode status)
+    {
+        Assert.True(LlmResilienceOptions.EsFalloConmutable(new HttpRequestException("x", null, status)));
+    }
+
+    [Fact]
+    public void EsFalloConmutable_BadRequest_NoConmuta()
+    {
+        Assert.False(LlmResilienceOptions.EsFalloConmutable(new HttpRequestException("x", null, HttpStatusCode.BadRequest)));
+    }
 }
