@@ -67,6 +67,7 @@ describe('PaginaResultados', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Parcial 1' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Resultados' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'Detalle' })).toHaveAttribute('href', '/evaluaciones/e1');
+    expect(screen.getByRole('link', { name: 'Métricas' })).toHaveAttribute('href', '/evaluaciones/e1/metricas');
   });
 
   it('muestra una fila por alumno con nombre, estado, notas y alertas', () => {

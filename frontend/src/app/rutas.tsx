@@ -8,6 +8,7 @@ import { PaginaEditarEvaluacion } from '@/features/evaluaciones/pages/PaginaEdit
 import { PaginaEvaluacion } from '@/features/evaluaciones/pages/PaginaEvaluacion';
 import { PaginaEvaluaciones } from '@/features/evaluaciones/pages/PaginaEvaluaciones';
 import { PaginaNuevaEvaluacion } from '@/features/evaluaciones/pages/PaginaNuevaEvaluacion';
+import { PaginaMetricas } from '@/features/metricas/PaginaMetricas';
 import { PaginaMisExamenes } from '@/features/mis-examenes/PaginaMisExamenes';
 import { PaginaMatriculas } from '@/features/matriculas/PaginaMatriculas';
 import { PaginaEntrega } from '@/features/revision-notas/pages/PaginaEntrega';
@@ -62,6 +63,7 @@ export const rutas: RouteObject[] = [
                   { path: '/evaluaciones/:evaluacionId/editar', element: <PaginaEditarEvaluacion /> },
                   { path: '/evaluaciones/:evaluacionId/resultados', element: <PaginaResultados /> },
                   { path: '/evaluaciones/:evaluacionId/resultados/:entregaId', element: <PaginaEntrega /> },
+                  { path: '/evaluaciones/:evaluacionId/metricas', element: <PaginaMetricas /> },
                 ],
               },
               {
