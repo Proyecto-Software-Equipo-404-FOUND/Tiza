@@ -5,6 +5,7 @@ using PEI.IA.Application.Guardrails;
 using PEI.IA.Application.Interfaces;
 using PEI.IA.Application.Prompts;
 using PEI.IA.Application.Services;
+using PEI.IA.Infrastructure.Cursos;
 using PEI.IA.Infrastructure.Evaluaciones;
 using PEI.IA.Infrastructure.LlmClients;
 using PEI.IA.Infrastructure.Mcp;
@@ -33,6 +34,7 @@ builder.Services.AddSingleton<ILlmClient, PollyResilientLlmClient>();
 builder.Services.AddSingleton<IBarandaSeguridad, BarandaSeguridad>();
 builder.Services.AddSingleton<IPromptBuilder, PromptBuilder>();
 builder.Services.AddScoped<ICorreccionService, CorreccionService>();
+builder.Services.AddScoped<IAgentesOrchestrator, AgentesOrchestrator>();
 
 // ── Tool Executor (Plan B o MCP real) ──
 builder.Services.AddSingleton<LocalToolExecutor>();
@@ -61,6 +63,22 @@ builder.Services.AddHttpClient<IEvaluacionesClient, EvaluacionesHttpClient>(clie
     client.BaseAddress = new Uri(evaluacionesSettings.BaseUrl.TrimEnd('/') + "/");
     client.Timeout     = TimeSpan.FromMilliseconds(evaluacionesSettings.TimeoutMs);
 });
+
+// ── Cliente HTTP → Microservicio de Cursos (S3-CU-03 / S3-IA-02) ──
+var cursosSettings = builder.Configuration
+    .GetSection("CursosSettings")
+    .Get<CursosSettings>() ?? new CursosSettings();
+
+builder.Services.AddSingleton(cursosSettings);
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddTransient<PEI.IA.Api.Http.ReenviarAuthorizationHandler>();
+builder.Services.AddHttpClient<ICursosClient, CursosHttpClient>(client =>
+{
+    client.BaseAddress = new Uri(cursosSettings.BaseUrl.TrimEnd('/') + "/");
+    client.Timeout     = TimeSpan.FromMilliseconds(cursosSettings.TimeoutMs);
+})
+// S3-IA-02: Cursos necesita el token del docente para darnos el texto del apunte.
+.AddHttpMessageHandler<PEI.IA.Api.Http.ReenviarAuthorizationHandler>();
 
 // ── Controllers + JSON ──
 builder.Services.AddControllers()

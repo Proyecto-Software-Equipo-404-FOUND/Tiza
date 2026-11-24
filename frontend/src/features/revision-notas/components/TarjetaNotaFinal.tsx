@@ -29,8 +29,8 @@ export function TarjetaNotaFinal({ resumen, aprobada, soloLectura, notaAprobada,
         aprobada
           ? `Nota corregida${fechaAprobacionUtc ? ` (${formatearFechaHora(fechaAprobacionUtc)})` : ''}. El alumno ya puede verla.`
           : soloLectura
-            ? 'Todavía no está corregida. Solo el docente que creó el examen puede aprobarla.'
-            : 'Revisá la nota que sugirió la IA, corregila si hace falta y aprobala. Hasta entonces el alumno no la ve.'
+            ? 'Todavía no está corregida. Solo el docente que creó el examen puede finalizar la corrección.'
+            : 'Revisá la nota que sugirió la IA, corregila si hace falta y finalizá la corrección. Hasta entonces el alumno no la ve.'
       }
     >
       <div className='flex flex-wrap items-center justify-between gap-4'>
@@ -41,7 +41,7 @@ export function TarjetaNotaFinal({ resumen, aprobada, soloLectura, notaAprobada,
           <span className='rounded-full bg-tiza-menta px-4 py-2 text-sm font-bold text-tiza-bosque'>Corregida</span>
         ) : soloLectura ? null : (
           <Boton type='button' onClick={onAprobar} disabled={resumen.total == null} cargando={cargando}>
-            Aprobar nota final
+            Finalizar corrección
           </Boton>
         )}
       </div>
@@ -50,7 +50,7 @@ export function TarjetaNotaFinal({ resumen, aprobada, soloLectura, notaAprobada,
           {resumen.conProblemas === 1
             ? 'Hay 1 pregunta sin puntaje válido.'
             : `Hay ${resumen.conProblemas} preguntas sin puntaje válido.`}{' '}
-          Completalas para poder aprobar.
+          Completalas para poder finalizar la corrección.
         </p>
       )}
       {error && (

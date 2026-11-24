@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using PEI.IA.Application.DTOs;
 using PEI.IA.Application.Interfaces;
 
 namespace PEI.IA.Infrastructure.Mcp;
@@ -13,23 +14,27 @@ namespace PEI.IA.Infrastructure.Mcp;
 public class LocalToolExecutor : IToolExecutor
 {
     private readonly ILogger<LocalToolExecutor> _logger;
+    private readonly ICursosClient? _cursosClient;
     private readonly ConcurrentDictionary<string, CalificacionRegistrada> _calificaciones = new();
 
-    public LocalToolExecutor(ILogger<LocalToolExecutor> logger)
+    public LocalToolExecutor(ILogger<LocalToolExecutor> logger, ICursosClient? cursosClient = null)
     {
         _logger = logger;
+        _cursosClient = cursosClient;
     }
 
-    public Task<string> EjecutarAsync(string toolName, string argumentosJson, CancellationToken cancellationToken = default)
+    public async Task<string> EjecutarAsync(string toolName, string argumentosJson, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("[Plan B - Local] Ejecutando tool '{Tool}' con args: {Args}",
             toolName, argumentosJson[..Math.Min(200, argumentosJson.Length)]);
 
         return toolName switch
         {
-            "RegistrarCalificacionSugerida" => EjecutarRegistrarCalificacion(argumentosJson),
-            "Echo" => Task.FromResult(JsonSerializer.Serialize(new { resultado = $"[Echo Local] {argumentosJson}" })),
-            _ => Task.FromResult(JsonSerializer.Serialize(new { error = $"Tool '{toolName}' no encontrada en el executor local." }))
+            "RegistrarCalificacionSugerida" => await EjecutarRegistrarCalificacion(argumentosJson),
+            "ObtenerTextoApunte" => await EjecutarObtenerTextoApunte(argumentosJson, cancellationToken),
+            "RevisarCorreccion" => await EjecutarRevisarCorreccion(argumentosJson),
+            "Echo" => JsonSerializer.Serialize(new { resultado = $"[Echo Local] {argumentosJson}" }),
+            _ => JsonSerializer.Serialize(new { error = $"Tool '{toolName}' no encontrada en el executor local." })
         };
     }
 
@@ -70,6 +75,38 @@ public class LocalToolExecutor : IToolExecutor
             },
             new()
             {
+                Nombre = "ObtenerTextoApunte",
+                Descripcion = "Devuelve el texto extraído y metadatos de un apunte del curso a partir de su ID.",
+                ParametrosSchemaJson = JsonSerializer.Serialize(new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        materialId = new { type = "string", format = "uuid", description = "ID del apunte" }
+                    },
+                    required = new[] { "materialId" }
+                })
+            },
+            new()
+            {
+                Nombre = "RevisarCorreccion",
+                Descripcion = "Revisa la corrección y nota asignada por un evaluador comparándola con la rúbrica.",
+                ParametrosSchemaJson = JsonSerializer.Serialize(new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        enunciado = new { type = "string" },
+                        notaPrimerAgente = new { type = "number" },
+                        puntajeMaximo = new { type = "number" },
+                        notaRevisor = new { type = "number" },
+                        observaciones = new { type = "string" }
+                    },
+                    required = new[] { "enunciado", "notaPrimerAgente", "puntajeMaximo", "notaRevisor" }
+                })
+            },
+            new()
+            {
                 Nombre = "Echo",
                 Descripcion = "Tool de prueba que devuelve el texto recibido.",
                 ParametrosSchemaJson = "{\"type\":\"object\",\"properties\":{\"texto\":{\"type\":\"string\"}},\"required\":[\"texto\"]}"
@@ -77,6 +114,91 @@ public class LocalToolExecutor : IToolExecutor
         };
 
         return Task.FromResult<IReadOnlyList<LlmToolDefinition>>(tools);
+    }
+
+    private async Task<string> EjecutarObtenerTextoApunte(string argumentosJson, CancellationToken ct)
+    {
+        try
+        {
+            var doc = JsonDocument.Parse(argumentosJson);
+            if (!doc.RootElement.TryGetProperty("materialId", out var matIdProp) ||
+                !Guid.TryParse(matIdProp.GetString(), out var materialId))
+            {
+                return JsonSerializer.Serialize(new { exito = false, error = "materialId inválido o ausente." });
+            }
+
+            if (_cursosClient != null)
+            {
+                var material = await _cursosClient.ObtenerTextoMaterialAsync(materialId, ct);
+                if (material == null)
+                {
+                    return JsonSerializer.Serialize(new { exito = false, error = $"Apunte {materialId} no encontrado." });
+                }
+
+                return JsonSerializer.Serialize(new
+                {
+                    exito = true,
+                    materialId = material.MaterialId,
+                    titulo = material.Titulo,
+                    cantidadPaginas = material.CantidadPaginas,
+                    texto = material.Texto,
+                    tieneTexto = material.TieneTexto
+                });
+            }
+
+            // Simulación en memoria si CursosClient no está inyectado
+            return JsonSerializer.Serialize(new
+            {
+                exito = true,
+                materialId = materialId,
+                titulo = "Apunte de prueba simulado",
+                cantidadPaginas = 5,
+                texto = "Contenido pedagógico simulado sobre programación modular y clean architecture.",
+                tieneTexto = true
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[Plan B - Local] Error al ejecutar ObtenerTextoApunte");
+            return JsonSerializer.Serialize(new { exito = false, error = ex.Message });
+        }
+    }
+
+    private Task<string> EjecutarRevisarCorreccion(string argumentosJson)
+    {
+        try
+        {
+            var doc = JsonDocument.Parse(argumentosJson);
+            var root = doc.RootElement;
+            var nota1 = root.TryGetProperty("notaPrimerAgente", out var n1) ? n1.GetDecimal() : 0m;
+            var nota2 = root.TryGetProperty("notaRevisor", out var n2) ? n2.GetDecimal() : 0m;
+            var max = root.TryGetProperty("puntajeMaximo", out var m) ? m.GetDecimal() : 10m;
+            var obs = root.TryGetProperty("observaciones", out var o) ? o.GetString() ?? "" : "";
+
+            var diferencia = Math.Abs(nota1 - nota2);
+            var umbral = max * 0.15m;
+            var requiereRevision = diferencia > umbral;
+
+            var resultado = new RevisionCorreccionResultado
+            {
+                EsConsistente = !requiereRevision,
+                DiferenciaPuntaje = diferencia,
+                NotaSugeridaAgente1 = nota1,
+                NotaSugeridaRevisor = nota2,
+                Observaciones = obs,
+                RequiereRevisionDocente = requiereRevision,
+                MotivoRevision = requiereRevision
+                    ? $"Diferencia de {diferencia} puntos supera el umbral permitido ({umbral})."
+                    : null
+            };
+
+            return Task.FromResult(JsonSerializer.Serialize(resultado));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[Plan B - Local] Error al ejecutar RevisarCorreccion");
+            return Task.FromResult(JsonSerializer.Serialize(new { error = ex.Message }));
+        }
     }
 
     private Task<string> EjecutarRegistrarCalificacion(string argumentosJson)
