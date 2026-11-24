@@ -317,6 +317,19 @@
             "type": "integer",
             "format": "int64",
             "description": "Latencia de la inferencia en milisegundos."
+          },
+          "requiereRevisionDocente": {
+            "type": "boolean",
+            "description": "S3-IA-01 (#226): true si la corrección necesita que el docente la mire (intento de engaño detectado o formato inválido tras el reintento)."
+          },
+          "sospechaEngano": {
+            "type": "boolean",
+            "description": "S3-IA-01 (#226): true si la respuesta del alumno tenía instrucciones para manipular la corrección. La justificación empieza con [Alerta Docente: …]."
+          },
+          "motivoRevision": {
+            "type": "string",
+            "description": "S3-IA-01 (#226): motivo legible para el docente cuando requiereRevisionDocente es true; null si no.",
+            "nullable": true
           }
         }
       },

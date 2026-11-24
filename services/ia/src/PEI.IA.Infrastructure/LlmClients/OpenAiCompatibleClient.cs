@@ -56,8 +56,18 @@ public class OpenAiCompatibleClient : ILlmClient
         _httpClient.BaseAddress = new Uri(_config.BaseUrl.TrimEnd('/') + "/");
         if (!string.IsNullOrEmpty(_config.ApiKey))
         {
-            _httpClient.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", _config.ApiKey);
+            if (string.IsNullOrWhiteSpace(_config.AuthHeader) ||
+                _config.AuthHeader.Equals("Authorization", StringComparison.OrdinalIgnoreCase))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", _config.ApiKey);
+            }
+            else
+            {
+                // S3-IA-03: Azure OpenAI / API Management esperan la key en su propio header (ej. "api-key").
+                _httpClient.DefaultRequestHeaders.Remove(_config.AuthHeader);
+                _httpClient.DefaultRequestHeaders.TryAddWithoutValidation(_config.AuthHeader, _config.ApiKey);
+            }
         }
         if (_config.TimeoutMs > 0)
         {
@@ -111,7 +121,11 @@ public class OpenAiCompatibleClient : ILlmClient
             _config.Provider, _config.Model, jsonContent.Length);
 
         var httpContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-        var response = await _httpClient.PostAsync("chat/completions", httpContent, cancellationToken);
+        // S3-IA-03: Azure OpenAI pide la versión de la API en la query string.
+        var ruta = string.IsNullOrWhiteSpace(_config.ApiVersion)
+            ? "chat/completions"
+            : $"chat/completions?api-version={Uri.EscapeDataString(_config.ApiVersion)}";
+        var response = await _httpClient.PostAsync(ruta, httpContent, cancellationToken);
 
         sw.Stop();
 
