@@ -187,7 +187,7 @@ function DetalleEntrega({ entrega, evaluacionId, nombre }: { entrega: EntregaDet
             ? 'La nota de la IA fue solo una sugerencia. La nota final ya está corregida.'
             : soloLectura
               ? 'La nota de la IA es solo una sugerencia. La nota final la define el docente.'
-              : 'La nota de la IA es solo una sugerencia. La nota final es la que aprobás más abajo.'
+              : 'La nota de la IA es solo una sugerencia. La nota final es la que confirmás más abajo.'
         }
       >
         <dl className='grid gap-4 sm:grid-cols-3'>
@@ -271,9 +271,9 @@ function DetalleEntrega({ entrega, evaluacionId, nombre }: { entrega: EntregaDet
 
       <ModalConfirmacion
         abierto={confirmando}
-        titulo='¿Aprobar la nota final?'
-        mensaje={`La nota final va a ser ${formatearNota(resumen.total, resumen.maximo) ?? ''}. Después de aprobarla, el alumno la puede ver.`}
-        textoConfirmar='Sí, aprobar'
+        titulo='¿Finalizar la corrección?'
+        mensaje={`La nota final va a ser ${formatearNota(resumen.total, resumen.maximo) ?? ''}. Al finalizar la corrección, el alumno la puede ver.`}
+        textoConfirmar='Sí, finalizar'
         variante='principal'
         onConfirmar={confirmar}
         onCancelar={() => setConfirmando(false)}

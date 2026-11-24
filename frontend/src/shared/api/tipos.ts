@@ -15,4 +15,12 @@ export type ResultadoPaginado<T> = { items: T[]; totalItems: number; pagina: num
 export type Cohorte = { id: string; cursoId: string; docenteId: string; nombre: string; periodo: string; activo: boolean; fechaCreacionUtc: string; };
 
 // `type` lleva el código del error de negocio (por ejemplo NOTA_YA_APROBADA)
-export type ProblemDetails = { title?: string; status: number; detail?: string; type?: string };
+// En ALUMNO_EN_OTRA_COMISION el contrato suma cohorteActualId y cohorteActualNombre: la comisión donde el alumno ya está activo
+export type ProblemDetails = {
+  title?: string;
+  status: number;
+  detail?: string;
+  type?: string;
+  cohorteActualId?: string | null;
+  cohorteActualNombre?: string | null;
+};
