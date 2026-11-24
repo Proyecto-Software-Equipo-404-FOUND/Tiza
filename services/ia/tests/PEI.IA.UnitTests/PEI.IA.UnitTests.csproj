@@ -25,6 +25,7 @@
     <ProjectReference Include="..\..\src\PEI.IA.Domain\PEI.IA.Domain.csproj" />
     <ProjectReference Include="..\..\src\PEI.IA.Infrastructure\PEI.IA.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\PEI.IA.McpServer\PEI.IA.McpServer.csproj" />
+    <ProjectReference Include="..\..\src\PEI.IA.Api\PEI.IA.Api.csproj" />
   </ItemGroup>
 
 </Project>
