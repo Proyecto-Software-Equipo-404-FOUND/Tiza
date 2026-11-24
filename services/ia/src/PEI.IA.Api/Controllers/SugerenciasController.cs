@@ -35,6 +35,7 @@ public class SugerenciasController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> SugerirPreguntas(
         [FromBody] SugerirPreguntasRequest request,
@@ -83,9 +84,9 @@ public class SugerenciasController : ControllerBase
 
         // Validación de rol si se encuentra presente en los claims del token
         var rol = User?.Claims?.FirstOrDefault(c => c.Type == "rol" || c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
+        // Contrato: solo Docente. Igual Cursos valida el token al pedir el texto del apunte.
         if (!string.IsNullOrWhiteSpace(rol) &&
-            !rol.Equals("Docente", StringComparison.OrdinalIgnoreCase) &&
-            !rol.Equals("Administrador", StringComparison.OrdinalIgnoreCase))
+            !rol.Equals("Docente", StringComparison.OrdinalIgnoreCase))
         {
             return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
             {
@@ -115,11 +116,23 @@ public class SugerenciasController : ControllerBase
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("MATERIAL_SIN_TEXTO"))
         {
-            return BadRequest(new ProblemDetails
+            // Contrato ia-v1.json: 422 MATERIAL_SIN_TEXTO
+            return UnprocessableEntity(new ProblemDetails
             {
                 Type = "MATERIAL_SIN_TEXTO",
                 Title = "Este apunte no tiene texto para generar preguntas (puede ser un PDF escaneado). Elegí otro apunte.",
-                Status = StatusCodes.Status400BadRequest
+                Status = StatusCodes.Status422UnprocessableEntity
+            });
+        }
+        catch (CursosAccesoDenegadoException ex)
+        {
+            // Cursos rechazó el token (401) o el usuario no puede ver el apunte (403): se respeta su respuesta.
+            return StatusCode(ex.StatusCode, new ProblemDetails
+            {
+                Title = ex.StatusCode == StatusCodes.Status401Unauthorized
+                    ? "Tu sesión venció. Volvé a iniciar sesión."
+                    : "Solo los docentes pueden pedir sugerencias.",
+                Status = ex.StatusCode
             });
         }
         catch (KeyNotFoundException)

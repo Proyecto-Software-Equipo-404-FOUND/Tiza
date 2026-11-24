@@ -41,7 +41,17 @@ public class ObtenerTextoApunteTool
         [Description("Identificador único del apunte (GUID).")] Guid materialId)
     {
         _logger.LogInformation("[MCP Tool] ObtenerTextoApunte solicitado para MaterialId: {MaterialId}", materialId);
-        var material = await _cursosClient.ObtenerTextoMaterialAsync(materialId);
+        TextoMaterialCursoDto? material;
+        try
+        {
+            material = await _cursosClient.ObtenerTextoMaterialAsync(materialId);
+        }
+        catch (Exception ex)
+        {
+            // 401/403 de Cursos o Cursos caído: la tool informa el error en vez de cortar el servidor MCP.
+            _logger.LogWarning(ex, "[MCP Tool] No se pudo obtener el texto del apunte {MaterialId}.", materialId);
+            return ResultadoTextoApunte.Fallido("No se pudo obtener el apunte desde Cursos.");
+        }
 
         if (material == null)
         {

@@ -70,11 +70,15 @@ var cursosSettings = builder.Configuration
     .Get<CursosSettings>() ?? new CursosSettings();
 
 builder.Services.AddSingleton(cursosSettings);
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddTransient<PEI.IA.Api.Http.ReenviarAuthorizationHandler>();
 builder.Services.AddHttpClient<ICursosClient, CursosHttpClient>(client =>
 {
     client.BaseAddress = new Uri(cursosSettings.BaseUrl.TrimEnd('/') + "/");
     client.Timeout     = TimeSpan.FromMilliseconds(cursosSettings.TimeoutMs);
-});
+})
+// S3-IA-02: Cursos necesita el token del docente para darnos el texto del apunte.
+.AddHttpMessageHandler<PEI.IA.Api.Http.ReenviarAuthorizationHandler>();
 
 // ── Controllers + JSON ──
 builder.Services.AddControllers()

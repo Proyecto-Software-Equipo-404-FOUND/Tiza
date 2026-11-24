@@ -74,7 +74,7 @@ public class SugerenciasControllerTests
     }
 
     [Fact]
-    public async Task SugerirPreguntas_MaterialSinTexto_Retorna400ConTypeMaterialSinTexto()
+    public async Task SugerirPreguntas_MaterialSinTexto_Retorna422ConTypeMaterialSinTexto()
     {
         var materialId = Guid.NewGuid();
         _fakeOrchestrator.LanzarExcepcion = new InvalidOperationException("MATERIAL_SIN_TEXTO: No hay texto");
@@ -87,9 +87,37 @@ public class SugerenciasControllerTests
 
         var result = await _controller.SugerirPreguntas(request, CancellationToken.None);
 
-        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-        var problem = Assert.IsType<ProblemDetails>(badRequest.Value);
+        var unprocessable = Assert.IsType<UnprocessableEntityObjectResult>(result);
+        var problem = Assert.IsType<ProblemDetails>(unprocessable.Value);
         Assert.Equal("MATERIAL_SIN_TEXTO", problem.Type);
+        Assert.Equal(422, problem.Status);
+    }
+
+    [Theory]
+    [InlineData(401)]
+    [InlineData(403)]
+    public async Task SugerirPreguntas_CursosRechazaElToken_RespetaElStatusDeCursos(int status)
+    {
+        _fakeOrchestrator.LanzarExcepcion = new CursosAccesoDenegadoException(status);
+
+        var result = await _controller.SugerirPreguntas(
+            new SugerirPreguntasRequest { MaterialId = Guid.NewGuid(), Cantidad = 3 }, CancellationToken.None);
+
+        var objeto = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(status, objeto.StatusCode);
+    }
+
+    [Fact]
+    public async Task SugerirPreguntas_SinPreguntasValidas_Retorna503IaNoDisponible()
+    {
+        _fakeOrchestrator.LanzarExcepcion = new InvalidOperationException("IA_NO_DISPONIBLE: nada válido");
+
+        var result = await _controller.SugerirPreguntas(
+            new SugerirPreguntasRequest { MaterialId = Guid.NewGuid(), Cantidad = 3 }, CancellationToken.None);
+
+        var objeto = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(503, objeto.StatusCode);
+        Assert.Equal("IA_NO_DISPONIBLE", Assert.IsType<ProblemDetails>(objeto.Value).Type);
     }
 
     [Fact]

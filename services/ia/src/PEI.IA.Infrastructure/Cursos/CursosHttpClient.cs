@@ -30,29 +30,30 @@ public class CursosHttpClient : ICursosClient
 
     public async Task<TextoMaterialCursoDto?> ObtenerTextoMaterialAsync(Guid materialId, CancellationToken ct = default)
     {
-        try
-        {
-            var response = await _httpClient.GetAsync($"api/v1/materiales/{materialId}/texto", ct);
-            if (response.StatusCode == HttpStatusCode.NotFound)
-            {
-                _logger.LogWarning("Material {MaterialId} no encontrado en microservicio Cursos.", materialId);
-                return null;
-            }
+        // El token del docente lo agrega ReenviarAuthorizationHandler (en la API de IA):
+        // Cursos valida que no sea alumno y que el apunte sea de su institución.
+        using var response = await _httpClient.GetAsync($"api/v1/materiales/{materialId}/texto", ct);
 
-            if (!response.IsSuccessStatusCode)
-            {
-                var content = await response.Content.ReadAsStringAsync(ct);
-                _logger.LogWarning("Error {Status} al obtener texto de material {MaterialId}: {Content}",
-                    response.StatusCode, materialId, content);
-                return null;
-            }
-
-            return await response.Content.ReadFromJsonAsync<TextoMaterialCursoDto>(JsonOptions, ct);
-        }
-        catch (Exception ex)
+        if (response.StatusCode == HttpStatusCode.NotFound)
         {
-            _logger.LogError(ex, "Excepción al consultar texto del material {MaterialId} en Cursos.", materialId);
+            _logger.LogWarning("Material {MaterialId} no encontrado en Cursos (inexistente o de otra institución).", materialId);
             return null;
         }
+
+        if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            _logger.LogWarning("Cursos rechazó el pedido del texto del material {MaterialId}: {Status}.", materialId, (int)response.StatusCode);
+            throw new CursosAccesoDenegadoException((int)response.StatusCode);
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsStringAsync(ct);
+            _logger.LogWarning("Error {Status} al obtener texto de material {MaterialId}: {Content}",
+                response.StatusCode, materialId, content);
+            throw new HttpRequestException($"Cursos respondió {(int)response.StatusCode} al pedir el texto del apunte.");
+        }
+
+        return await response.Content.ReadFromJsonAsync<TextoMaterialCursoDto>(JsonOptions, ct);
     }
 }

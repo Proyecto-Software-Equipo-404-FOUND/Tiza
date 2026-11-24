@@ -55,23 +55,35 @@ public class AgentesOrchestrator : IAgentesOrchestrator
             "Iniciando orquestación de Agente Generador para MaterialId={MaterialId}, Cantidad={Cant}, Tema='{Tema}'",
             request.MaterialId, request.Cantidad, request.Tema);
 
-        // ── 1. Obtener texto del apunte a través de la tool MCP ObtenerTextoApunte ──
-        var argsJson = JsonSerializer.Serialize(new { materialId = request.MaterialId });
-        var mcpResultJson = await _toolExecutor.EjecutarAsync("ObtenerTextoApunte", argsJson, cancellationToken);
-
+        // ── 1. Obtener texto del apunte ──
+        // Con el cliente de Cursos (el caso real) se pide directo, con el token del docente:
+        // 404 → MATERIAL_NO_ENCONTRADO, 401/403 → CursosAccesoDenegadoException. Se corta antes de llamar al modelo.
         string textoApunte;
-        bool tieneTexto = true;
-        try
+        bool tieneTexto;
+        if (_cursosClient != null)
         {
-            var doc = JsonDocument.Parse(mcpResultJson);
-            var root = doc.RootElement;
-            tieneTexto = root.TryGetProperty("tieneTexto", out var tt) && tt.GetBoolean();
-            textoApunte = root.TryGetProperty("texto", out var t) ? t.GetString() ?? "" : "";
+            var material = await _cursosClient.ObtenerTextoMaterialAsync(request.MaterialId, cancellationToken)
+                           ?? throw new KeyNotFoundException($"MATERIAL_NO_ENCONTRADO: {request.MaterialId}");
+            tieneTexto = material.TieneTexto;
+            textoApunte = material.Texto ?? string.Empty;
         }
-        catch
+        else
         {
-            textoApunte = string.Empty;
-            tieneTexto = false;
+            // Sin cliente de Cursos (pruebas o Plan B): se usa la tool MCP ObtenerTextoApunte.
+            var argsJson = JsonSerializer.Serialize(new { materialId = request.MaterialId });
+            var mcpResultJson = await _toolExecutor.EjecutarAsync("ObtenerTextoApunte", argsJson, cancellationToken);
+            try
+            {
+                var doc = JsonDocument.Parse(mcpResultJson);
+                var root = doc.RootElement;
+                tieneTexto = root.TryGetProperty("tieneTexto", out var tt) && tt.ValueKind == JsonValueKind.True;
+                textoApunte = root.TryGetProperty("texto", out var t) ? t.GetString() ?? "" : "";
+            }
+            catch
+            {
+                textoApunte = string.Empty;
+                tieneTexto = false;
+            }
         }
 
         if (!tieneTexto || string.IsNullOrWhiteSpace(textoApunte))
@@ -104,52 +116,29 @@ public class AgentesOrchestrator : IAgentesOrchestrator
 
         // Parsear preguntas generadas
         var preguntas = ParsearPreguntas(llmResult.Contenido);
-        if (preguntas.Count == 0)
+
+        // ── 4. Agente 2 (Revisor): descarta las preguntas que no respetan el contrato ──
+        // No se inventa ni se completa nada: una pregunta mal armada no se le muestra al docente.
+        var tiposPedidos = request.Tipos is { Count: > 0 }
+            ? new HashSet<string>(request.Tipos, StringComparer.OrdinalIgnoreCase)
+            : null;
+        var validas = preguntas
+            .Where(p => tiposPedidos == null || tiposPedidos.Contains(p.Tipo))
+            .Where(EsPreguntaValida)
+            .Take(request.Cantidad)
+            .ToList();
+
+        _logger.LogInformation("Agente Revisor: {Validas} de {Total} preguntas generadas son válidas.",
+            validas.Count, preguntas.Count);
+
+        if (validas.Count == 0)
         {
-            // Fallback sintético en caso de error del modelo
-            preguntas = GenerarPreguntasFallback(textoApunte, request.Cantidad);
+            // Sin preguntas válidas (JSON malformado o todas descartadas) → 503 IA_NO_DISPONIBLE en el controller.
+            throw new InvalidOperationException("IA_NO_DISPONIBLE: el modelo no devolvió preguntas válidas.");
         }
 
-        // Ajustar cantidad si el LLM devolvió más o menos
-        if (preguntas.Count > request.Cantidad)
-        {
-            preguntas = preguntas.Take(request.Cantidad).ToList();
-        }
-
-        // ── 4. Agente 2 (Revisor): validar preguntas generadas ──
-        bool revisadaPorAgenteRevisor = true;
-        try
-        {
-            _logger.LogInformation("Agente Revisor validando {Cant} preguntas generadas...", preguntas.Count);
-            // El revisor verifica consistencia y estructura
-            foreach (var p in preguntas)
-            {
-                if (p.Tipo == "OpcionMultiple" && (p.Opciones == null || p.Opciones.Count < 2))
-                {
-                    p.Opciones = new List<OpcionPreguntaDto>
-                    {
-                        new() { Texto = "Opción A (Verdadera)", EsCorrecta = true },
-                        new() { Texto = "Opción B (Falsa)", EsCorrecta = false }
-                    };
-                }
-                if (p.Tipo == "Abierta" && (p.Rubrica == null || p.Rubrica.Criterios.Count == 0))
-                {
-                    p.Rubrica = new RubricaPreguntaDto
-                    {
-                        Criterios = new List<CriterioRubricaDto>
-                        {
-                            new() { Descripcion = "Comprensión conceptual", Puntaje = 5m },
-                            new() { Descripcion = "Fundamentación y claridad", Puntaje = 5m }
-                        }
-                    };
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "El agente revisor reportó una advertencia menor al validar.");
-            revisadaPorAgenteRevisor = false;
-        }
+        preguntas = validas;
+        const bool revisadaPorAgenteRevisor = true;
 
         return new SugerirPreguntasResponse
         {
@@ -254,49 +243,29 @@ public class AgentesOrchestrator : IAgentesOrchestrator
         return raw;
     }
 
-    private static List<PreguntaSugeridaDto> GenerarPreguntasFallback(string textoApunte, int cantidad)
+    /// <summary>
+    /// Reglas del contrato para una pregunta sugerida (las mismas que valida Evaluaciones al guardar):
+    /// OpcionMultiple con 2 o más opciones con texto y exactamente una correcta;
+    /// Abierta con rúbrica cuyos criterios suman el puntaje máximo.
+    /// </summary>
+    public static bool EsPreguntaValida(PreguntaSugeridaDto p)
     {
-        var fragmento = textoApunte.Length > 100 ? textoApunte[..100] + "..." : textoApunte;
-        var preguntas = new List<PreguntaSugeridaDto>();
+        if (string.IsNullOrWhiteSpace(p.Enunciado) || p.PuntajeMaximo <= 0) return false;
 
-        for (int i = 1; i <= cantidad; i++)
+        if (string.Equals(p.Tipo, "OpcionMultiple", StringComparison.OrdinalIgnoreCase))
         {
-            if (i % 2 == 1)
-            {
-                preguntas.Add(new PreguntaSugeridaDto
-                {
-                    Enunciado = $"¿Cuál es el concepto central presentado en el fragmento analizado del tema {i}?",
-                    Tipo = "OpcionMultiple",
-                    PuntajeMaximo = 10m,
-                    Opciones = new List<OpcionPreguntaDto>
-                    {
-                        new() { Texto = "Definición y principios fundamentales explicados en el texto.", EsCorrecta = true },
-                        new() { Texto = "Procedimiento alternativo no descripto en la bibliografía.", EsCorrecta = false },
-                        new() { Texto = "Concepto accesorio desestimado en el análisis.", EsCorrecta = false }
-                    },
-                    FragmentoApunte = fragmento
-                });
-            }
-            else
-            {
-                preguntas.Add(new PreguntaSugeridaDto
-                {
-                    Enunciado = $"Explique y relacione las ideas clave expuestas en el material de cátedra sobre el punto {i}.",
-                    Tipo = "Abierta",
-                    PuntajeMaximo = 10m,
-                    Rubrica = new RubricaPreguntaDto
-                    {
-                        Criterios = new List<CriterioRubricaDto>
-                        {
-                            new() { Descripcion = "Precisión conceptual y coherencia", Puntaje = 5m },
-                            new() { Descripcion = "Capacidad de articulación y fundamentación", Puntaje = 5m }
-                        }
-                    },
-                    FragmentoApunte = fragmento
-                });
-            }
+            return p.Opciones is { Count: >= 2 } opciones
+                   && opciones.All(o => !string.IsNullOrWhiteSpace(o.Texto))
+                   && opciones.Count(o => o.EsCorrecta) == 1;
         }
 
-        return preguntas;
+        if (string.Equals(p.Tipo, "Abierta", StringComparison.OrdinalIgnoreCase))
+        {
+            return p.Rubrica?.Criterios is { Count: > 0 } criterios
+                   && criterios.All(c => !string.IsNullOrWhiteSpace(c.Descripcion) && c.Puntaje > 0)
+                   && Math.Abs(criterios.Sum(c => c.Puntaje) - p.PuntajeMaximo) <= 0.01m;
+        }
+
+        return false;
     }
 }

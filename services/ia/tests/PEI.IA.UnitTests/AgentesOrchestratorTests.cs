@@ -101,6 +101,8 @@ public class AgentesOrchestratorTests
             tieneTexto = false
         });
 
+        _fakeCursosClient.Material = new TextoMaterialCursoDto(materialId, "Escaneo sin OCR", 3, "", false);
+
         var request = new SugerirPreguntasRequest
         {
             MaterialId = materialId,
@@ -110,6 +112,129 @@ public class AgentesOrchestratorTests
         // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _orchestrator.GenerarPreguntasAsync(request));
         Assert.Contains("MATERIAL_SIN_TEXTO", ex.Message);
+        Assert.Equal(0, _fakeLlmClient.Llamadas);
+    }
+
+    // ── S3-IA-02: arreglos de la revisión (#281) ──
+
+    [Fact]
+    public async Task GenerarPreguntasAsync_ApunteInexistenteEnCursos_LanzaKeyNotFoundSinLlamarAlModelo()
+    {
+        _fakeCursosClient.DevolverNull = true;
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _orchestrator.GenerarPreguntasAsync(
+            new SugerirPreguntasRequest { MaterialId = Guid.NewGuid(), Cantidad = 2 }));
+        Assert.Equal(0, _fakeLlmClient.Llamadas);
+    }
+
+    [Theory]
+    [InlineData(401)]
+    [InlineData(403)]
+    public async Task GenerarPreguntasAsync_CursosRechazaElToken_PropagaElErrorSinLlamarAlModelo(int status)
+    {
+        _fakeCursosClient.Lanzar = new CursosAccesoDenegadoException(status);
+
+        var ex = await Assert.ThrowsAsync<CursosAccesoDenegadoException>(() => _orchestrator.GenerarPreguntasAsync(
+            new SugerirPreguntasRequest { MaterialId = Guid.NewGuid(), Cantidad = 2 }));
+        Assert.Equal(status, ex.StatusCode);
+        Assert.Equal(0, _fakeLlmClient.Llamadas);
+    }
+
+    [Fact]
+    public async Task GenerarPreguntasAsync_ModeloDevuelveJsonInvalido_LanzaIaNoDisponibleSinInventarPreguntas()
+    {
+        _fakeLlmClient.Resultado = new LlmCompletionResult { Contenido = "no es json", Proveedor = "x", Modelo = "y" };
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _orchestrator.GenerarPreguntasAsync(
+            new SugerirPreguntasRequest { MaterialId = Guid.NewGuid(), Cantidad = 3 }));
+        Assert.Contains("IA_NO_DISPONIBLE", ex.Message);
+    }
+
+    [Fact]
+    public async Task GenerarPreguntasAsync_RevisorDescartaLasInvalidasYNoLasCompleta()
+    {
+        _fakeLlmClient.Resultado = new LlmCompletionResult
+        {
+            Contenido = JsonSerializer.Serialize(new
+            {
+                preguntas = new object[]
+                {
+                    // inválida: dos correctas
+                    new { enunciado = "OM con dos correctas", tipo = "OpcionMultiple", puntajeMaximo = 2.0,
+                          opciones = new[] { new { texto = "A", esCorrecta = true }, new { texto = "B", esCorrecta = true } } },
+                    // inválida: abierta sin rúbrica
+                    new { enunciado = "Abierta sin rúbrica", tipo = "Abierta", puntajeMaximo = 5.0 },
+                    // válida
+                    new { enunciado = "Explicá la regla de dependencias.", tipo = "Abierta", puntajeMaximo = 5.0,
+                          rubrica = new { criterios = new[] { new { descripcion = "Define", puntaje = 3.0 }, new { descripcion = "Ejemplifica", puntaje = 2.0 } } } }
+                }
+            }),
+            Proveedor = "OpenRouter",
+            Modelo = "test-model"
+        };
+
+        var resultado = await _orchestrator.GenerarPreguntasAsync(
+            new SugerirPreguntasRequest { MaterialId = Guid.NewGuid(), Cantidad = 3 });
+
+        var pregunta = Assert.Single(resultado.Preguntas);
+        Assert.Equal("Explicá la regla de dependencias.", pregunta.Enunciado);
+        Assert.True(resultado.RevisadaPorAgenteRevisor);
+        Assert.DoesNotContain(resultado.Preguntas, p => p.Opciones?.Any(o => o.Texto.Contains("Opción A")) == true);
+    }
+
+    [Fact]
+    public async Task GenerarPreguntasAsync_TodasInvalidas_LanzaIaNoDisponible()
+    {
+        _fakeLlmClient.Resultado = new LlmCompletionResult
+        {
+            Contenido = JsonSerializer.Serialize(new
+            {
+                preguntas = new[] { new { enunciado = "Abierta con rúbrica que no suma", tipo = "Abierta", puntajeMaximo = 10.0,
+                    rubrica = new { criterios = new[] { new { descripcion = "Define", puntaje = 3.0 } } } } }
+            }),
+            Proveedor = "x",
+            Modelo = "y"
+        };
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _orchestrator.GenerarPreguntasAsync(
+            new SugerirPreguntasRequest { MaterialId = Guid.NewGuid(), Cantidad = 1 }));
+        Assert.Contains("IA_NO_DISPONIBLE", ex.Message);
+    }
+
+    [Fact]
+    public void EsPreguntaValida_OpcionMultipleConUnaCorrecta_EsValida()
+    {
+        var p = new PreguntaSugeridaDto
+        {
+            Enunciado = "¿Qué es SOLID?",
+            Tipo = "OpcionMultiple",
+            PuntajeMaximo = 1,
+            Opciones = new List<OpcionPreguntaDto>
+            {
+                new() { Texto = "Principios de diseño", EsCorrecta = true },
+                new() { Texto = "Un framework", EsCorrecta = false }
+            }
+        };
+
+        Assert.True(AgentesOrchestrator.EsPreguntaValida(p));
+    }
+
+    [Fact]
+    public void EsPreguntaValida_OpcionMultipleSinCorrecta_NoEsValida()
+    {
+        var p = new PreguntaSugeridaDto
+        {
+            Enunciado = "¿Qué es SOLID?",
+            Tipo = "OpcionMultiple",
+            PuntajeMaximo = 1,
+            Opciones = new List<OpcionPreguntaDto>
+            {
+                new() { Texto = "A", EsCorrecta = false },
+                new() { Texto = "B", EsCorrecta = false }
+            }
+        };
+
+        Assert.False(AgentesOrchestrator.EsPreguntaValida(p));
     }
 
     [Fact]
@@ -156,12 +281,15 @@ public class AgentesOrchestratorTests
     {
         public LlmCompletionResult Resultado { get; set; } = new() { Contenido = "{}" };
 
+        public int Llamadas { get; private set; }
+
         public Task<LlmCompletionResult> CompletarAsync(
             string systemPrompt,
             string userPrompt,
             IReadOnlyList<LlmToolDefinition>? tools = null,
             CancellationToken cancellationToken = default)
         {
+            Llamadas++;
             return Task.FromResult(Resultado);
         }
     }
@@ -194,9 +322,15 @@ public class AgentesOrchestratorTests
 
     private sealed class FakeCursosClient : ICursosClient
     {
+        public TextoMaterialCursoDto? Material { get; set; }
+        public bool DevolverNull { get; set; }
+        public Exception? Lanzar { get; set; }
+
         public Task<TextoMaterialCursoDto?> ObtenerTextoMaterialAsync(Guid materialId, CancellationToken ct = default)
         {
-            return Task.FromResult<TextoMaterialCursoDto?>(new TextoMaterialCursoDto(
+            if (Lanzar != null) throw Lanzar;
+            if (DevolverNull) return Task.FromResult<TextoMaterialCursoDto?>(null);
+            return Task.FromResult<TextoMaterialCursoDto?>(Material ?? new TextoMaterialCursoDto(
                 materialId, "Titulo", 1, "Texto apunte", true));
         }
     }
