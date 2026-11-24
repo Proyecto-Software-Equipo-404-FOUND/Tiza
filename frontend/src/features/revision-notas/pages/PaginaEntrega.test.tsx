@@ -157,7 +157,7 @@ describe('PaginaEntrega', () => {
   it('el texto de «Notas» cambia según quién mira y si ya está corregida', () => {
     simular({ data: entrega });
     const vista = renderizar();
-    expect(screen.getByText(/es la que aprobás más abajo/)).toBeInTheDocument();
+    expect(screen.getByText(/es la que confirmás más abajo/)).toBeInTheDocument();
     vista.unmount();
     simular({ data: entrega }, 'administrador');
     const admin = renderizar();
@@ -244,7 +244,7 @@ describe('PaginaEntrega', () => {
       renderizar();
       expect(screen.getByLabelText(/Nota final de la pregunta 2/)).toHaveValue('3,5');
       expect(screen.getByText('5,5 / 6')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Aprobar nota final' })).toBeEnabled();
+      expect(screen.getByRole('button', { name: 'Finalizar corrección' })).toBeEnabled();
     });
 
     it('al cambiar el puntaje recalcula el total', async () => {
@@ -264,7 +264,7 @@ describe('PaginaEntrega', () => {
       await userEvent.type(campo, '5');
       expect(screen.getByText('No puede superar 4.')).toBeInTheDocument();
       expect(screen.getByText('Faltan puntajes')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Aprobar nota final' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Finalizar corrección' })).toBeDisabled();
     });
 
     it('si la IA no sugirió nota, hay que completarla a mano para poder aprobar', async () => {
@@ -274,18 +274,18 @@ describe('PaginaEntrega', () => {
       };
       simular({ data: pendiente });
       renderizar();
-      expect(screen.getByText('Hay 1 pregunta sin puntaje válido. Completalas para poder aprobar.')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Aprobar nota final' })).toBeDisabled();
+      expect(screen.getByText('Hay 1 pregunta sin puntaje válido. Completalas para poder finalizar la corrección.')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Finalizar corrección' })).toBeDisabled();
       await userEvent.type(screen.getByLabelText(/Nota final de la pregunta 2/), '2,5');
-      expect(screen.getByRole('button', { name: 'Aprobar nota final' })).toBeEnabled();
+      expect(screen.getByRole('button', { name: 'Finalizar corrección' })).toBeEnabled();
     });
 
     it('si el docente solo confirma lo que sugirió la IA, aprueba sin guardar cambios', async () => {
       simular({ data: entrega });
       renderizar();
-      await userEvent.click(screen.getByRole('button', { name: 'Aprobar nota final' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Finalizar corrección' }));
       expect(aprobarNota).not.toHaveBeenCalled();
-      await userEvent.click(screen.getByRole('button', { name: 'Sí, aprobar' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Sí, finalizar' }));
       expect(aprobarNota).toHaveBeenCalledWith([]);
     });
 
@@ -295,8 +295,8 @@ describe('PaginaEntrega', () => {
       const campo = screen.getByLabelText(/Nota final de la pregunta 2/);
       await userEvent.clear(campo);
       await userEvent.type(campo, '4');
-      await userEvent.click(screen.getByRole('button', { name: 'Aprobar nota final' }));
-      await userEvent.click(screen.getByRole('button', { name: 'Sí, aprobar' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Finalizar corrección' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Sí, finalizar' }));
       expect(aprobarNota).toHaveBeenCalledWith([{ preguntaId: 'p2', puntaje: 4 }]);
     });
 
@@ -313,16 +313,16 @@ describe('PaginaEntrega', () => {
       // El estado de corrección deja paso a «Corregida»
       expect(screen.getAllByText('Corregida').length).toBeGreaterThan(0);
       expect(screen.queryByText('Nota sugerida')).not.toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: 'Aprobar nota final' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Finalizar corrección' })).not.toBeInTheDocument();
       expect(screen.getByLabelText(/Nota final de la pregunta 2/)).toBeDisabled();
     });
 
     it('el administrador ve la nota pero no puede editarla ni aprobarla', () => {
       simular({ data: entrega }, 'administrador');
       renderizar();
-      expect(screen.queryByRole('button', { name: 'Aprobar nota final' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Finalizar corrección' })).not.toBeInTheDocument();
       expect(screen.getByLabelText(/Nota final de la pregunta 2/)).toBeDisabled();
-      expect(screen.getByText(/Solo el docente que creó el examen puede aprobarla/)).toBeInTheDocument();
+      expect(screen.getByText(/Solo el docente que creó el examen puede finalizar la corrección/)).toBeInTheDocument();
     });
 
     it('explica con el código del contrato por qué no se pudo aprobar', () => {

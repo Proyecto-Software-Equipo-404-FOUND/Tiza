@@ -145,6 +145,46 @@ describe('PaginaMatriculas', () => {
     expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
   });
 
+  it('explica que el alumno ya está en otra comisión del curso (ALUMNO_EN_OTRA_COMISION)', async () => {
+    vi.mocked(api.listarMatriculas).mockResolvedValue([]);
+    vi.mocked(api.matricularAlumno).mockRejectedValue(
+      new ApiError(409, { status: 409, title: 'x', type: 'ALUMNO_EN_OTRA_COMISION' }),
+    );
+    mostrarPagina();
+
+    await userEvent.selectOptions(await screen.findByLabelText('Alumno'), 'a1');
+    await userEvent.click(screen.getByRole('button', { name: 'Matricular' }));
+
+    expect(
+      await screen.findByText(
+        'Este alumno ya está en otra comisión de este curso. Dalo de baja de esa comisión para matricularlo acá.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('nombra la comisión donde el alumno ya está cuando el servidor la informa', async () => {
+    vi.mocked(api.listarMatriculas).mockResolvedValue([]);
+    vi.mocked(api.matricularAlumno).mockRejectedValue(
+      new ApiError(409, {
+        status: 409,
+        title: 'x',
+        type: 'ALUMNO_EN_OTRA_COMISION',
+        cohorteActualId: 'c9',
+        cohorteActualNombre: 'Comisión Tarde',
+      }),
+    );
+    mostrarPagina();
+
+    await userEvent.selectOptions(await screen.findByLabelText('Alumno'), 'a1');
+    await userEvent.click(screen.getByRole('button', { name: 'Matricular' }));
+
+    expect(
+      await screen.findByText(
+        'Este alumno ya está en la comisión «Comisión Tarde» de este curso. Dalo de baja de esa comisión para matricularlo acá.',
+      ),
+    ).toBeInTheDocument();
+  });
+
   it('muestra el mensaje de permiso ante un 403', async () => {
     vi.mocked(api.listarMatriculas).mockResolvedValue([]);
     vi.mocked(api.matricularAlumno).mockRejectedValue(
