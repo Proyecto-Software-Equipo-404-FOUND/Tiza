@@ -63,6 +63,17 @@ vi.mock('@/features/revision-notas/api/entregas', () => ({
   obtenerEntrega: vi.fn().mockRejectedValue(new Error('sin backend en este test')),
 }));
 
+vi.mock('@/features/metricas/api/metricas', () => ({
+  obtenerMetricas: vi.fn().mockResolvedValue({
+    evaluacionId: 'e1',
+    cantidadEntregas: 0,
+    cantidadAprobadas: 0,
+    puntajeMaximo: 10,
+    preguntas: [],
+    alumnos: [],
+  }),
+}));
+
 vi.mock('@/features/mis-examenes/api/misExamenes', () => ({
   listarMisExamenes: vi.fn().mockResolvedValue([]),
 }));
@@ -192,6 +203,18 @@ describe('rutas de la aplicación', () => {
     mostrar('/sala');
     expect(await screen.findByRole('heading', { level: 1, name: 'Sala en vivo' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Sala en vivo' })).toBeInTheDocument();
+  });
+
+  it('un docente entra a las métricas de un examen', async () => {
+    iniciarComo('docente');
+    mostrar('/evaluaciones/e1/metricas');
+    expect(await screen.findByRole('link', { name: 'Métricas' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('un alumno no entra a las métricas de un examen', () => {
+    iniciarComo('alumno');
+    mostrar('/evaluaciones/e1/metricas');
+    expect(screen.getByText('No tenés permiso para ver esta página.')).toBeInTheDocument();
   });
 
   it('un alumno entra a Mis exámenes y ve el enlace en el menú', async () => {

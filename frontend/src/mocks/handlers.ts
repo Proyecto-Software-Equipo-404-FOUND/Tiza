@@ -2,13 +2,15 @@ import { http, HttpResponse } from 'msw';
 import { usuarios, cursos } from './datos';
 import { crearTokenFalso } from './token';
 import { handlersUsuarios } from './usuarios';
-import { handlersMatriculas } from './matriculas';
+import { cursoTieneAlumnosActivos, handlersMatriculas } from './matriculas';
 import { handlersCohortes } from './cohortes';
 import { handlersEvaluaciones } from './evaluaciones';
 import { handlersSalas } from './salas';
 import { handlersEntregas } from './entregas';
+import { handlersMetricas } from './metricas';
 import { handlersMisExamenes } from './misExamenes';
 import { handlersMateriales } from './materiales';
+import { handlersSugerencias } from './sugerencias';
 import { handlersInvitado } from './invitado';
 
 export const handlers = [
@@ -111,6 +113,13 @@ export const handlers = [
   http.delete('*/api/v1/cursos/:id', ({ params }) => {
     const curso = cursos.find((c) => c.id === params.id);
     if (!curso) return HttpResponse.json({ title: 'No encontrado', status: 404 }, { status: 404 });
+    // S3-CU-02: con alumnos matriculados no se puede dar de baja el curso
+    if (cursoTieneAlumnosActivos(curso.id)) {
+      return HttpResponse.json(
+        { title: 'No se puede desactivar un curso con alumnos matriculados.', status: 409, type: 'CURSO_CON_ALUMNOS' },
+        { status: 409 },
+      );
+    }
     curso.activo = false;
     return new HttpResponse(null, { status: 204 });
   }),
@@ -120,6 +129,8 @@ export const handlers = [
   ...handlersSalas,
   ...handlersEntregas,
   ...handlersMisExamenes,
+  ...handlersMetricas,
   ...handlersMateriales,
+  ...handlersSugerencias,
   ...handlersInvitado,
 ];

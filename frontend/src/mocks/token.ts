@@ -1,3 +1,16 @@
+// El rol viaja en el JWT (claim role). Si no se puede leer se trata como sin sesión.
+export function rolDelToken(request: Request): string | null {
+  const encabezado = request.headers.get('Authorization');
+  const carga = encabezado?.replace('Bearer ', '').split('.')[1];
+  if (!carga) return null;
+  try {
+    const json = atob(carga.replace(/-/g, '+').replace(/_/g, '/'));
+    return (JSON.parse(json) as { role?: string }).role ?? null;
+  } catch {
+    return null;
+  }
+}
+
 type UsuarioFalso = { id: string; nombre: string; rol: string; institucionId: string };
 
 // btoa solo entiende Latin-1: se pasa por UTF-8 para que un nombre con tildes o ñ llegue bien, como en un JWT real

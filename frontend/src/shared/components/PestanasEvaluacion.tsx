@@ -2,12 +2,12 @@ import { Link } from 'react-router-dom';
 
 type Props = {
   evaluacionId: string;
-  actual: 'detalle' | 'resultados';
+  actual: 'detalle' | 'resultados' | 'metricas';
 };
 
 const base = 'rounded-full px-4 py-2 text-sm font-bold';
 
-// Pestañas «Detalle» y «Resultados» de una evaluación. Son rutas distintas, por eso son enlaces.
+// Pestañas «Detalle», «Resultados» y «Métricas» de una evaluación. Son rutas distintas, por eso son enlaces.
 export function PestanasEvaluacion({ evaluacionId, actual }: Props) {
   const estilo = (activa: boolean) =>
     `${base} ${activa ? 'bg-tiza-bosque text-white' : 'bg-tiza-menta text-tiza-bosque hover:bg-tiza-menta/70'}`;
@@ -26,6 +26,13 @@ export function PestanasEvaluacion({ evaluacionId, actual }: Props) {
         aria-current={actual === 'resultados' ? 'page' : undefined}
       >
         Resultados
+      </Link>
+      <Link
+        to={`/evaluaciones/${evaluacionId}/metricas`}
+        className={estilo(actual === 'metricas')}
+        aria-current={actual === 'metricas' ? 'page' : undefined}
+      >
+        Métricas
       </Link>
     </nav>
   );

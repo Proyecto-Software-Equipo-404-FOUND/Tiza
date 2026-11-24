@@ -43,4 +43,52 @@ describe('mensajeDeError', () => {
       'Demasiados intentos. Esperá un momento e intentá de nuevo.',
     );
   });
+
+  it('explica por qué no se puede eliminar un curso con alumnos (CURSO_CON_ALUMNOS)', () => {
+    const error = new ApiError(409, {
+      title: 'No se puede desactivar un curso con alumnos matriculados.',
+      status: 409,
+      type: 'CURSO_CON_ALUMNOS',
+    });
+    expect(mensajeDeError(error)).toBe(
+      'No se puede eliminar el curso porque tiene alumnos matriculados. Primero dá de baja sus matrículas.',
+    );
+  });
+
+  it('explica el conflicto de comisión (ALUMNO_EN_OTRA_COMISION)', () => {
+    const error = new ApiError(409, { title: 'x', status: 409, type: 'ALUMNO_EN_OTRA_COMISION' });
+    expect(mensajeDeError(error)).toBe(
+      'Este alumno ya está en otra comisión de este curso. Dalo de baja de esa comisión para matricularlo acá.',
+    );
+  });
+
+  it('ALUMNO_EN_OTRA_COMISION nombra la comisión actual si el servidor la informa', () => {
+    const error = new ApiError(409, {
+      title: 'x',
+      status: 409,
+      type: 'ALUMNO_EN_OTRA_COMISION',
+      cohorteActualId: 'c1',
+      cohorteActualNombre: 'Comisión B',
+    });
+    expect(mensajeDeError(error)).toBe(
+      'Este alumno ya está en la comisión «Comisión B» de este curso. Dalo de baja de esa comisión para matricularlo acá.',
+    );
+  });
+
+  it('ALUMNO_EN_OTRA_COMISION con el nombre vacío o null usa el mensaje general', () => {
+    const error = new ApiError(409, {
+      title: 'x',
+      status: 409,
+      type: 'ALUMNO_EN_OTRA_COMISION',
+      cohorteActualNombre: null,
+    });
+    expect(mensajeDeError(error)).toBe(
+      'Este alumno ya está en otra comisión de este curso. Dalo de baja de esa comisión para matricularlo acá.',
+    );
+  });
+
+  it('con un código que no conoce, sigue con el mensaje según el estado', () => {
+    const error = new ApiError(409, { title: 'x', status: 409, type: 'OTRO_CODIGO' });
+    expect(mensajeDeError(error)).toBe('Alguien modificó este dato. Recargá la página e intentá de nuevo.');
+  });
 });

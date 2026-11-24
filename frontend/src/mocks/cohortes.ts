@@ -2,7 +2,7 @@ import { http, HttpResponse } from 'msw';
 import type { Cohorte } from '@/shared/api/tipos';
 import { cursos, CURSO_1_ID, COHORTE_1_ID, DOCENTE_A_ID } from './datos';
 
-const cohortes: Cohorte[] = [
+export const cohortes: Cohorte[] = [
   {
     id: COHORTE_1_ID,
     cursoId: CURSO_1_ID,

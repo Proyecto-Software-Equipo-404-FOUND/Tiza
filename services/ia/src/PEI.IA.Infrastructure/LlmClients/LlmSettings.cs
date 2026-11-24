@@ -28,6 +28,21 @@ public class LlmProviderConfig
 
     /// <summary>Prioridad de ejecución (1 = principal, 2 = primer fallback, 3 = segundo fallback, etc.).</summary>
     public int Prioridad { get; set; } = 1;
+
+    /// <summary>
+    /// S3-IA-03: header donde va la key. "Authorization" (por defecto) la manda como Bearer;
+    /// cualquier otro nombre (ej. "api-key" en Azure OpenAI) la manda tal cual en ese header.
+    /// </summary>
+    public string AuthHeader { get; set; } = "Authorization";
+
+    /// <summary>S3-IA-03: si tiene valor, se agrega "?api-version=..." al pedido (Azure OpenAI).</summary>
+    public string? ApiVersion { get; set; }
+
+    /// <summary>
+    /// S3-IA-03: si es true y la key está vacía, el proveedor no se usa
+    /// (así quien no tiene la key del gateway pasa directo a los proveedores gratis).
+    /// </summary>
+    public bool OmitirSinApiKey { get; set; }
 }
 
 /// <summary>
@@ -70,7 +85,10 @@ public class LlmSettings
     {
         if (Providers is { Count: > 0 })
         {
-            return Providers.OrderBy(p => p.Prioridad).ToList();
+            return Providers
+                .Where(p => !(p.OmitirSinApiKey && string.IsNullOrWhiteSpace(p.ApiKey)))
+                .OrderBy(p => p.Prioridad)
+                .ToList();
         }
 
         return new List<LlmProviderConfig>

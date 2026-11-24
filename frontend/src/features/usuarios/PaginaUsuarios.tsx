@@ -14,6 +14,7 @@ import { Tabla, type Columna } from '@/shared/components/Tabla';
 import { Tarjeta } from '@/shared/components/Tarjeta';
 import { useAviso } from '@/shared/components/Aviso';
 import { listarUsuarios, registrarUsuario, type RolNuevo, type UsuarioDeLaLista } from './api/usuarios';
+import { ImportarAlumnosCsv } from './ImportarAlumnosCsv';
 
 // Mismos límites que valida Identidad (RegisterRequest). BCrypt corta la contraseña en 72 bytes.
 const esquema = z.object({
@@ -32,8 +33,9 @@ type Errores = Partial<Record<keyof Campos | 'confirmacion' | 'confirmacionEmail
 const VACIO: Campos = { nombre: '', apellido: '', email: '', password: '' };
 
 const columnas: Columna<UsuarioDeLaLista>[] = [
-  { titulo: 'Nombre', celda: (usuario) => <span className='font-semibold'>{usuario.nombre}</span> },
-  { titulo: 'Email', celda: (usuario) => usuario.email },
+  // En el celular la tabla tiene que entrar sin desplazarse: los textos largos (sobre todo el email) se parten en líneas
+  { titulo: 'Nombre', celda: (usuario) => <span className='break-words font-semibold'>{usuario.nombre}</span> },
+  { titulo: 'Email', celda: (usuario) => <span className='break-all'>{usuario.email}</span> },
   { titulo: 'Rol', celda: (usuario) => usuario.rol },
 ];
 
@@ -213,6 +215,8 @@ export function PaginaUsuarios() {
           </Boton>
         </form>
       </Tarjeta>
+
+      <ImportarAlumnosCsv />
 
       <Tarjeta titulo='Usuarios de la institución'>
         {cargando ? (
