@@ -1,3 +1,4 @@
+using PEI.Evaluaciones.Application.Evaluaciones.Queries.GetMetricasEvaluacion;
 using PEI.Evaluaciones.Application.Evaluaciones.Queries.GetMisExamenes;
 using System.Security.Claims;
 using System.Text.Json;
@@ -167,6 +168,27 @@ public class EvaluacionesController : ControllerBase
         if (acceso is not null) return acceso;
 
         var resultado = await _mediador.Send(new ListarEntregasEvaluacionQuery(id, sesion.InstitucionId), ct);
+        if (resultado.Tipo != TipoResultado.Ok)
+        {
+            return RespuestaError(resultado);
+        }
+
+        return Ok(resultado.Valor);
+    }
+
+    [HttpGet("{id:guid}/metricas")]
+    public async Task<IActionResult> ObtenerMetricas(Guid id, CancellationToken ct)
+    {
+        if (!LeerSesion(out var sesion, out var error)) return error!;
+        if (!AccesoEvaluaciones.PuedeLeer(sesion.Rol))
+        {
+            return Problema(403, "Solo docentes y administradores pueden ver las métricas.", Array.Empty<string>());
+        }
+
+        var acceso = await ComprobarAcceso(id, sesion, ct);
+        if (acceso is not null) return acceso;
+
+        var resultado = await _mediador.Send(new GetMetricasEvaluacionQuery(id, sesion.InstitucionId), ct);
         if (resultado.Tipo != TipoResultado.Ok)
         {
             return RespuestaError(resultado);

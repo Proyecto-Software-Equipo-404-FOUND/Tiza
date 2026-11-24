@@ -846,6 +846,92 @@
           }
         }
       }
+    },
+    "/api/usuarios/{id}/baja": {
+      "post": {
+        "tags": [
+          "Usuarios"
+        ],
+        "summary": "[S3-ID-01, #243] Da de baja a un alumno o docente de la institución.",
+        "description": "Solo Administrador de la misma institución. Pone Activo = false y revoca sus refresh tokens en una transacción: no puede iniciar sesión ni renovar, y su JWT vigente deja de servir en Identidad. No borra datos (fuera de alcance: borrado definitivo). Un usuario Administrador → 403; inexistente o de otra institución → 404.",
+        "operationId": "DarBajaUsuario",
+        "responses": {
+          "204": {
+            "description": "Listo (también si ya estaba en ese estado: es idempotente)."
+          },
+          "401": {
+            "$ref": "#/components/responses/NoAutenticado"
+          },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
+          },
+          "404": {
+            "$ref": "#/components/responses/NoEncontrado"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorInterno"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/api/usuarios/{id}/reactivar": {
+      "post": {
+        "tags": [
+          "Usuarios"
+        ],
+        "summary": "[S3-ID-01, #243] Reactiva a un alumno o docente dado de baja.",
+        "description": "Solo Administrador de la misma institución. Pone Activo = true: puede volver a iniciar sesión, pero no recupera sesiones anteriores (los refresh tokens siguen revocados). Un usuario Administrador → 403; inexistente o de otra institución → 404.",
+        "operationId": "ReactivarUsuario",
+        "responses": {
+          "204": {
+            "description": "Listo (también si ya estaba en ese estado: es idempotente)."
+          },
+          "401": {
+            "$ref": "#/components/responses/NoAutenticado"
+          },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
+          },
+          "404": {
+            "$ref": "#/components/responses/NoEncontrado"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorInterno"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
     }
   },
   "components": {
