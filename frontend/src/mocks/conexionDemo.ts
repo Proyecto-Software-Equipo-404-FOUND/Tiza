@@ -8,8 +8,119 @@ const P2_ID = '9c3d4e5f-6071-4c8d-8e9f-1a2b3c4d5e6f';
 const OPCION_CORRECTA = '7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d';
 const OPCION_OTRA = '8b2c3d4e-5f60-4b7c-9d8e-0f1a2b3c4d5e';
 
+/* IDs y constantes para la sala demo de Quiz gamificado (PIN 777777) */
+const SALA_QUIZ_DEMO_ID = '77777777-7777-4777-8777-777777777777';
+const Q1_ID = '7f1c1d9e-0a3b-4c11-9a52-1b2c3d4e5f01';
+const Q2_ID = '7f1c1d9e-0a3b-4c11-9a52-1b2c3d4e5f02';
+const Q3_ID = '7f1c1d9e-0a3b-4c11-9a52-1b2c3d4e5f03';
+const Q4_ID = '7f1c1d9e-0a3b-4c11-9a52-1b2c3d4e5f04';
+const Q5_ID = '7f1c1d9e-0a3b-4c11-9a52-1b2c3d4e5f05';
+
 const esperar = (ms: number) => new Promise((resolver) => setTimeout(resolver, ms));
 const enSegundos = (segundos: number) => new Date(Date.now() + segundos * 1000).toISOString();
+
+const quizPregunta1 = (): PreguntaActual => ({
+  salaId: SALA_QUIZ_DEMO_ID,
+  preguntaId: Q1_ID,
+  indice: 1,
+  totalPreguntas: 5,
+  tipo: 'BucketSort',
+  enunciado: 'Clasificá cada protocolo según su capa en el modelo TCP/IP:',
+  puntajeMaximo: 1.5,
+  puntajePorItem: 0.3,
+  opciones: null,
+  cestas: [
+    { id: 'capa_aplicacion', titulo: 'Capa de Aplicación', icono: '🌐' },
+    { id: 'capa_red_transporte', titulo: 'Red y Transporte', icono: '🔀' },
+  ],
+  itemsBucket: [
+    { id: 'it_http', texto: 'HTTP / HTTPS', cestaCorrecta: 'capa_aplicacion' },
+    { id: 'it_ip', texto: 'Protocolo IP', cestaCorrecta: 'capa_red_transporte' },
+    { id: 'it_dns', texto: 'DNS', cestaCorrecta: 'capa_aplicacion' },
+    { id: 'it_tcp', texto: 'TCP / UDP', cestaCorrecta: 'capa_red_transporte' },
+    { id: 'it_smtp', texto: 'SMTP (Correo)', cestaCorrecta: 'capa_aplicacion' },
+  ],
+  fechaInicioUtc: new Date().toISOString(),
+  fechaLimiteUtc: enSegundos(180),
+});
+
+const quizPregunta2 = (): PreguntaActual => ({
+  salaId: SALA_QUIZ_DEMO_ID,
+  preguntaId: Q2_ID,
+  indice: 2,
+  totalPreguntas: 5,
+  tipo: 'ClasificadorRapido',
+  enunciado: 'Determiná si cada afirmación sobre telecomunicaciones y modulación es Verdadera o Falsa:',
+  puntajeMaximo: 1.5,
+  puntajePorItem: 0.3,
+  opciones: null,
+  afirmaciones: [
+    { id: 'af_1', texto: 'La modulación AM varía la amplitud de la portadora manteniendo su frecuencia constante.', esVerdadera: true },
+    { id: 'af_2', texto: 'En el modelo OSI, la dirección MAC opera en la Capa de Red (Capa 3).', esVerdadera: false },
+    { id: 'af_3', texto: 'La fibra óptica transmite señales en el espectro de la luz visible o infrarroja.', esVerdadera: true },
+    { id: 'af_4', texto: 'A mayor frecuencia de una onda electromagnética, mayor es su longitud de onda.', esVerdadera: false },
+    { id: 'af_5', texto: 'El espectro electromagnético de radiofrecuencia es un recurso natural finito y regulado.', esVerdadera: true },
+  ],
+  fechaInicioUtc: new Date().toISOString(),
+  fechaLimiteUtc: enSegundos(180),
+});
+
+const quizPregunta3 = (): PreguntaActual => ({
+  salaId: SALA_QUIZ_DEMO_ID,
+  preguntaId: Q3_ID,
+  indice: 3,
+  totalPreguntas: 5,
+  tipo: 'Emparejamiento',
+  enunciado: 'Asociá cada concepto de modulación y capa física con su definición correspondiente:',
+  puntajeMaximo: 1.5,
+  puntajePorItem: 0.3,
+  opciones: null,
+  pares: [
+    { conceptoId: 'c1', conceptoTexto: 'Modulación QAM', definicionId: 'd1', definicionTexto: 'Combina variación de amplitud y fase de la portadora.' },
+    { conceptoId: 'c2', conceptoTexto: 'Ancho de Banda', definicionId: 'd2', definicionTexto: 'Rango de frecuencias que puede transportar el canal.' },
+    { conceptoId: 'c3', conceptoTexto: 'Capa Física', definicionId: 'd3', definicionTexto: 'Transmisión de cadenas de bits sobre el medio de transmisión.' },
+    { conceptoId: 'c4', conceptoTexto: 'Modulación FM', definicionId: 'd4', definicionTexto: 'Varía la frecuencia de la portadora según la moduladora.' },
+    { conceptoId: 'c5', conceptoTexto: 'Atenuación', definicionId: 'd5', definicionTexto: 'Pérdida paulatina de potencia de la señal con la distancia.' },
+  ],
+  fechaInicioUtc: new Date().toISOString(),
+  fechaLimiteUtc: enSegundos(180),
+});
+
+const quizPregunta4 = (): PreguntaActual => ({
+  salaId: SALA_QUIZ_DEMO_ID,
+  preguntaId: Q4_ID,
+  indice: 4,
+  totalPreguntas: 5,
+  tipo: 'Ordenamiento',
+  enunciado: 'Ordená las capas del Modelo OSI desde la capa inferior (Capa 1) hacia la superior (Capa 4):',
+  puntajeMaximo: 1,
+  opciones: null,
+  itemsOrden: [
+    { id: 'l1', texto: 'Capa 1: Capa Física (señales eléctricas/ópticas y bits)', ordenCorrecto: 1 },
+    { id: 'l2', texto: 'Capa 2: Capa de Enlace de Datos (tramas y direcciones MAC)', ordenCorrecto: 2 },
+    { id: 'l3', texto: 'Capa 3: Capa de Red (paquetes y enrutamiento IP)', ordenCorrecto: 3 },
+    { id: 'l4', texto: 'Capa 4: Capa de Transporte (segmentos, TCP/UDP)', ordenCorrecto: 4 },
+  ],
+  fechaInicioUtc: new Date().toISOString(),
+  fechaLimiteUtc: enSegundos(180),
+});
+
+const quizPregunta5 = (): PreguntaActual => ({
+  salaId: SALA_QUIZ_DEMO_ID,
+  preguntaId: Q5_ID,
+  indice: 5,
+  totalPreguntas: 5,
+  tipo: 'OpcionMultiple',
+  enunciado: '¿Qué protocolo de la capa de transporte proporciona una entrega confiable y orientada a la conexión?',
+  puntajeMaximo: 2,
+  opciones: [
+    { id: 'op_tcp', texto: 'TCP (Transmission Control Protocol)' },
+    { id: 'op_udp', texto: 'UDP (User Datagram Protocol)' },
+    { id: 'op_icmp', texto: 'ICMP (Internet Control Message Protocol)' },
+  ],
+  fechaInicioUtc: new Date().toISOString(),
+  fechaLimiteUtc: enSegundos(120),
+});
 
 const pregunta1 = (): PreguntaActual => ({
   salaId: SALA_DEMO_ID,
@@ -153,6 +264,23 @@ export function crearConexionDemo(): ConexionSala {
         2500,
       );
     }
+
+    /* Avance de preguntas en la sala de Quiz gamificado (PIN 777777) */
+    if (envio.preguntaId === Q1_ID) setTimeout(() => simular('preguntaActual', quizPregunta2()), 2000);
+    if (envio.preguntaId === Q2_ID) setTimeout(() => simular('preguntaActual', quizPregunta3()), 2000);
+    if (envio.preguntaId === Q3_ID) setTimeout(() => simular('preguntaActual', quizPregunta4()), 2000);
+    if (envio.preguntaId === Q4_ID) setTimeout(() => simular('preguntaActual', quizPregunta5()), 2000);
+    if (envio.preguntaId === Q5_ID) {
+      setTimeout(
+        () =>
+          simular('salaFinalizada', {
+            salaId: SALA_QUIZ_DEMO_ID,
+            finalizadaUtc: new Date().toISOString(),
+            motivo: 'Docente',
+          }),
+        2000,
+      );
+    }
     return resultado(envio, 'Aceptada', ahora);
   };
 
@@ -205,6 +333,19 @@ export function crearConexionDemo(): ConexionSala {
         });
         return undefined;
       }
+      if (pin === 777777) {
+        simular('estadoSala', {
+          salaId: SALA_QUIZ_DEMO_ID,
+          estado: 'EnCurso',
+          fechaLimiteUtc: enSegundos(1800),
+          preguntaActual: quizPregunta1(),
+          ultimaSecuencia: 0,
+          preguntasRespondidas: [],
+          servidorUtc: new Date().toISOString(),
+        });
+        return undefined;
+      }
+
       if (pin === 123456) {
         simular('estadoSala', { salaId: SALA_DEMO_ID, estado: 'Activa', fechaLimiteUtc: null });
         setTimeout(() => {

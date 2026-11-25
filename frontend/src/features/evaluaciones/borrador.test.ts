@@ -177,3 +177,81 @@ describe('sumaCriterios', () => {
     ).toBe(5.5);
   });
 });
+
+describe('dinamicas gamificadas de Quiz', () => {
+  it('nuevaPregunta genera plantillas precargadas con 0.3 pts por ítem', () => {
+    const bucket = nuevaPregunta('BucketSort');
+    expect(bucket.tipo).toBe('BucketSort');
+    expect(bucket.puntajePorItem).toBe('0.3');
+    expect(bucket.puntajeMaximo).toBe('1.5');
+    expect(bucket.cestas).toHaveLength(2);
+    expect(bucket.itemsBucket).toHaveLength(5);
+
+    const flashcards = nuevaPregunta('ClasificadorRapido');
+    expect(flashcards.tipo).toBe('ClasificadorRapido');
+    expect(flashcards.puntajePorItem).toBe('0.3');
+    expect(flashcards.puntajeMaximo).toBe('1.5');
+    expect(flashcards.afirmaciones).toHaveLength(5);
+
+    const matching = nuevaPregunta('Emparejamiento');
+    expect(matching.tipo).toBe('Emparejamiento');
+    expect(matching.puntajePorItem).toBe('0.3');
+    expect(matching.puntajeMaximo).toBe('1.5');
+    expect(matching.pares).toHaveLength(5);
+
+    const orden = nuevaPregunta('Ordenamiento');
+    expect(orden.tipo).toBe('Ordenamiento');
+    expect(orden.puntajeMaximo).toBe('1');
+    expect(orden.itemsOrden).toHaveLength(4);
+  });
+
+  it('aDatosEvaluacion serializa correctamente los campos gamificados', () => {
+    const borrador: EvaluacionBorrador = {
+      titulo: 'Quiz 1',
+      tipo: 'Quiz',
+      preguntas: [
+        nuevaPregunta('BucketSort'),
+        nuevaPregunta('ClasificadorRapido'),
+        nuevaPregunta('Emparejamiento'),
+        nuevaPregunta('Ordenamiento'),
+      ],
+    };
+
+    const datos = aDatosEvaluacion(borrador);
+    const preguntas = datos.preguntasJson.preguntas;
+
+    expect(preguntas[0].tipo).toBe('BucketSort');
+    expect(preguntas[0].puntajePorItem).toBe(0.3);
+    expect(preguntas[0].cestas).toHaveLength(2);
+    expect(preguntas[0].itemsBucket).toHaveLength(5);
+
+    expect(preguntas[1].tipo).toBe('ClasificadorRapido');
+    expect(preguntas[1].puntajePorItem).toBe(0.3);
+    expect(preguntas[1].afirmaciones).toHaveLength(5);
+
+    expect(preguntas[2].tipo).toBe('Emparejamiento');
+    expect(preguntas[2].puntajePorItem).toBe(0.3);
+    expect(preguntas[2].pares).toHaveLength(5);
+
+    expect(preguntas[3].tipo).toBe('Ordenamiento');
+    expect(preguntas[3].itemsOrden).toHaveLength(4);
+  });
+
+  it('validar valida cestas en BucketSort y pares en Emparejamiento', () => {
+    const bucketInvalido = { ...nuevaPregunta('BucketSort'), cestas: [] };
+    const erroresBucket = validar({
+      titulo: 'Quiz',
+      tipo: 'Quiz',
+      preguntas: [bucketInvalido],
+    });
+    expect(erroresBucket[`${bucketInvalido.id}.cestas`]).toBe('Definí al menos 2 cestas');
+
+    const matchingInvalido = { ...nuevaPregunta('Emparejamiento'), pares: [] };
+    const erroresMatching = validar({
+      titulo: 'Quiz',
+      tipo: 'Quiz',
+      preguntas: [matchingInvalido],
+    });
+    expect(erroresMatching[`${matchingInvalido.id}.pares`]).toBe('Agregá al menos 2 pares para asociar');
+  });
+});

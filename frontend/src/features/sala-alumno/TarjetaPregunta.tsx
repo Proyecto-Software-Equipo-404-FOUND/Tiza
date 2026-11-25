@@ -4,6 +4,10 @@ import { BannerError } from '@/shared/components/BannerError';
 import { Boton } from '@/shared/components/Boton';
 import { Tarjeta } from '@/shared/components/Tarjeta';
 import { Cronometro, useTiempoRestante } from './Cronometro';
+import { QuizBucketSort } from './componentes/QuizBucketSort';
+import { QuizClasificadorRapido } from './componentes/QuizClasificadorRapido';
+import { QuizEmparejamiento } from './componentes/QuizEmparejamiento';
+import { QuizOrdenamiento } from './componentes/QuizOrdenamiento';
 import type { PreguntaActual } from './tipos';
 
 const MAX_RESPUESTA = 10000;
@@ -14,11 +18,11 @@ type Props = {
   enviando: boolean;
   error: string | null;
   desfaseMs: number;
-  /** El servidor ya no acepta respuestas a esta pregunta (tiempo, sala cerrada, sesión reemplazada…) */
+  /* El servidor ya no acepta respuestas a esta pregunta (tiempo, sala cerrada, sesión reemplazada…) */
   cerrada?: boolean;
-  /** Sin conexión con la sala: se puede seguir escribiendo, pero no enviar hasta reconectar */
+  /* Sin conexión con la sala: se puede seguir escribiendo, pero no enviar hasta reconectar */
   sinConexion?: boolean;
-  /** La respuesta ya se intentó enviar y se reenvía sola cuando vuelva la conexión */
+  /* La respuesta ya se intentó enviar y se reenvía sola cuando vuelva la conexión */
   respuestaEnEspera?: boolean;
   onEnviar: (respuesta: string) => void;
 };
@@ -65,20 +69,54 @@ export function TarjetaPregunta({
     if (respuesta.trim() && !enviando && !agotado && !sinConexion) onEnviar(respuesta);
   };
 
-  return (
-    <Tarjeta titulo={titulo} subtitulo={`${pregunta.puntajeMaximo} puntos`}>
-      <form onSubmit={enviar} noValidate className='flex flex-col gap-5'>
-        {/* En el celular el cronómetro va arriba del enunciado para no quitarle ancho; en el DOM sigue después */}
-        <div className='flex flex-col-reverse gap-3 sm:flex-row sm:items-start sm:justify-between'>
-          <p id='enunciado' className='min-w-0 flex-1 break-words font-heading text-xl font-extrabold text-tiza-bosque'>
-            {pregunta.enunciado}
-          </p>
-          <div className='shrink-0 self-end sm:self-auto'>
-            <Cronometro limiteUtc={pregunta.fechaLimiteUtc} desfaseMs={desfaseMs} />
-          </div>
-        </div>
+  /* Renderiza el cuerpo de la pregunta aplicando el patrón Strategy según pregunta.tipo */
+  const renderizarCuerpoPregunta = () => {
+    const deshabilitado = enviando || agotado || sinConexion;
 
-        {pregunta.tipo === 'OpcionMultiple' ? (
+    switch (pregunta.tipo) {
+      case 'BucketSort':
+        return (
+          <QuizBucketSort
+            cestas={pregunta.cestas ?? []}
+            items={pregunta.itemsBucket ?? []}
+            puntajePorItem={pregunta.puntajePorItem}
+            deshabilitado={deshabilitado}
+            onCambioRespuesta={(serializado, completado) => setRespuesta(completado ? serializado : '')}
+          />
+        );
+
+      case 'ClasificadorRapido':
+        return (
+          <QuizClasificadorRapido
+            afirmaciones={pregunta.afirmaciones ?? []}
+            puntajePorItem={pregunta.puntajePorItem}
+            deshabilitado={deshabilitado}
+            onCambioRespuesta={(serializado, completado) => setRespuesta(completado ? serializado : '')}
+          />
+        );
+
+      case 'Emparejamiento':
+        return (
+          <QuizEmparejamiento
+            pares={pregunta.pares ?? []}
+            puntajePorItem={pregunta.puntajePorItem}
+            deshabilitado={deshabilitado}
+            onCambioRespuesta={(serializado, completado) => setRespuesta(completado ? serializado : '')}
+          />
+        );
+
+      case 'Ordenamiento':
+        return (
+          <QuizOrdenamiento
+            items={pregunta.itemsOrden ?? []}
+            puntajeMaximo={pregunta.puntajeMaximo}
+            deshabilitado={deshabilitado}
+            onCambioRespuesta={(serializado, completado) => setRespuesta(completado ? serializado : '')}
+          />
+        );
+
+      case 'OpcionMultiple':
+        return (
           <div role='radiogroup' aria-labelledby='enunciado' className='flex flex-col gap-2'>
             {(pregunta.opciones ?? []).map((opcion) => (
               <label
@@ -93,14 +131,18 @@ export function TarjetaPregunta({
                   value={opcion.id}
                   checked={respuesta === opcion.id}
                   onChange={() => setRespuesta(opcion.id)}
-                  disabled={enviando || agotado}
+                  disabled={deshabilitado}
                   className='h-4 w-4 accent-tiza-pasto'
                 />
                 {opcion.texto}
               </label>
             ))}
           </div>
-        ) : (
+        );
+
+      case 'Abierta':
+      default:
+        return (
           <div className='flex flex-col gap-1.5'>
             <label htmlFor='respuesta-abierta' className='text-sm font-semibold text-tiza-bosque'>
               Tu respuesta
@@ -111,14 +153,31 @@ export function TarjetaPregunta({
               maxLength={MAX_RESPUESTA}
               value={respuesta}
               onChange={(evento) => setRespuesta(evento.target.value)}
-              disabled={enviando || agotado}
+              disabled={deshabilitado}
               className='rounded-xl border border-tiza-borde bg-white px-4 py-3 text-tiza-bosque disabled:cursor-not-allowed disabled:opacity-50'
             />
             <span className='self-end text-xs text-tiza-bosque/60'>
               {respuesta.length} / {MAX_RESPUESTA}
             </span>
           </div>
-        )}
+        );
+    }
+  };
+
+  return (
+    <Tarjeta titulo={titulo} subtitulo={`${pregunta.puntajeMaximo} puntos`}>
+      <form onSubmit={enviar} noValidate className='flex flex-col gap-5'>
+        {/* En el celular el cronómetro va arriba del enunciado para no quitarle ancho */}
+        <div className='flex flex-col-reverse gap-3 sm:flex-row sm:items-start sm:justify-between'>
+          <p id='enunciado' className='min-w-0 flex-1 break-words font-heading text-xl font-extrabold text-tiza-bosque'>
+            {pregunta.enunciado}
+          </p>
+          <div className='shrink-0 self-end sm:self-auto'>
+            <Cronometro limiteUtc={pregunta.fechaLimiteUtc} desfaseMs={desfaseMs} />
+          </div>
+        </div>
+
+        {renderizarCuerpoPregunta()}
 
         {error && <BannerError mensaje={error} />}
         {agotado && !error && <BannerError mensaje='Se terminó el tiempo para responder.' />}

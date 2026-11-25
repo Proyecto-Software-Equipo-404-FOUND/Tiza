@@ -225,4 +225,24 @@ describe('FormularioEvaluacion', () => {
     expect(onCancelar).toHaveBeenCalledTimes(1);
     expect(onEnviar).not.toHaveBeenCalled();
   });
+
+  it('en una evaluación tipo Quiz ofrece dinámicas gamificadas y precarga plantillas', async () => {
+    mostrar();
+    await userEvent.selectOptions(screen.getByLabelText('Tipo'), 'Quiz');
+    await agregarPregunta();
+
+    // El selector de tipo de la pregunta ofrece las dinámicas gamificadas
+    const selectorTipo = screen.getByLabelText('Tipo de la pregunta 1');
+    expect(screen.getByRole('option', { name: /bucket sort/i })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /clasificador rápido/i })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /unir conceptos/i })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /ordenar pasos/i })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Abierta' })).not.toBeInTheDocument();
+
+    // Seleccionar Bucket Sort autocompleta con la plantilla precargada de 1.5 pts
+    await userEvent.selectOptions(selectorTipo, 'BucketSort');
+    expect(screen.getByLabelText('Puntaje máximo de la pregunta 1')).toHaveValue(1.5);
+    expect(screen.getByText(/Configuración de Cestas y Fichas/)).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Capa de Aplicación')).toBeInTheDocument();
+  });
 });

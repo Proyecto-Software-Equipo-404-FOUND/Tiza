@@ -93,4 +93,56 @@ describe('TarjetaPregunta', () => {
     mostrar({ error: 'No pudimos enviar tu respuesta.' });
     expect(screen.getByText('No pudimos enviar tu respuesta.')).toBeInTheDocument();
   });
+
+  it('en BucketSort bloquea el envío hasta clasificar todas las fichas', async () => {
+    const usuario = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const onEnviar = mostrar({
+      pregunta: {
+        ...base,
+        tipo: 'BucketSort',
+        opciones: null,
+        cestas: [{ id: 'c1', titulo: 'Clean Arch', icono: '🏛️' }],
+        itemsBucket: [{ id: 'i1', texto: 'Entidad' }],
+      },
+    });
+
+    // El botón empieza deshabilitado
+    expect(screen.getByRole('button', { name: 'Enviar respuesta' })).toBeDisabled();
+
+    // Clasificar la ficha i1 en c1
+    await usuario.click(screen.getByTestId('ficha-i1'));
+    await usuario.click(screen.getByTestId('cesta-c1'));
+
+    // Botón habilitado
+    expect(screen.getByRole('button', { name: 'Enviar respuesta' })).toBeEnabled();
+    await usuario.click(screen.getByRole('button', { name: 'Enviar respuesta' }));
+
+    expect(onEnviar).toHaveBeenCalledWith(
+      JSON.stringify({ tipo: 'BucketSort', asignaciones: { i1: 'c1' } }),
+    );
+  });
+
+  it('en ClasificadorRapido bloquea el envío hasta responder todas las afirmaciones', async () => {
+    const usuario = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const onEnviar = mostrar({
+      pregunta: {
+        ...base,
+        tipo: 'ClasificadorRapido',
+        opciones: null,
+        afirmaciones: [{ id: 'af1', texto: 'Afirmación de prueba' }],
+      },
+    });
+
+    expect(screen.getByRole('button', { name: 'Enviar respuesta' })).toBeDisabled();
+
+    // Responder Verdadero
+    await usuario.click(screen.getByRole('button', { name: /verdadero/i }));
+
+    expect(screen.getByRole('button', { name: 'Enviar respuesta' })).toBeEnabled();
+    await usuario.click(screen.getByRole('button', { name: 'Enviar respuesta' }));
+
+    expect(onEnviar).toHaveBeenCalledWith(
+      JSON.stringify({ tipo: 'ClasificadorRapido', respuestas: { af1: true } }),
+    );
+  });
 });
