@@ -59,6 +59,7 @@ builder.Services.AddScoped<ObtenerUsuarioHandler>();
 builder.Services.AddScoped<IUsuariosModificacionDataAccess, UsuariosModificacionDataAccess>();
 builder.Services.AddScoped<PEI.Identidad.Application.UseCases.Usuarios.Estado.DarBajaUsuarioHandler>();
 builder.Services.AddScoped<PEI.Identidad.Application.UseCases.Usuarios.Estado.ReactivarUsuarioHandler>();
+builder.Services.AddScoped<PEI.Identidad.Application.UseCases.Auth.CambiarContrasena.CambiarContrasenaHandler>();
 // S3-SA-01 (#231): ingreso de invitado. Identidad consulta a Sala en vivo por el endpoint interno.
 builder.Services.AddSingleton(new PEI.Identidad.Infrastructure.Invitados.SalaInvitadosOptions
 {

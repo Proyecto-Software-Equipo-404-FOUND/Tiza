@@ -19,7 +19,9 @@ export function useNombresAlumnos() {
 
   const porId = new Map((consulta.data ?? []).map((alumno) => [alumno.id, nombreCompleto(alumno)]));
   return {
-    nombreDe: (alumnoId: string) => porId.get(alumnoId) ?? nombreDeReemplazo(alumnoId),
+    // El invitado no está en Identidad: se muestra el nombre que escribió al entrar a la sala
+    nombreDe: (alumnoId: string, nombreInvitado?: string | null) =>
+      porId.get(alumnoId) ?? (nombreInvitado ? `${nombreInvitado} (invitado)` : nombreDeReemplazo(alumnoId)),
     cargando: consulta.isPending,
     fallo: consulta.isError,
   };

@@ -1177,6 +1177,105 @@
         }
       }
     },
+    "/api/v1/alumnos/me/evaluaciones/{entregaId}": {
+      "get": {
+        "tags": [
+          "Mis exámenes"
+        ],
+        "summary": "Detalle del examen corregido del alumno de la sesión: sus respuestas, cuáles estuvieron bien y el puntaje de cada pregunta.",
+        "description": "S3-EV-05. Solo rol Alumno y solo su propia entrega (otra → 404). Solo con la nota aprobada (antes → 409 CORRECCION_NO_APROBADA). Nunca incluye el comentario interno del docente ni las alertas de foco. En las abiertas, la justificación es la de la IA; si el docente editó el puntaje, solo va el puntaje.",
+        "operationId": "ObtenerMiExamen",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entregaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalle del examen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiExamenDetalle"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin token o token inválido.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "No autenticado.",
+                  "status": 401,
+                  "errores": []
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no es Alumno.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Solo los alumnos tienen \"Mis exámenes\".",
+                  "status": 403,
+                  "errores": []
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no es del alumno de la sesión.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "No se encontró el examen.",
+                  "status": 404,
+                  "errores": []
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "La nota todavía no fue aprobada por el docente. `type`: CORRECCION_NO_APROBADA.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "La corrección todavía no está aprobada.",
+                  "status": 409,
+                  "errores": [],
+                  "type": "CORRECCION_NO_APROBADA"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/evaluaciones/{id}/metricas": {
       "get": {
         "tags": [
@@ -1894,6 +1993,12 @@
             "format": "date-time",
             "nullable": true,
             "description": "S3-EV-03 (#224): cuándo el docente aprobó la nota. Solo cuando estadoNota = Aprobada; sirve para mostrarla al recargar."
+          },
+          "nombreInvitado": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 60,
+            "description": "S3-SA-01: solo para invitados (alumnos sin cuenta), el nombre que escribieron al entrar a la sala. Null u omitido para alumnos con cuenta (su nombre sale de Identidad)."
           }
         },
         "example": {
@@ -2450,6 +2555,12 @@
                 "diferenciaConPromedio": {
                   "type": "number",
                   "description": "notaFinal − promedio (puede ser negativa)."
+                },
+                "nombreInvitado": {
+                  "type": "string",
+                  "nullable": true,
+                  "maxLength": 60,
+                  "description": "S3-SA-01: solo para invitados (alumnos sin cuenta), el nombre que escribieron al entrar a la sala. Null u omitido para alumnos con cuenta (su nombre sale de Identidad)."
                 }
               }
             }
@@ -2478,6 +2589,105 @@
               "diferenciaConPromedio": 1.3
             }
           ]
+        }
+      },
+      "MiRespuesta": {
+        "type": "object",
+        "required": [
+          "preguntaId",
+          "enunciado",
+          "tipo",
+          "puntajeMaximo"
+        ],
+        "properties": {
+          "preguntaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "enunciado": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "OpcionMultiple",
+              "Abierta"
+            ]
+          },
+          "puntajeMaximo": {
+            "type": "number"
+          },
+          "respuesta": {
+            "type": "string",
+            "description": "Abierta: lo que escribió el alumno. Opción múltiple: null.",
+            "nullable": true
+          },
+          "opcionElegidaTexto": {
+            "type": "string",
+            "description": "Opción múltiple: la opción que eligió (null si no respondió).",
+            "nullable": true
+          },
+          "opcionCorrectaTexto": {
+            "type": "string",
+            "description": "Solo opción múltiple.",
+            "nullable": true
+          },
+          "esCorrecta": {
+            "type": "boolean",
+            "description": "Opción múltiple: si eligió la correcta. Abierta: null.",
+            "nullable": true
+          },
+          "puntajeObtenido": {
+            "type": "number",
+            "description": "Puntaje final de la pregunta (el del docente si lo editó).",
+            "nullable": true
+          },
+          "justificacion": {
+            "type": "string",
+            "description": "Solo abiertas: la justificación de la IA. Null si el docente editó el puntaje. Nunca es el comentario interno del docente.",
+            "nullable": true
+          }
+        }
+      },
+      "MiExamenDetalle": {
+        "type": "object",
+        "required": [
+          "evaluacionId",
+          "entregaId",
+          "titulo",
+          "fechaEntregaUtc",
+          "preguntas"
+        ],
+        "properties": {
+          "evaluacionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "entregaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "fechaEntregaUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "notaFinal": {
+            "type": "number",
+            "nullable": true
+          },
+          "puntajeMaximo": {
+            "type": "number",
+            "nullable": true
+          },
+          "preguntas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MiRespuesta"
+            }
+          }
         }
       }
     },

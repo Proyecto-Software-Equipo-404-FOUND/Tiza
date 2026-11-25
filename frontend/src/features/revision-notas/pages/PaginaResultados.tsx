@@ -26,7 +26,7 @@ export function PaginaResultados() {
           to={`/evaluaciones/${evaluacionId}/resultados/${entrega.entregaId}`}
           className='font-semibold text-tiza-pasto hover:underline'
         >
-          {nombreDe(entrega.alumnoId)}
+          {nombreDe(entrega.alumnoId, entrega.nombreInvitado)}
         </Link>
       ),
     },

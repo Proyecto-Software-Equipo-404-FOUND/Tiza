@@ -26,3 +26,12 @@ export function cerrarSesionEnServidor(refreshToken: string) {
     body: JSON.stringify({ refreshToken }),
   });
 }
+
+// S3-ID-03: el usuario cambia su propia contraseña (POST /api/auth/cambiar-contrasena, responde 204).
+// El servidor revoca todos los refresh tokens: después hay que volver a ingresar.
+export function cambiarContrasena(contrasenaActual: string, contrasenaNueva: string) {
+  return pedir<void>('/api/v1/identidad/auth/cambiar-contrasena', {
+    method: 'POST',
+    body: JSON.stringify({ contrasenaActual, contrasenaNueva }),
+  });
+}

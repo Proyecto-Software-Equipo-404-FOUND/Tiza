@@ -47,9 +47,20 @@ export function Layout() {
             <Logo />
           </Link>
           <div className='flex items-center gap-3'>
-            <span className='text-sm'>
-              {usuario?.nombre} · <span className='capitalize'>{usuario?.rol}</span>
-            </span>
+            {esInvitado ? (
+              <span className='text-sm'>
+                {usuario?.nombre} · <span className='capitalize'>{usuario?.rol}</span>
+              </span>
+            ) : (
+              // S3-ID-03: desde el nombre se llega a «Mi cuenta» (cambio de contraseña)
+              <Link
+                to='/mi-cuenta'
+                title='Mi cuenta'
+                className='rounded-lg px-2 py-1 text-sm hover:bg-tiza-menta/60'
+              >
+                {usuario?.nombre} · <span className='capitalize'>{usuario?.rol}</span>
+              </Link>
+            )}
             <Boton variante='secundario' onClick={cerrarSesion} className='!py-2'>
               Salir
             </Boton>

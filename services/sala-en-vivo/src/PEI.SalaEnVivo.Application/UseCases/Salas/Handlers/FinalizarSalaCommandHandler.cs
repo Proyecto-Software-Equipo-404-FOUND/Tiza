@@ -151,6 +151,12 @@ namespace PEI.SalaEnVivo.Application.UseCases.Salas.Handlers
                     g => g.Key,
                     g => g.OrderBy(e => e.RegistradoUtc).ToList());
 
+            // S3-SA-01: nombre que escribió cada invitado al entrar (los alumnos con cuenta no tienen)
+            var nombresInvitados = participantes
+                .Where(p => !string.IsNullOrWhiteSpace(p.NombreInvitado))
+                .GroupBy(p => p.AlumnoId)
+                .ToDictionary(g => g.Key, g => g.First().NombreInvitado!);
+
             var alumnos = participantes
                 .Select(p => p.AlumnoId)
                 .Distinct()
@@ -189,7 +195,8 @@ namespace PEI.SalaEnVivo.Application.UseCases.Salas.Handlers
                                 f.Severidad,
                                 f.RegistradoUtc))
                             .ToList()
-                        : new List<AlertaFocoEntregaDto>()))
+                        : new List<AlertaFocoEntregaDto>(),
+                    nombresInvitados.TryGetValue(alumnoId, out var nombreInvitado) ? nombreInvitado : null))
                 .ToList();
 
             return new LoteEntregasRequestDto(

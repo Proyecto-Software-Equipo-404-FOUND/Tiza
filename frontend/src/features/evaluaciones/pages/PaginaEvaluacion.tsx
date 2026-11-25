@@ -92,7 +92,7 @@ export function PaginaEvaluacion() {
                 <span>Actualizada el {formatearFecha(evaluacion.fechaActualizacion)}</span>
               </p>
             </div>
-            {evaluacion.estado === 'Borrador' && (
+            {evaluacion.estado === 'Borrador' && esDocente && (
               <EnlaceBoton
                 to={`/evaluaciones/${evaluacion.id}/editar`}
                 icono={<Pencil className='h-4 w-4' aria-hidden='true' />}
@@ -123,7 +123,8 @@ export function PaginaEvaluacion() {
             </p>
           </Tarjeta>
 
-          {evaluacion.estado === 'Borrador' && (
+          {/* Publicar y eliminar son solo del docente (el back rechaza al administrador) */}
+          {evaluacion.estado === 'Borrador' && esDocente && (
             <>
               <PublicarEvaluacion evaluacion={evaluacion} />
               <EliminarEvaluacion evaluacionId={evaluacion.id} />

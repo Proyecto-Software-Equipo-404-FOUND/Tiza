@@ -8,6 +8,8 @@ export type AlertasFocoResumen = { amarillas: number; rojas: number };
 export type EntregaResumen = {
   entregaId: string;
   alumnoId: string;
+  /** Solo para invitados (alumnos sin cuenta): el nombre que escribieron al entrar */
+  nombreInvitado?: string | null;
   salaId: string;
   estado: EstadoEntrega;
   respondioAlgo?: boolean;

@@ -137,6 +137,10 @@ namespace PEI.Evaluaciones.Infrastructure.Migrations
                     b.Property<Guid>("InstitucionId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("NombreInvitado")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
                     b.Property<decimal?>("NotaFinal")
                         .HasPrecision(6, 2)
                         .HasColumnType("numeric(6,2)");

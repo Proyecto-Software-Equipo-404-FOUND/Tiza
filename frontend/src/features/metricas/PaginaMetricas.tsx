@@ -37,7 +37,13 @@ function Dato({ etiqueta, valor, detalle, acortar = false }: PropsDato) {
   );
 }
 
-function Contenido({ metricas, nombreDe }: { metricas: MetricasEvaluacion; nombreDe: (alumnoId: string) => string }) {
+function Contenido({
+  metricas,
+  nombreDe,
+}: {
+  metricas: MetricasEvaluacion;
+  nombreDe: (alumnoId: string, nombreInvitado?: string | null) => string;
+}) {
   if (metricas.cantidadEntregas === 0) {
     return (
       <Tarjeta titulo='Todavía no hay métricas'>
@@ -62,7 +68,7 @@ function Contenido({ metricas, nombreDe }: { metricas: MetricasEvaluacion; nombr
   const alumnos = [...metricas.alumnos].sort((a, b) => b.notaFinal - a.notaFinal);
 
   const columnas: Columna<MetricaAlumno>[] = [
-    { titulo: 'Alumno', celda: (alumno) => <span className='font-semibold'>{nombreDe(alumno.alumnoId)}</span> },
+    { titulo: 'Alumno', celda: (alumno) => <span className='font-semibold'>{nombreDe(alumno.alumnoId, alumno.nombreInvitado)}</span> },
     { titulo: 'Nota final', celda: (alumno) => formatearNota(alumno.notaFinal, metricas.puntajeMaximo) },
     {
       titulo: 'Contra el promedio',

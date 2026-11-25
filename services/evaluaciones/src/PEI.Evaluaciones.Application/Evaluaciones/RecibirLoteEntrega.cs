@@ -22,7 +22,9 @@ public sealed record LoteEntregasRequest(
 public sealed record EntregaLoteRequest(
     Guid AlumnoId,
     List<RespuestaLoteRequest> Respuestas,
-    List<JsonElement> AlertasFoco);
+    List<JsonElement> AlertasFoco,
+    // S3-SA-01: solo viene para los invitados (alumnos sin cuenta)
+    string? NombreInvitado = null);
 
 public sealed record RespuestaLoteRequest(
     Guid PreguntaId,
@@ -172,6 +174,9 @@ public sealed class RecibirLoteEntregasHandler
                 EvaluacionId = lote.EvaluacionId,
                 SalaId = lote.SalaId,
                 AlumnoId = entrada.AlumnoId,
+                NombreInvitado = string.IsNullOrWhiteSpace(entrada.NombreInvitado)
+                    ? null
+                    : entrada.NombreInvitado.Trim()[..Math.Min(entrada.NombreInvitado.Trim().Length, 60)],
                 RespuestasJson = JsonSerializer.Serialize(entrada.Respuestas, JsonOptions),
                 AlertasFocoJson = JsonSerializer.Serialize(entrada.AlertasFoco, JsonOptions),
                 NotaMultipleChoice = notaMultipleChoice,

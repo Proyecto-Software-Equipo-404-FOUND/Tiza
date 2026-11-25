@@ -8,6 +8,10 @@ const MENSAJES_POR_CODIGO: Record<string, string> = {
   // S3-CU-04: un alumno solo puede estar en una comisión por curso
   ALUMNO_EN_OTRA_COMISION:
     'Este alumno ya está en otra comisión de este curso. Dalo de baja de esa comisión para matricularlo acá.',
+  // S3-ID-03: cambio de contraseña
+  CONTRASENA_ACTUAL_INCORRECTA: 'La contraseña actual no es correcta.',
+  CONTRASENA_NUEVA_INVALIDA: 'La contraseña nueva tiene que tener al menos 8 caracteres.',
+  CONTRASENA_IGUAL_A_LA_ACTUAL: 'La contraseña nueva tiene que ser distinta de la actual.',
 };
 
 export function mensajeDeError(error: unknown): string {
