@@ -3,4 +3,3 @@ dist
 coverage
 cypress/videos
 cypress/screenshots
-.env.local
