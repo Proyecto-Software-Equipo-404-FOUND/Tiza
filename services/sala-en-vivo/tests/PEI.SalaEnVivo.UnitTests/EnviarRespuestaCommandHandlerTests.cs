@@ -380,10 +380,10 @@ namespace PEI.SalaEnVivo.UnitTests
         }
 
         public Task<bool> ExisteActivaPorPINAsync(int pin, CancellationToken cancellationToken) =>
-            Task.FromResult(Salas.Any(s => s.CodigoPIN == pin && s.Estado == "Activa"));
+            Task.FromResult(Salas.Any(s => s.CodigoPIN == pin && (s.Estado == "Activa" || s.Estado == "EnCurso")));
 
         public Task<Sala?> ObtenerActivaPorPINAsync(int pin, CancellationToken cancellationToken) =>
-            Task.FromResult(Salas.FirstOrDefault(s => s.CodigoPIN == pin && s.Estado == "Activa"));
+            Task.FromResult(Salas.FirstOrDefault(s => s.CodigoPIN == pin && (s.Estado == "Activa" || s.Estado == "EnCurso")));
 
         public Task<Sala?> ObtenerPorIdAsync(Guid id, CancellationToken cancellationToken = default) =>
             Task.FromResult(Salas.FirstOrDefault(s => s.Id == id));

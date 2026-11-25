@@ -57,18 +57,33 @@ export function resumirNota(respuestas: RespuestaEntrega[], valores: Record<stri
   return { total: conProblemas > 0 ? null : redondeado, maximo, conProblemas };
 }
 
-export type CambioNota = { preguntaId: string; puntaje: number };
+export type CambioNota = { preguntaId: string; puntaje: number; comentario?: string | null };
 
 /**
- * Los puntajes que el docente cambió y hay que guardar antes de aprobar. Lo que dejó igual a la nota vigente
- * no se manda (así no queda como «Editada» una nota que solo confirmó). null si algún puntaje no es válido.
+ * Los puntajes (y comentarios) que el docente cambió y hay que guardar antes de aprobar. Lo que dejó igual a la nota
+ * vigente no se manda (así no queda como «Editada» una nota que solo confirmó). null si algún puntaje no es válido.
+ * Si cambia el comentario se manda igual, con el puntaje vigente.
  */
-export function armarCambios(entrega: EntregaDetalle, valores: Record<string, string>): CambioNota[] | null {
+export function armarCambios(
+  entrega: EntregaDetalle,
+  valores: Record<string, string>,
+  comentarios: Record<string, string> = {},
+): CambioNota[] | null {
   if (resumirNota(entrega.respuestas, valores).total == null) return null;
   const cambios: CambioNota[] = [];
   for (const respuesta of entrega.respuestas.filter(esEditable)) {
     const { valor } = leerPuntaje(valores[respuesta.preguntaId] ?? '', respuesta.puntajeMaximo);
-    if (valor != null && valor !== notaVigente(respuesta)) cambios.push({ preguntaId: respuesta.preguntaId, puntaje: valor });
+    const anterior = (respuesta.comentarioDocente ?? '').trim();
+    const escrito = comentarios[respuesta.preguntaId];
+    const comentarioCambio = escrito !== undefined && escrito.trim() !== anterior;
+    if (valor == null || (valor === notaVigente(respuesta) && !comentarioCambio)) continue;
+    const comentario = comentarioCambio ? escrito.trim() : anterior;
+    // Se manda el comentario si cambió o si ya había uno, para no borrarlo al guardar el puntaje
+    if (comentarioCambio || anterior) {
+      cambios.push({ preguntaId: respuesta.preguntaId, puntaje: valor, comentario: comentario === '' ? null : comentario });
+    } else {
+      cambios.push({ preguntaId: respuesta.preguntaId, puntaje: valor });
+    }
   }
   return cambios;
 }

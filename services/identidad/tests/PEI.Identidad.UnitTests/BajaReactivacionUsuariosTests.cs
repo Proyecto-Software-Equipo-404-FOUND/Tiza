@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using PEI.Identidad.Application.Abstractions;
 using PEI.Identidad.Application.UseCases.Auth.Login;
+using PEI.Identidad.Application.UseCases.Usuarios;
 using PEI.Identidad.Application.UseCases.Usuarios.Estado;
 using PEI.Identidad.Domain.Entities;
 using PEI.Identidad.Domain.Security;
@@ -143,6 +144,26 @@ public class BajaReactivacionUsuariosTests
         var handler = new DarBajaUsuarioHandler(repo);
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             handler.HandleAsync(new DarBajaUsuarioCommand(usuario.Id)));
+    }
+
+    [Fact]
+    public async Task Reactivar_AlumnoPendienteDeActivacion_NoLoActiva()
+    {
+        var repo = new RepositorioModificacionFalso();
+        var usuario = new Usuario
+        {
+            Id = Guid.NewGuid(),
+            Rol = IdentityRoles.Alumno,
+            Activo = false,
+            PasswordHash = UsuarioPendiente.MarcaPasswordHash
+        };
+        repo.Usuarios[usuario.Id] = usuario;
+
+        var resultado = await new ReactivarUsuarioHandler(repo).HandleAsync(new ReactivarUsuarioCommand(usuario.Id));
+
+        Assert.Equal(ModificarEstadoUsuarioResultado.PendienteActivacion, resultado);
+        Assert.False(usuario.Activo);
+        Assert.False(repo.Guardado);
     }
 
     [Theory]

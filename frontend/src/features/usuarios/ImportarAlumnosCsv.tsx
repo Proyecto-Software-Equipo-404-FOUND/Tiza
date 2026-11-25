@@ -67,7 +67,7 @@ function Resumen({
           {creados > 0 &&
             (conContrasena
               ? `Ya ${creados === 1 ? 'puede iniciar sesión' : 'pueden iniciar sesión'} con la contraseña inicial.`
-              : `${creados === 1 ? 'Recibe' : 'Reciben'} un email para definir su contraseña.`)}
+              : `${creados === 1 ? 'Queda pendiente' : 'Quedan pendientes'} de activación: para que puedan entrar, importalos con una contraseña inicial.`)}
         </li>
         {omitidos > 0 && (
           <li>{plural(omitidos, 'fila omitida porque su email ya existía', 'filas omitidas porque su email ya existía')}.</li>
@@ -208,8 +208,8 @@ export function ImportarAlumnosCsv() {
           />
           <p className='text-sm text-tiza-bosque/70'>
             Si la completás, todos los alumnos nuevos quedan activos y pueden iniciar sesión enseguida con esa
-            contraseña (no reciben el email de activación). Si la dejás vacía, cada uno recibe un email para definir la
-            suya. Mínimo 8 caracteres.
+            contraseña. Si la dejás vacía, quedan pendientes hasta activar su cuenta por email, algo que todavía no está
+            disponible en esta versión: para que puedan entrar, poné una contraseña inicial. Mínimo 8 caracteres.
           </p>
         </div>
 

@@ -15,13 +15,23 @@ public sealed class UsuariosConsultaDataAccess(IdentidadDbContext db) : IUsuario
         if (rol is not null) query = query.Where(u => u.Rol == rol);
         return await query
             .OrderBy(u => u.Apellido).ThenBy(u => u.Nombre)
-            .Select(u => new UsuarioResumen(u.Id, u.Nombre, u.Apellido, u.Email, u.Rol))
+            .Select(u => new UsuarioResumen(u.Id, u.Nombre, u.Apellido, u.Email, u.Rol, true, false))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<UsuarioResumen>> ListarIncluyendoInactivosAsync(string? rol, CancellationToken cancellationToken = default)
+    {
+        var query = db.Usuarios.AsNoTracking().AsQueryable();
+        if (rol is not null) query = query.Where(u => u.Rol == rol);
+        return await query
+            .OrderBy(u => u.Apellido).ThenBy(u => u.Nombre)
+            .Select(u => new UsuarioResumen(u.Id, u.Nombre, u.Apellido, u.Email, u.Rol, u.Activo, u.PasswordHash == UsuarioPendiente.MarcaPasswordHash))
             .ToListAsync(cancellationToken);
     }
 
     public Task<UsuarioResumen?> ObtenerActivoAsync(Guid id, CancellationToken cancellationToken = default) =>
         db.Usuarios.AsNoTracking()
             .Where(u => u.Id == id && u.Activo)
-            .Select(u => new UsuarioResumen(u.Id, u.Nombre, u.Apellido, u.Email, u.Rol))
+            .Select(u => new UsuarioResumen(u.Id, u.Nombre, u.Apellido, u.Email, u.Rol, true, false))
             .FirstOrDefaultAsync(cancellationToken);
 }

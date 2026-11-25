@@ -70,6 +70,34 @@ namespace PEI.SalaEnVivo.UnitTests
         }
 
         [Fact]
+        public async Task Handle_AlumnoQueYaEstabaYLaSalaEstaEnCurso_VuelveAEntrarSinDuplicarse()
+        {
+            var sala = CrearSalaConEvaluacion(_cohorteId);
+            _cursosClient.Matriculados.Add((_cohorteId, _alumnoId));
+            await CrearHandler().Handle(Comando(), CancellationToken.None);
+            sala.Estado = "EnCurso";
+
+            var salaId = await CrearHandler().Handle(Comando(), CancellationToken.None);
+
+            Assert.Equal(sala.Id, salaId);
+            Assert.Single(_participantes.Participantes);
+        }
+
+        [Fact]
+        public async Task Handle_AlumnoNuevoConLaSalaEnCurso_LanzaSalaEnCursoYNoIngresa()
+        {
+            var sala = CrearSalaConEvaluacion(_cohorteId);
+            _cursosClient.Matriculados.Add((_cohorteId, _alumnoId));
+            sala.Estado = "EnCurso";
+
+            var error = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => CrearHandler().Handle(Comando(), CancellationToken.None));
+
+            Assert.StartsWith("SALA_EN_CURSO", error.Message);
+            Assert.Empty(_participantes.Participantes);
+        }
+
+        [Fact]
         public async Task Handle_AlumnoNoMatriculado_LanzaAlumnoNoMatriculadoYNoIngresa()
         {
             CrearSalaConEvaluacion(_cohorteId);

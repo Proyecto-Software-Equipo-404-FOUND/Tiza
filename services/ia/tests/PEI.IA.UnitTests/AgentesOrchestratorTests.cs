@@ -277,6 +277,48 @@ public class AgentesOrchestratorTests
         Assert.Equal(3.5m, resultado.DiferenciaPuntaje);
     }
 
+    // ── S3-IA-02: el modelo a veces devuelve la rúbrica con otra forma ──
+
+    [Fact]
+    public void ParsearPreguntas_RubricaComoListaYCriterioConOtroNombre_SeLeeIgual()
+    {
+        const string json = """
+            ```json
+            { "preguntas": [
+              { "enunciado": "Explicá qué es un algoritmo", "tipo": "abierta", "puntajeMaximo": "10",
+                "rubrica": [ { "criterio": "Define", "puntaje": 6 }, { "criterio": "Ejemplifica", "puntaje": "4" } ] },
+              { "enunciado": "¿Qué es una variable?", "tipo": "Opción múltiple", "puntajeMaximo": 2,
+                "opciones": [ { "texto": "Memoria con nombre", "esCorrecta": true }, { "texto": "Un bucle", "esCorrecta": "false" } ] }
+            ] }
+            ```
+            """;
+
+        var preguntas = AgentesOrchestrator.ParsearPreguntas(json);
+
+        Assert.Equal(2, preguntas.Count);
+        Assert.Equal("Abierta", preguntas[0].Tipo);
+        Assert.Equal(10m, preguntas[0].PuntajeMaximo);
+        Assert.Equal(new[] { "Define", "Ejemplifica" }, preguntas[0].Rubrica!.Criterios.Select(c => c.Descripcion));
+        Assert.True(AgentesOrchestrator.EsPreguntaValida(preguntas[0]));
+        Assert.Equal("OpcionMultiple", preguntas[1].Tipo);
+        Assert.True(AgentesOrchestrator.EsPreguntaValida(preguntas[1]));
+    }
+
+    [Fact]
+    public void ParsearPreguntas_UnaPreguntaRota_NoTiraAbajoLasDemas()
+    {
+        const string json = """
+            { "preguntas": [
+              "esto no es un objeto",
+              { "enunciado": "¿Qué es una variable?", "tipo": "OpcionMultiple", "puntajeMaximo": 2,
+                "opciones": [ { "texto": "Memoria con nombre", "esCorrecta": true }, { "texto": "Un bucle", "esCorrecta": false } ] }
+            ] }
+            """;
+
+        var pregunta = Assert.Single(AgentesOrchestrator.ParsearPreguntas(json));
+        Assert.Equal("¿Qué es una variable?", pregunta.Enunciado);
+    }
+
     private sealed class FakeLlmClient : ILlmClient
     {
         public LlmCompletionResult Resultado { get; set; } = new() { Contenido = "{}" };

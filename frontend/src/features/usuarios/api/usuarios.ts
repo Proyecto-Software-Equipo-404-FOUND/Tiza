@@ -15,15 +15,47 @@ export const registrarUsuario = (datos: NuevoUsuario) =>
     body: JSON.stringify(datos),
   });
 
-export type UsuarioDeLaLista = { id: string; nombre: string; email: string; rol: RolNuevo };
+export type UsuarioDeLaLista = {
+  id: string;
+  nombre: string;
+  email: string;
+  rol: RolNuevo;
+  activo?: boolean;
+  /** Importado sin contraseña inicial y todavía sin activar: no se puede reactivar a mano */
+  pendienteActivacion?: boolean;
+};
 
-type UsuarioResumen = { id: string; nombre: string; apellido: string; email: string; rol: string };
+type UsuarioResumen = {
+  id: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  rol: string;
+  activo?: boolean;
+  pendienteActivacion?: boolean;
+};
 
-// GET /api/usuarios?rol= (S2-ID-10): el mismo endpoint que usan la matrícula y el selector de docentes
-export async function listarUsuarios(rol: RolNuevo): Promise<UsuarioDeLaLista[]> {
-  const usuarios = await pedir<UsuarioResumen[]>(`/api/v1/identidad/usuarios?rol=${rol}`);
-  return usuarios.map((u) => ({ id: u.id, nombre: `${u.nombre} ${u.apellido}`.trim(), email: u.email, rol }));
+// GET /api/usuarios?rol= (S2-ID-10): el mismo endpoint que usan la matrícula y el selector de docentes.
+// Con incluirInactivos (S3-ID-01, solo administrador) también vienen los dados de baja, para reactivarlos.
+export async function listarUsuarios(rol: RolNuevo, incluirInactivos = false): Promise<UsuarioDeLaLista[]> {
+  const usuarios = await pedir<UsuarioResumen[]>(
+    `/api/v1/identidad/usuarios?rol=${rol}${incluirInactivos ? '&incluirInactivos=true' : ''}`,
+  );
+  return usuarios.map((u) => ({
+    id: u.id,
+    nombre: `${u.nombre} ${u.apellido}`.trim(),
+    email: u.email,
+    rol,
+    ...(incluirInactivos ? { activo: u.activo !== false, pendienteActivacion: u.pendienteActivacion === true } : {}),
+  }));
 }
+
+// S3-ID-01 (#243): baja y reactivación. Solo Administrador; 204 sin cuerpo. No borra datos.
+export const darDeBajaUsuario = (id: string) =>
+  pedir<void>(`/api/v1/identidad/usuarios/${id}/baja`, { method: 'POST' });
+
+export const reactivarUsuario = (id: string) =>
+  pedir<void>(`/api/v1/identidad/usuarios/${id}/reactivar`, { method: 'POST' });
 
 // Respuesta de POST /api/usuarios/alumnos/importacion (ResultadoImportacion, S2-ID-02)
 export type ErrorDeFila = { fila: number; motivo: string };

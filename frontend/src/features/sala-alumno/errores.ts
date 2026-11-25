@@ -9,6 +9,7 @@ const CODIGOS: CodigoSala[] = [
   'ALUMNO_YA_EN_SALA',
   'ALUMNO_NO_EN_SALA',
   'SALA_FINALIZADA',
+  'SALA_EN_CURSO',
   'ALUMNO_NO_MATRICULADO',
   'MATRICULA_NO_VERIFICADA',
 ];
@@ -47,6 +48,7 @@ const MENSAJES: Record<CodigoSala, string> = {
   ALUMNO_YA_EN_SALA: 'Ya estás en esta sala.',
   ALUMNO_NO_EN_SALA: 'No encontramos tu sala. Ingresá el PIN de nuevo.',
   SALA_FINALIZADA: 'Esta sala ya finalizó.',
+  SALA_EN_CURSO: 'La evaluación ya empezó y no se pueden sumar alumnos nuevos. Avisale a tu docente.',
   ALUMNO_NO_MATRICULADO: 'No estás matriculado en la cohorte de esta evaluación. Consultá con tu docente.',
   MATRICULA_NO_VERIFICADA: 'No pudimos verificar tu matrícula. Probá de nuevo en unos segundos.',
   ERROR_INTERNO: 'Algo salió mal. Probá de nuevo.',

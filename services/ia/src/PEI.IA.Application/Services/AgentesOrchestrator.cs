@@ -133,6 +133,8 @@ public class AgentesOrchestrator : IAgentesOrchestrator
 
         if (validas.Count == 0)
         {
+            _logger.LogWarning("Agente Revisor: ninguna pregunta válida. Respuesta del modelo (primeros 600 caracteres): {Contenido}",
+                llmResult.Contenido is { Length: > 600 } c ? c[..600] : llmResult.Contenido);
             // Sin preguntas válidas (JSON malformado o todas descartadas) → 503 IA_NO_DISPONIBLE en el controller.
             throw new InvalidOperationException("IA_NO_DISPONIBLE: el modelo no devolvió preguntas válidas.");
         }
@@ -196,33 +198,164 @@ public class AgentesOrchestrator : IAgentesOrchestrator
         return resultado;
     }
 
-    private static List<PreguntaSugeridaDto> ParsearPreguntas(string? contenido)
+    /// <summary>
+    /// S3-IA-02: lee las preguntas del modelo pregunta por pregunta y de forma tolerante
+    /// (rúbrica como objeto o lista, "criterio"/"descripcion", números como texto, tipos con otra escritura).
+    /// Antes, un solo campo con otra forma hacía fallar la lista entera y no quedaba ninguna pregunta.
+    /// </summary>
+    public static List<PreguntaSugeridaDto> ParsearPreguntas(string? contenido)
     {
-        if (string.IsNullOrWhiteSpace(contenido)) return new List<PreguntaSugeridaDto>();
+        var resultado = new List<PreguntaSugeridaDto>();
+        if (string.IsNullOrWhiteSpace(contenido)) return resultado;
 
+        JsonDocument doc;
         try
         {
-            var json = ExtraerJson(contenido);
-            var doc = JsonDocument.Parse(json);
-            if (doc.RootElement.TryGetProperty("preguntas", out var preguntasArray) &&
-                preguntasArray.ValueKind == JsonValueKind.Array)
-            {
-                var lista = JsonSerializer.Deserialize<List<PreguntaSugeridaDto>>(preguntasArray.GetRawText(), JsonOptions);
-                return lista ?? new List<PreguntaSugeridaDto>();
-            }
-
-            if (doc.RootElement.ValueKind == JsonValueKind.Array)
-            {
-                var lista = JsonSerializer.Deserialize<List<PreguntaSugeridaDto>>(doc.RootElement.GetRawText(), JsonOptions);
-                return lista ?? new List<PreguntaSugeridaDto>();
-            }
+            doc = JsonDocument.Parse(ExtraerJson(contenido));
         }
-        catch
+        catch (JsonException)
         {
-            // Fallback ante json malformado
+            return resultado;
         }
 
-        return new List<PreguntaSugeridaDto>();
+        using (doc)
+        {
+            JsonElement lista;
+            if (doc.RootElement.ValueKind == JsonValueKind.Array)
+                lista = doc.RootElement;
+            else if (doc.RootElement.ValueKind == JsonValueKind.Object &&
+                     Buscar(doc.RootElement, "preguntas", out var preguntas) &&
+                     preguntas.ValueKind == JsonValueKind.Array)
+                lista = preguntas;
+            else
+                return resultado;
+
+            foreach (var item in lista.EnumerateArray())
+            {
+                if (item.ValueKind != JsonValueKind.Object) continue;
+                try
+                {
+                    resultado.Add(LeerPregunta(item));
+                }
+                catch (Exception)
+                {
+                    // Una pregunta con forma inesperada se saltea; el resto sigue.
+                }
+            }
+        }
+
+        return resultado;
+    }
+
+    private static PreguntaSugeridaDto LeerPregunta(JsonElement item)
+    {
+        var pregunta = new PreguntaSugeridaDto
+        {
+            Enunciado = LeerTexto(item, "enunciado") ?? LeerTexto(item, "pregunta") ?? string.Empty,
+            Tipo = NormalizarTipo(LeerTexto(item, "tipo")),
+            PuntajeMaximo = LeerNumero(item, "puntajeMaximo") ?? LeerNumero(item, "puntaje") ?? 10m,
+            FragmentoApunte = LeerTexto(item, "fragmentoApunte")
+        };
+
+        if (Buscar(item, "opciones", out var opciones) && opciones.ValueKind == JsonValueKind.Array)
+        {
+            pregunta.Opciones = new List<OpcionPreguntaDto>();
+            foreach (var o in opciones.EnumerateArray())
+            {
+                if (o.ValueKind == JsonValueKind.String)
+                {
+                    pregunta.Opciones.Add(new OpcionPreguntaDto { Texto = o.GetString() ?? string.Empty });
+                    continue;
+                }
+                if (o.ValueKind != JsonValueKind.Object) continue;
+                pregunta.Opciones.Add(new OpcionPreguntaDto
+                {
+                    Texto = LeerTexto(o, "texto") ?? LeerTexto(o, "opcion") ?? string.Empty,
+                    EsCorrecta = LeerBool(o, "esCorrecta") ?? LeerBool(o, "correcta") ?? false
+                });
+            }
+        }
+
+        // La rúbrica puede venir como { criterios: [...] }, como lista directa o como "criterios" suelto.
+        JsonElement criterios = default;
+        var hayCriterios = false;
+        if (Buscar(item, "rubrica", out var rubrica))
+        {
+            if (rubrica.ValueKind == JsonValueKind.Object && Buscar(rubrica, "criterios", out var c) && c.ValueKind == JsonValueKind.Array)
+            { criterios = c; hayCriterios = true; }
+            else if (rubrica.ValueKind == JsonValueKind.Array)
+            { criterios = rubrica; hayCriterios = true; }
+        }
+        else if (Buscar(item, "criterios", out var sueltos) && sueltos.ValueKind == JsonValueKind.Array)
+        { criterios = sueltos; hayCriterios = true; }
+
+        if (hayCriterios)
+        {
+            pregunta.Rubrica = new RubricaPreguntaDto();
+            foreach (var c in criterios.EnumerateArray())
+            {
+                if (c.ValueKind != JsonValueKind.Object) continue;
+                pregunta.Rubrica.Criterios.Add(new CriterioRubricaDto
+                {
+                    Descripcion = LeerTexto(c, "descripcion") ?? LeerTexto(c, "criterio") ?? LeerTexto(c, "nombre") ?? string.Empty,
+                    Puntaje = LeerNumero(c, "puntaje") ?? LeerNumero(c, "puntajeMaximo") ?? 0m
+                });
+            }
+        }
+
+        return pregunta;
+    }
+
+    private static string NormalizarTipo(string? tipo)
+    {
+        // Sin tildes ni separadores: "Opción múltiple", "opcion_multiple" y "OpcionMultiple" quedan iguales.
+        var sinTildes = string.Concat((tipo ?? string.Empty).Trim().ToLowerInvariant()
+            .Normalize(System.Text.NormalizationForm.FormD)
+            .Where(c => System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark));
+        var t = sinTildes.Replace("_", "").Replace(" ", "").Replace("-", "");
+        if (t.Contains("multiple") || t.Contains("choice") || t == "om") return "OpcionMultiple";
+        if (t.Contains("abierta") || t.Contains("open") || t.Contains("desarrollo")) return "Abierta";
+        return tipo?.Trim() ?? string.Empty;
+    }
+
+    private static bool Buscar(JsonElement objeto, string nombre, out JsonElement valor)
+    {
+        if (objeto.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var propiedad in objeto.EnumerateObject())
+            {
+                if (string.Equals(propiedad.Name, nombre, StringComparison.OrdinalIgnoreCase))
+                {
+                    valor = propiedad.Value;
+                    return true;
+                }
+            }
+        }
+
+        valor = default;
+        return false;
+    }
+
+    private static string? LeerTexto(JsonElement objeto, string nombre) =>
+        Buscar(objeto, nombre, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
+
+    private static decimal? LeerNumero(JsonElement objeto, string nombre)
+    {
+        if (!Buscar(objeto, nombre, out var v)) return null;
+        if (v.ValueKind == JsonValueKind.Number && v.TryGetDecimal(out var d)) return d;
+        if (v.ValueKind == JsonValueKind.String &&
+            decimal.TryParse(v.GetString(), System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var s))
+            return s;
+        return null;
+    }
+
+    private static bool? LeerBool(JsonElement objeto, string nombre)
+    {
+        if (!Buscar(objeto, nombre, out var v)) return null;
+        if (v.ValueKind == JsonValueKind.True) return true;
+        if (v.ValueKind == JsonValueKind.False) return false;
+        if (v.ValueKind == JsonValueKind.String && bool.TryParse(v.GetString(), out var b)) return b;
+        return null;
     }
 
     private static string ExtraerJson(string? raw)

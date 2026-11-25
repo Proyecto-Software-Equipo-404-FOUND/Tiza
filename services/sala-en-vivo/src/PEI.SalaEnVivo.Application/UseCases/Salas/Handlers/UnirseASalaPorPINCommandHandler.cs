@@ -69,7 +69,17 @@ namespace PEI.SalaEnVivo.Application.UseCases.Salas.Handlers
 
                 if (existeAlumnoEnSala == true)
                 {
-                    throw new InvalidOperationException("El alumno ya está registrado en la sala.");
+                    // Reingreso: el alumno ya estaba en la sala (cerró la pestaña o se cortó).
+                    // No se lo vuelve a registrar; el hub le manda el estado actual y sigue donde estaba.
+                    await transaccion.CommitAsync(cancellationToken);
+                    return sala.Id;
+                }
+
+                if (string.Equals(sala.Estado, "EnCurso", StringComparison.Ordinal))
+                {
+                    // Una vez iniciada, solo pueden volver los que ya estaban; no se suman alumnos nuevos.
+                    throw new InvalidOperationException(
+                        "SALA_EN_CURSO: La evaluación ya empezó y no se pueden sumar alumnos nuevos.");
                 }
 
                 if (sala.CantidadParticipantes >= sala.CapacidadMaxima)

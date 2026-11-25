@@ -395,6 +395,16 @@
                 "Alumno"
               ]
             }
+          },
+          {
+            "name": "incluirInactivos",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "S3-ID-01: solo para el administrador. Incluye a los dados de baja (activo = false) para poder reactivarlos."
           }
         ]
       }
@@ -913,6 +923,21 @@
           },
           "500": {
             "$ref": "#/components/responses/ErrorInterno"
+          },
+          "409": {
+            "description": "El alumno está pendiente de activación (no tiene contraseña).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "USUARIO_PENDIENTE_ACTIVACION",
+                  "title": "Este alumno todavía no activó su cuenta: no tiene contraseña. Volvé a importarlo con una contraseña inicial.",
+                  "status": 409
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1110,6 +1135,14 @@
               "Docente",
               "Alumno"
             ]
+          },
+          "activo": {
+            "type": "boolean",
+            "description": "S3-ID-01: false si el usuario está dado de baja. Solo aparecen usuarios inactivos con incluirInactivos=true (administrador)."
+          },
+          "pendienteActivacion": {
+            "type": "boolean",
+            "description": "S3-ID-01: true si el alumno fue importado sin contraseña inicial y todavía no activó su cuenta. No se puede reactivar a mano (409 USUARIO_PENDIENTE_ACTIVACION)."
           }
         }
       },
