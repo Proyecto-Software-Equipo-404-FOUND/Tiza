@@ -160,4 +160,4 @@ npm test -- --run
 
 ## 👥 Equipo 404 FOUND
 
-Proyecto de la cátedra [nombre de la materia] · Universidad Nacional Arturo Jauretche (UNAJ) · 2026.
+Proyecto de la cátedra Proyecto Software · Universidad Nacional Arturo Jauretche (UNAJ) · 2026.
