@@ -4,8 +4,8 @@
 
 Documentación de las once operaciones actuales de autenticación institucional, registro,
 comprobación de roles y Plataforma. No se cambian rutas, métodos, claims, roles,
-serialización, controladores, persistencia o políticas productivas. WeatherForecast permanece
-intacto y no forma parte de la colección. No se publica un contrato definitivo en contracts/openapi.
+serialización, controladores, persistencia o políticas productivas. El WeatherForecast de plantilla
+se retiró en el Sprint 3 y no forma parte de la colección. No se publica un contrato definitivo en contracts/openapi.
 
 Los tipos terminados en ResponseDocumentation solo describen los objetos anónimos actuales;
 no reemplazan los cuerpos que construyen las acciones.
