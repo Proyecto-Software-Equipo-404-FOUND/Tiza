@@ -13,7 +13,7 @@ public class BarandaSeguridad : IBarandaSeguridad
     private static readonly Regex[] PatronesSospechosos = new[]
     {
         // Directivas de ignorar rúbrica o instrucciones previas
-        new Regex(@"\b(ignora|ignorá|olvida|olvidá|desestima)\s+(la\s+)?(rúbrica|rubrica|instrucciones|consigna|reglas)", RegexOptions.IgnoreCase | RegexOptions.Compiled),
+        new Regex(@"\b(ignora|ignorá|olvida|olvidá|desestima)\s+(la\s+|las\s+|esta\s+|este\s+|todas\s+las\s+)?(rúbrica|rubrica|instrucciones|consigna|reglas|pregunta|examen)", RegexOptions.IgnoreCase | RegexOptions.Compiled),
         new Regex(@"\b(ignore|disregard|forget)\s+(all\s+)?(previous\s+)?(instructions|rules|rubric|prompt)", RegexOptions.IgnoreCase | RegexOptions.Compiled),
         
         // Peticiones directas de asignación de nota máxima o arbitraria
