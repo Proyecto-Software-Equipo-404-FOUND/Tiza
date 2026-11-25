@@ -55,3 +55,11 @@ services/identidad/.tmp/
 
 ## Almacenamiento local (archivos y materiales PDF subidos en desarrollo)
 storage/
+
+## Archivos de bloqueo de LibreOffice/Office y reportes generados por el benchmark de IA
+.~lock.*#
+~$*
+services/ia/reports/*.csv
+
+## Artefactos de los tests corridos en Docker
+.art-docker/
