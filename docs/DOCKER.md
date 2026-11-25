@@ -38,6 +38,12 @@ Copiá el ejemplo y poné una contraseña propia (8 caracteres o más) para cada
 ```bash
 cp .env.semilla.example .env.semilla          # Windows PowerShell: Copy-Item .env.semilla.example .env.semilla
 ```
+### Google Drive (opcional)
+Para subir apuntes desde Google Drive, creá `frontend/.env.local` (git lo ignora) con
+`VITE_GOOGLE_CLIENT_ID`, `VITE_GOOGLE_API_KEY` y `VITE_GOOGLE_APP_ID` del proyecto de Google Cloud
+(ver [S3-CU-05](../services/cursos/docs/S3-CU-05-GOOGLE-DRIVE-PICKER.md)). Solo funciona entrando por
+`http://localhost:3000` y con cuentas de Gmail registradas como usuarios de prueba. Sin ese archivo,
+la opción de Drive simplemente no aparece.
 
 ### 5. Preparar las bases (una sola vez)
 ```bash
