@@ -121,6 +121,211 @@ services:
       timeout: 5s
       retries: 5
 
+  # ==========================================
+  # 7. Aplicación completa en Docker (opcional)
+  # ==========================================
+  # Los servicios de abajo solo arrancan con el perfil "app":
+  #   docker compose -f infra/docker-compose.yml --profile app up -d --build
+  # Sin el perfil (start-all.ps1) se levantan solo las bases y Redis, como siempre.
+  # Usan las MISMAS bases y volúmenes de arriba: los datos que ya tenés se conservan.
+  # Guía completa: docs/DOCKER.md
+
+  identidad:
+    profiles: ["app"]
+    build:
+      context: ..
+      dockerfile: docker/dotnet.Dockerfile
+      args:
+        PROYECTO: services/identidad/src/PEI.Identidad.Api/PEI.Identidad.Api.csproj
+        APP_DLL: PEI.Identidad.Api.dll
+    image: tiza/identidad
+    container_name: pei-identidad
+    restart: on-failure:5
+    environment:
+      ConnectionStrings__IdentidadDb: Host=postgres-identidad;Port=5432;Database=pei_identidad_db;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      Sala__BaseUrl: http://sala-en-vivo:8080
+    ports:
+      - "5293:8080"
+    depends_on:
+      postgres-identidad:
+        condition: service_healthy
+
+  cursos:
+    profiles: ["app"]
+    build:
+      context: ..
+      dockerfile: docker/dotnet.Dockerfile
+      args:
+        PROYECTO: services/cursos/src/PEI.Cursos.Api/PEI.Cursos.Api.csproj
+        APP_DLL: PEI.Cursos.Api.dll
+    image: tiza/cursos
+    container_name: pei-cursos
+    restart: on-failure:5
+    environment:
+      ConnectionStrings__CursosDb: Host=postgres-cursos;Port=5432;Database=pei_cursos_db;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5102:8080"
+    volumes:
+      # Apuntes PDF subidos (Almacenamiento:DirectorioBase = storage/materiales)
+      - cursos_storage:/app/storage
+    depends_on:
+      postgres-cursos:
+        condition: service_healthy
+
+  evaluaciones:
+    profiles: ["app"]
+    build:
+      context: ..
+      dockerfile: docker/dotnet.Dockerfile
+      args:
+        PROYECTO: services/evaluaciones/src/PEI.Evaluaciones.Api/PEI.Evaluaciones.Api.csproj
+        APP_DLL: PEI.Evaluaciones.Api.dll
+    image: tiza/evaluaciones
+    container_name: pei-evaluaciones
+    restart: on-failure:5
+    environment:
+      ConnectionStrings__Default: Host=postgres-evaluaciones;Port=5432;Database=pei_evaluaciones_db;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      CorreccionIa__UrlBaseIa: http://ia:8080/
+    ports:
+      - "5103:8080"
+    depends_on:
+      postgres-evaluaciones:
+        condition: service_healthy
+
+  sala-en-vivo:
+    profiles: ["app"]
+    build:
+      context: ..
+      dockerfile: docker/dotnet.Dockerfile
+      args:
+        PROYECTO: services/sala-en-vivo/src/PEI.SalaEnVivo.Api/PEI.SalaEnVivo.Api.csproj
+        APP_DLL: PEI.SalaEnVivo.Api.dll
+    image: tiza/sala-en-vivo
+    container_name: pei-sala-en-vivo
+    restart: on-failure:5
+    environment:
+      ConnectionStrings__DefaultConnection: Host=postgres-sala;Port=5432;Database=pei_sala_db;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      ConnectionStrings__Redis: redis:6379
+      Evaluaciones__BaseUrl: http://evaluaciones:8080
+      Cursos__BaseUrl: http://cursos:8080
+    ports:
+      - "5104:8080"
+    depends_on:
+      postgres-sala:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  mcp-ia:
+    profiles: ["app"]
+    build:
+      context: ..
+      dockerfile: docker/dotnet.Dockerfile
+      args:
+        PROYECTO: services/ia/src/PEI.IA.McpServer/PEI.IA.McpServer.csproj
+        APP_DLL: PEI.IA.McpServer.dll
+        DATOS: services/ia/datasets
+    image: tiza/mcp-ia
+    container_name: pei-mcp-ia
+    restart: on-failure:5
+    environment:
+      EvaluacionesSettings__BaseUrl: http://evaluaciones:8080
+    ports:
+      - "5106:8080"
+
+  ia:
+    profiles: ["app"]
+    build:
+      context: ..
+      dockerfile: docker/dotnet.Dockerfile
+      args:
+        PROYECTO: services/ia/src/PEI.IA.Api/PEI.IA.Api.csproj
+        APP_DLL: PEI.IA.Api.dll
+    image: tiza/ia
+    container_name: pei-ia
+    restart: on-failure:5
+    # Claves de los modelos: solo este contenedor las recibe, en tiempo de ejecución.
+    # Los archivos están en la raíz del repo, los ignora git y no entran a ninguna imagen.
+    env_file:
+      - path: ../.env.gateway
+        required: false
+      - path: ../.env.openrouter
+        required: false
+    environment:
+      EvaluacionesSettings__BaseUrl: http://evaluaciones:8080
+      CursosSettings__BaseUrl: http://cursos:8080
+      McpSettings__McpServerUrl: http://mcp-ia:8080/mcp
+      LlmSettings__Providers__0__TimeoutMs: "25000"
+      # Ollama corriendo en la máquina (opcional, último proveedor de respaldo)
+      LlmSettings__Providers__2__BaseUrl: http://host.docker.internal:11434/v1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "5105:8080"
+    depends_on:
+      - mcp-ia
+
+  gateway:
+    profiles: ["app"]
+    build:
+      context: ..
+      dockerfile: docker/dotnet.Dockerfile
+      args:
+        PROYECTO: gateway/src/PEI.Gateway/PEI.Gateway.csproj
+        APP_DLL: PEI.Gateway.dll
+    image: tiza/gateway
+    container_name: pei-gateway
+    restart: on-failure:5
+    environment:
+      # Las direcciones de los servicios dentro de Docker están en appsettings.Docker.json del gateway
+      ASPNETCORE_ENVIRONMENT: Docker
+    ports:
+      - "8080:8080"
+    depends_on:
+      - identidad
+      - cursos
+      - evaluaciones
+      - sala-en-vivo
+      - ia
+
+  frontend:
+    profiles: ["app"]
+    build:
+      context: ../frontend
+    image: tiza/frontend
+    container_name: pei-frontend
+    restart: on-failure:5
+    ports:
+      # Desde el celular: http://IP-DE-LA-PC:3000
+      - "3000:80"
+    depends_on:
+      - gateway
+
+  # ------------------------------------------
+  # Herramienta de una sola vez (perfil "herramientas"), solo para bases NUEVAS:
+  # migraciones de Identidad, Cursos y Evaluaciones + usuarios semilla opcionales. Ver docs/DOCKER.md.
+  #   docker compose -f infra/docker-compose.yml run --rm preparar-bases
+  # ------------------------------------------
+  preparar-bases:
+    profiles: ["herramientas"]
+    build:
+      context: ..
+      dockerfile: docker/preparar-bases.Dockerfile
+    image: tiza/preparar-bases
+    env_file:
+      - path: ../.env.semilla
+        required: false
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    depends_on:
+      postgres-identidad:
+        condition: service_healthy
+      postgres-cursos:
+        condition: service_healthy
+      postgres-evaluaciones:
+        condition: service_healthy
+
 volumes:
   db_identidad_data:
   db_cursos_data:
@@ -128,3 +333,4 @@ volumes:
   db_sala_data:
   db_ia_data:
   redis_data:
+  cursos_storage:

@@ -1,0 +1,24 @@
+# Contexto de build de las imágenes .NET (raíz del repo).
+# El frontend tiene su propio contexto (frontend/) y su propio .dockerignore.
+.git
+.github
+.vs
+.vscode
+.idea
+**/bin
+**/obj
+**/node_modules
+**/TestResults
+.art-docker
+storage
+frontend
+docs
+tests
+**/tests
+*.docx
+*.csv
+
+# Claves locales (.env.gateway, .env.openrouter, .env.semilla): NUNCA entran a una imagen.
+# Se pasan en tiempo de ejecución solo al contenedor que las usa (ver infra/docker-compose.yml).
+.env
+.env.*
