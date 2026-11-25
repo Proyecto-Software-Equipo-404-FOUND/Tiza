@@ -11,6 +11,8 @@ export type MetricaPregunta = {
 
 export type MetricaAlumno = {
   alumnoId: string;
+  /** Solo para invitados (alumnos sin cuenta): el nombre que escribieron al entrar */
+  nombreInvitado?: string | null;
   notaFinal: number;
   /** notaFinal − promedio (puede ser negativa) */
   diferenciaConPromedio: number;

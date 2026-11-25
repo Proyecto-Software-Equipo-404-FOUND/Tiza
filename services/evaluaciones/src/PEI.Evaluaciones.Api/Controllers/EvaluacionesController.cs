@@ -309,6 +309,34 @@ public class EvaluacionesController : ControllerBase
         return Ok(resultado.Valor);
     }
 
+    // S3-EV-05: el alumno ve el detalle de su examen corregido (sus respuestas, cuáles estuvieron bien
+    // y el puntaje de cada pregunta). Sin el comentario interno del docente. Solo con la nota aprobada.
+    [HttpGet("/api/v1/alumnos/me/evaluaciones/{entregaId:guid}")]
+    public async Task<IActionResult> ObtenerMiExamen(Guid entregaId, CancellationToken ct)
+    {
+        var usuarioClaim = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!Guid.TryParse(usuarioClaim, out var alumnoId))
+        {
+            return Problema(401, "No autenticado.", Array.Empty<string>());
+        }
+
+        var rol = User.FindFirst("role")?.Value ?? User.FindFirst(ClaimTypes.Role)?.Value;
+        if (!string.Equals(rol, "Alumno", StringComparison.OrdinalIgnoreCase))
+        {
+            return Problema(403, "Solo los alumnos tienen \"Mis exámenes\".", Array.Empty<string>());
+        }
+
+        var resultado = await _mediador.Send(new ObtenerMiExamenDetalleQuery(entregaId, alumnoId), ct);
+
+        return resultado.Tipo switch
+        {
+            TipoResultado.Ok => Ok(resultado.Valor),
+            TipoResultado.NoEncontrado => Problema(404, "No se encontró el examen.", Array.Empty<string>()),
+            TipoResultado.Conflicto => Problema(409, "La corrección todavía no está aprobada.", resultado.Errores, "CORRECCION_NO_APROBADA"),
+            _ => Problema(400, resultado.Errores.FirstOrDefault() ?? "La peticion no es valida.", resultado.Errores)
+        };
+    }
+
     private sealed record Sesion(Guid InstitucionId, Guid UsuarioId, string? Rol);
 
     // Claims del contrato JwtInstitucional (identidad-v1.json): sub, institucion_id, role.

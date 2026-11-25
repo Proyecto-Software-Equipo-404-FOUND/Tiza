@@ -165,6 +165,58 @@
         }
       }
     },
+    "/api/auth/cambiar-contrasena": {
+      "post": {
+        "tags": [
+          "Autenticación"
+        ],
+        "summary": "Cambia la contraseña del usuario autenticado.",
+        "description": "S3-ID-03. Pide la contraseña actual. La nueva sigue las reglas del registro (8 caracteres o más, 72 bytes o menos). Al cambiarla se revocan todos los refresh tokens del usuario. No disponible para invitados.",
+        "operationId": "CambiarContrasena",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambiarContrasenaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Contraseña cambiada, sin cuerpo."
+          },
+          "400": {
+            "description": "Pedido inválido. `type`: CONTRASENA_ACTUAL_INCORRECTA, CONTRASENA_NUEVA_INVALIDA o CONTRASENA_IGUAL_A_LA_ACTUAL.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/NoAutenticado"
+          },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
+          },
+          "429": {
+            "$ref": "#/components/responses/DemasiadosIntentos"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorInterno"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
     "/api/auth/register": {
       "post": {
         "tags": [
@@ -1442,6 +1494,24 @@
           },
           "nombre": {
             "type": "string"
+          }
+        }
+      },
+      "CambiarContrasenaRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "contrasenaActual",
+          "contrasenaNueva"
+        ],
+        "properties": {
+          "contrasenaActual": {
+            "type": "string"
+          },
+          "contrasenaNueva": {
+            "type": "string",
+            "minLength": 8,
+            "description": "Entre 8 caracteres y 72 bytes UTF-8; no puede ser solo espacios ni igual a la actual."
           }
         }
       }

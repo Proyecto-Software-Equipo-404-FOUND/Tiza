@@ -5,8 +5,10 @@ import { PaginaEvaluaciones } from './PaginaEvaluaciones';
 import { useEvaluaciones } from '../hooks/useEvaluaciones';
 import { ApiError } from '@/shared/api/cliente';
 import type { Evaluacion } from '../tipos';
+import { useEsDocente } from '@/features/auth/useEsDocente';
 
 vi.mock('../hooks/useEvaluaciones', () => ({ useEvaluaciones: vi.fn() }));
+vi.mock('@/features/auth/useEsDocente', () => ({ useEsDocente: vi.fn(() => true) }));
 
 type Estado = ReturnType<typeof useEvaluaciones>;
 
@@ -107,5 +109,12 @@ describe('PaginaEvaluaciones', () => {
     simular({ data: [] });
     renderizar();
     expect(screen.getByRole('link', { name: 'Nueva evaluación' })).toHaveAttribute('href', '/evaluaciones/nueva');
+  });
+
+  it('no le muestra «Nueva evaluación» al administrador', () => {
+    vi.mocked(useEsDocente).mockReturnValueOnce(false);
+    simular({ data: [] });
+    renderizar();
+    expect(screen.queryByRole('link', { name: 'Nueva evaluación' })).not.toBeInTheDocument();
   });
 });

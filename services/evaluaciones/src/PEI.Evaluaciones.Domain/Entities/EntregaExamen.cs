@@ -20,6 +20,9 @@ public class EntregaExamen
     public DateTimeOffset? FechaAprobacionUtc { get; set; }
     public Guid? DocenteAprobadorId { get; set; }
 
+    // S3-SA-01: nombre que escribió el invitado al entrar a la sala (null para alumnos con cuenta)
+    public string? NombreInvitado { get; set; }
+
     // S2-EV-02 (#144): concurrencia optimista. El worker y el callback de IA pueden
     // modificar la misma entrega al mismo tiempo.
     public int Version { get; set; } = 1;

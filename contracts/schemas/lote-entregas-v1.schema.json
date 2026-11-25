@@ -57,7 +57,12 @@
         "alumnoId": {
           "type": "string",
           "format": "uuid",
-          "description": "Claim sub del alumno. Es el único dato del alumno que viaja: nunca nombre ni email."
+          "description": "Claim sub del alumno. De un alumno con cuenta es el único dato que viaja: nunca nombre ni email."
+        },
+        "nombreInvitado": {
+          "type": [ "string", "null" ],
+          "maxLength": 60,
+          "description": "S3-SA-01: solo para invitados (sin cuenta), el nombre que escribieron al entrar. Los alumnos con cuenta no lo envían."
         },
         "respuestas": {
           "type": "array",

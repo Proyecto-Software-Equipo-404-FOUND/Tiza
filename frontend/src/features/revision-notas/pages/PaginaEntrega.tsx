@@ -311,7 +311,7 @@ export function PaginaEntrega() {
           key={entrega.entregaId}
           entrega={entrega}
           evaluacionId={evaluacionId}
-          nombre={nombreDe(entrega.alumnoId)}
+          nombre={nombreDe(entrega.alumnoId, entrega.nombreInvitado)}
         />
       )}
     </main>

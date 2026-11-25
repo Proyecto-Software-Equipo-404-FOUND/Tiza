@@ -28,7 +28,9 @@ public sealed record MetricaPreguntaDto(
 public sealed record MetricaAlumnoDto(
     Guid AlumnoId,
     decimal NotaFinal,
-    decimal DiferenciaConPromedio);
+    decimal DiferenciaConPromedio,
+    // S3-SA-01: nombre del invitado; null para alumnos con cuenta
+    string? NombreInvitado = null);
 
 public sealed class GetMetricasEvaluacionHandler
     : IRequestHandler<GetMetricasEvaluacionQuery, ResultadoOperacion<MetricasEvaluacionDto>>
@@ -95,7 +97,7 @@ public sealed class GetMetricasEvaluacionHandler
             .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.FechaEdicionUtc).First().PuntajeDocente);
 
         var sumaPorPregunta = preguntas.ToDictionary(p => p.Id, _ => 0m);
-        var notasAlumnos = new List<(Guid AlumnoId, decimal NotaFinal)>();
+        var notasAlumnos = new List<(Guid AlumnoId, decimal NotaFinal, string? NombreInvitado)>();
 
         foreach (var entrega in entregasAprobadas)
         {
@@ -114,7 +116,7 @@ public sealed class GetMetricasEvaluacionHandler
             }
 
             var notaFinalAlumno = Math.Round(entrega.NotaFinal ?? 0m, 2);
-            notasAlumnos.Add((entrega.AlumnoId, notaFinalAlumno));
+            notasAlumnos.Add((entrega.AlumnoId, notaFinalAlumno, entrega.NombreInvitado));
         }
 
         var cantidadAprobadas = entregasAprobadas.Count;
@@ -151,7 +153,8 @@ public sealed class GetMetricasEvaluacionHandler
             .Select(n => new MetricaAlumnoDto(
                 AlumnoId: n.AlumnoId,
                 NotaFinal: n.NotaFinal,
-                DiferenciaConPromedio: Math.Round(n.NotaFinal - promedioExamen, 2)))
+                DiferenciaConPromedio: Math.Round(n.NotaFinal - promedioExamen, 2),
+                NombreInvitado: n.NombreInvitado))
             .ToList();
 
         return ResultadoOperacion<MetricasEvaluacionDto>.Ok(

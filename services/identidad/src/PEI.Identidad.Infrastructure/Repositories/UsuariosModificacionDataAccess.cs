@@ -40,6 +40,34 @@ public sealed class UsuariosModificacionDataAccess(IdentidadDbContext db) : IUsu
         }
     }
 
+    public async Task CambiarContrasenaAsync(Guid usuarioId, string nuevoHash, CancellationToken cancellationToken = default)
+    {
+        await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            var usuario = await db.Usuarios.FirstOrDefaultAsync(u => u.Id == usuarioId, cancellationToken);
+            if (usuario is not null)
+            {
+                usuario.PasswordHash = nuevoHash;
+                await db.RefreshTokens
+                    .Where(t => t.UsuarioId == usuarioId && !t.Revocado)
+                    .ExecuteUpdateAsync(s => s.SetProperty(t => t.Revocado, true), cancellationToken);
+                await db.SaveChangesAsync(cancellationToken);
+            }
+            await tx.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            db.ChangeTracker.Clear();
+            await tx.RollbackAsync(CancellationToken.None);
+            throw;
+        }
+        finally
+        {
+            db.ChangeTracker.Clear();
+        }
+    }
+
     public Task SaveChangesAsync(CancellationToken cancellationToken = default) =>
         db.SaveChangesAsync(cancellationToken);
 }

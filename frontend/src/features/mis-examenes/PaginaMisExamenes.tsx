@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { mensajeDeError } from '@/shared/api/errores';
 import { BannerError } from '@/shared/components/BannerError';
 import { Spinner } from '@/shared/components/Spinner';
@@ -18,6 +19,14 @@ function Resultado({ examen }: { examen: MiExamen }) {
         </span>
         {nota && <span className='font-bold'>{nota.principal}</span>}
         {nota?.detalle && <span className='text-xs text-tiza-bosque/70'>({nota.detalle})</span>}
+        {/* S3-EV-05: con la nota aprobada, el alumno puede ver qué respondió bien y mal */}
+        <Link
+          to={`/mis-examenes/${examen.entregaId}`}
+          className='text-sm font-bold text-tiza-bosque underline'
+          aria-label={`Ver la corrección de ${examen.titulo}`}
+        >
+          Ver corrección
+        </Link>
       </span>
     );
   }

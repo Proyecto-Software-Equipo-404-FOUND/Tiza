@@ -1,5 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/shared/api/cliente';
 import { useMisExamenes } from './hooks/useMisExamenes';
@@ -37,6 +38,14 @@ function simular(estado: Record<string, unknown>) {
   } as unknown as ReturnType<typeof useMisExamenes>);
 }
 
+// Con router: los exámenes corregidos tienen el enlace «Ver corrección»
+const mostrar = () =>
+  render(
+    <MemoryRouter>
+      <PaginaMisExamenes />
+    </MemoryRouter>,
+  );
+
 const fila = (titulo: string) => screen.getByText(titulo).closest('li') as HTMLElement;
 
 describe('PaginaMisExamenes', () => {
@@ -46,25 +55,25 @@ describe('PaginaMisExamenes', () => {
 
   it('muestra el título de la pantalla', () => {
     simular({ data: [] });
-    render(<PaginaMisExamenes />);
+    mostrar();
     expect(screen.getByRole('heading', { level: 1, name: 'Mis exámenes' })).toBeInTheDocument();
   });
 
   it('muestra un aviso de carga mientras llegan los datos', () => {
     simular({ isPending: true });
-    render(<PaginaMisExamenes />);
+    mostrar();
     expect(screen.getByRole('status')).toHaveTextContent('Cargando tus exámenes…');
   });
 
   it('con la lista vacía invita a rendir un examen', () => {
     simular({ data: [] });
-    render(<PaginaMisExamenes />);
+    mostrar();
     expect(screen.getByText('Todavía no rendiste ningún examen.')).toBeInTheDocument();
   });
 
   it('un examen corregido muestra «Corregida» y la nota final', () => {
     simular({ data: [aprobado] });
-    render(<PaginaMisExamenes />);
+    mostrar();
     const celdas = within(fila('Parcial 1'));
     expect(celdas.getByText('Corregida')).toBeInTheDocument();
     expect(celdas.getByText('8,5 / 10')).toBeInTheDocument();
@@ -72,15 +81,25 @@ describe('PaginaMisExamenes', () => {
 
   it('un examen que no es sobre 10 muestra la nota convertida y el puntaje original', () => {
     simular({ data: [{ ...aprobado, notaFinal: 4, puntajeMaximo: 5 }] });
-    render(<PaginaMisExamenes />);
+    mostrar();
     const celdas = within(fila('Parcial 1'));
     expect(celdas.getByText('8 / 10')).toBeInTheDocument();
     expect(celdas.getByText('(4 de 5 puntos obtenidos)')).toBeInTheDocument();
   });
 
+  it('un examen corregido enlaza a su corrección; uno pendiente, no', () => {
+    simular({ data: [aprobado, pendiente] });
+    mostrar();
+    expect(within(fila('Parcial 1')).getByRole('link', { name: 'Ver la corrección de Parcial 1' })).toHaveAttribute(
+      'href',
+      '/mis-examenes/en1',
+    );
+    expect(within(fila('Parcial 2')).queryByRole('link')).not.toBeInTheDocument();
+  });
+
   it('un examen pendiente no muestra ninguna nota', () => {
     simular({ data: [pendiente] });
-    render(<PaginaMisExamenes />);
+    mostrar();
     const celdas = within(fila('Parcial 2'));
     expect(celdas.getByText('Pendiente de corrección')).toBeInTheDocument();
     expect(celdas.queryByText(/\d \/ \d/)).not.toBeInTheDocument();
@@ -88,7 +107,7 @@ describe('PaginaMisExamenes', () => {
 
   it('mantiene el orden que manda el backend (del más nuevo al más viejo)', () => {
     simular({ data: [pendiente, aprobado] });
-    render(<PaginaMisExamenes />);
+    mostrar();
     const filas = screen.getAllByRole('listitem');
     expect(filas[0]).toHaveTextContent('Parcial 2');
     expect(filas[1]).toHaveTextContent('Parcial 1');
@@ -96,14 +115,14 @@ describe('PaginaMisExamenes', () => {
 
   it('con un 403 muestra que no tiene permiso', () => {
     simular({ isError: true, error: new ApiError(403, null) });
-    render(<PaginaMisExamenes />);
+    mostrar();
     expect(screen.getByRole('alert')).toHaveTextContent('No tenés permiso para hacer esto.');
   });
 
   it('ante un error permite reintentar', async () => {
     const refetch = vi.fn();
     simular({ isError: true, error: new ApiError(500, null), refetch });
-    render(<PaginaMisExamenes />);
+    mostrar();
     await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
     expect(refetch).toHaveBeenCalledOnce();
   });

@@ -21,7 +21,9 @@ public record EntregaResumenDto(
     AlertasFocoResumenDto AlertasFoco,
     string EstadoNota = "Sugerida",
     decimal? NotaFinal = null,
-    DateTimeOffset? FechaAprobacionUtc = null);
+    DateTimeOffset? FechaAprobacionUtc = null,
+    // S3-SA-01: nombre del invitado (alumno sin cuenta); null para alumnos con cuenta
+    string? NombreInvitado = null);
 
 // S3-EV-01: Puntaje es lo que otorgó la IA; PuntajeMaximo, el máximo del criterio (puede faltar en calificaciones viejas).
 public record DesgloseCriterioDto(string Criterio, decimal Puntaje, decimal? PuntajeMaximo, string Comentario);
@@ -65,7 +67,40 @@ public record EntregaDetalleDto(
     List<AlertaFocoDetalleDto> Alertas,
     string EstadoNota = "Sugerida",
     decimal? NotaFinal = null,
-    DateTimeOffset? FechaAprobacionUtc = null);
+    DateTimeOffset? FechaAprobacionUtc = null,
+    // S3-SA-01: nombre del invitado (alumno sin cuenta); null para alumnos con cuenta
+    string? NombreInvitado = null);
+
+// S3-EV-05: detalle de un examen corregido, visto por el propio alumno. Solo con la nota aprobada.
+// Nunca incluye el comentario interno del docente ni los datos de foco.
+public record MiRespuestaDto(
+    Guid PreguntaId,
+    string Enunciado,
+    string Tipo,
+    decimal PuntajeMaximo,
+    // Abierta: el texto que escribió. Opción múltiple: null (va en OpcionElegidaTexto)
+    string? Respuesta,
+    string? OpcionElegidaTexto,
+    // Solo opción múltiple
+    string? OpcionCorrectaTexto,
+    // Opción múltiple: si eligió la correcta. Abierta: null
+    bool? EsCorrecta,
+    // Puntaje final de la pregunta (el del docente si lo editó)
+    decimal? PuntajeObtenido,
+    // Solo abiertas: la justificación de la IA. Null si el docente editó el puntaje.
+    string? Justificacion);
+
+public record MiExamenDetalleDto(
+    Guid EvaluacionId,
+    Guid EntregaId,
+    string Titulo,
+    DateTimeOffset FechaEntregaUtc,
+    decimal? NotaFinal,
+    decimal? PuntajeMaximo,
+    List<MiRespuestaDto> Preguntas);
+
+public record ObtenerMiExamenDetalleQuery(Guid EntregaId, Guid AlumnoId)
+    : IRequest<ResultadoOperacion<MiExamenDetalleDto>>;
 
 // Query para Listar Entregas
 public record ListarEntregasEvaluacionQuery(Guid EvaluacionId, Guid InstitucionId)
@@ -80,7 +115,8 @@ public record ObtenerEntregaDetalleQuery(Guid EvaluacionId, Guid EntregaId, Guid
 // Handler que usa IResultadosRepositorio
 public class ConsultarResultadosHandler :
     IRequestHandler<ListarEntregasEvaluacionQuery, ResultadoOperacion<List<EntregaResumenDto>>>,
-    IRequestHandler<ObtenerEntregaDetalleQuery, ResultadoOperacion<EntregaDetalleDto>>
+    IRequestHandler<ObtenerEntregaDetalleQuery, ResultadoOperacion<EntregaDetalleDto>>,
+    IRequestHandler<ObtenerMiExamenDetalleQuery, ResultadoOperacion<MiExamenDetalleDto>>
 {
     private readonly IResultadosRepositorio _repositorio;
 
@@ -156,9 +192,73 @@ public class ConsultarResultadosHandler :
             alertas,
             resumen.EstadoNota,
             resumen.NotaFinal,
-            resumen.FechaAprobacionUtc);
+            resumen.FechaAprobacionUtc,
+            resumen.NombreInvitado);
 
         return ResultadoOperacion<EntregaDetalleDto>.Ok(detalle);
+    }
+
+    // S3-EV-05: el alumno ve sus errores. Solo su propia entrega (otra → 404, no se revela que existe)
+    // y solo con la nota aprobada (antes → 409: no se muestran sugerencias de la IA sin revisar).
+    public async Task<ResultadoOperacion<MiExamenDetalleDto>> Handle(
+        ObtenerMiExamenDetalleQuery request,
+        CancellationToken ct)
+    {
+        var filas = await _repositorio.ListarEntregasPorAlumnoAsync(request.AlumnoId, ct);
+        var fila = filas.FirstOrDefault(x => x.Entrega.Id == request.EntregaId && x.Entrega.AlumnoId == request.AlumnoId);
+        if (fila.Entrega is null)
+        {
+            return ResultadoOperacion<MiExamenDetalleDto>.NoEncontrado();
+        }
+
+        var (entrega, evaluacion) = fila;
+        if (entrega.EstadoNota != EstadoNotaEntrega.Aprobada)
+        {
+            return ResultadoOperacion<MiExamenDetalleDto>.Conflicto("La corrección todavía no está aprobada.");
+        }
+
+        var calificaciones = await _repositorio.ListarCalificacionesPorEntregaAsync(entrega.Id, ct);
+        var calificacionesDocente = await _repositorio.ListarCalificacionesDocentePorEntregaAsync(entrega.Id, ct);
+        var estructura = ParsearEstructuraPreguntas(evaluacion.PreguntasJson);
+        var respuestas = MapearRespuestas(entrega.RespuestasJson, estructura, calificaciones, calificacionesDocente);
+
+        var preguntas = respuestas.Select(r =>
+        {
+            var info = estructura.Preguntas.First(p => p.Id == r.PreguntaId);
+            var esMultiple = r.Tipo == "OpcionMultiple";
+            var editada = r.PuntajeDocente.HasValue;
+            var opcionCorrecta = esMultiple
+                ? info.Opciones.Values.Where(o => o.EsCorrecta).Select(o => o.Texto).FirstOrDefault()
+                : null;
+
+            decimal? puntaje = editada
+                ? r.PuntajeDocente
+                : esMultiple
+                    ? r.PuntajeObtenido ?? (r.EstadoCorreccion == "SinRespuesta" ? 0m : null)
+                    : r.NotaSugerida ?? (r.EstadoCorreccion == "SinRespuesta" ? 0m : null);
+
+            return new MiRespuestaDto(
+                r.PreguntaId,
+                r.Enunciado,
+                r.Tipo,
+                r.PuntajeMaximo,
+                esMultiple ? null : r.Respuesta,
+                r.OpcionElegidaTexto,
+                opcionCorrecta,
+                esMultiple ? r.EsCorrecta ?? false : null,
+                puntaje,
+                // La justificación de la IA solo si el docente no cambió el puntaje: si lo cambió, ya no la representa
+                !esMultiple && !editada ? r.JustificacionIA : null);
+        }).ToList();
+
+        return ResultadoOperacion<MiExamenDetalleDto>.Ok(new MiExamenDetalleDto(
+            evaluacion.Id,
+            entrega.Id,
+            evaluacion.Titulo,
+            entrega.FechaEntrega,
+            entrega.NotaFinal,
+            entrega.PuntajeMaximo,
+            preguntas));
     }
 
     private static EntregaResumenDto MapearResumen(
@@ -207,7 +307,8 @@ public class ConsultarResultadosHandler :
             alertas,
             estadoNota,
             notaFinal,
-            fechaAprobacionUtc);
+            fechaAprobacionUtc,
+            entrega.NombreInvitado);
     }
 
     private static AlertasFocoResumenDto ParsearAlertas(string alertasJson)

@@ -10,6 +10,8 @@ import { PaginaEvaluaciones } from '@/features/evaluaciones/pages/PaginaEvaluaci
 import { PaginaNuevaEvaluacion } from '@/features/evaluaciones/pages/PaginaNuevaEvaluacion';
 import { PaginaMetricas } from '@/features/metricas/PaginaMetricas';
 import { PaginaMisExamenes } from '@/features/mis-examenes/PaginaMisExamenes';
+import { PaginaMiExamen } from '@/features/mis-examenes/PaginaMiExamen';
+import { PaginaMiCuenta } from '@/features/mi-cuenta/PaginaMiCuenta';
 import { PaginaMatriculas } from '@/features/matriculas/PaginaMatriculas';
 import { PaginaEntrega } from '@/features/revision-notas/pages/PaginaEntrega';
 import { PaginaResultados } from '@/features/revision-notas/pages/PaginaResultados';
@@ -50,6 +52,11 @@ export const rutas: RouteObject[] = [
               { path: '/', element: <PaginaInicio /> },
               { path: '/no-autorizado', element: <PaginaNoAutorizada /> },
               {
+                // S3-ID-03: cualquier usuario con cuenta (el invitado no tiene contraseña)
+                element: <RutaProtegida roles={['alumno', 'docente', 'administrador']} />,
+                children: [{ path: '/mi-cuenta', element: <PaginaMiCuenta /> }],
+              },
+              {
                 // Solo docente y administrador
                 element: <RutaProtegida roles={['docente', 'administrador']} />,
                 children: [
@@ -58,9 +65,7 @@ export const rutas: RouteObject[] = [
                   { path: '/cursos/:cursoId/apuntes', element: <PaginaApuntes /> },
                   { path: '/cohortes/:cohorteId/matriculas', element: <PaginaMatriculas /> },
                   { path: '/evaluaciones', element: <PaginaEvaluaciones /> },
-                  { path: '/evaluaciones/nueva', element: <PaginaNuevaEvaluacion /> },
                   { path: '/evaluaciones/:evaluacionId', element: <PaginaEvaluacion /> },
-                  { path: '/evaluaciones/:evaluacionId/editar', element: <PaginaEditarEvaluacion /> },
                   { path: '/evaluaciones/:evaluacionId/resultados', element: <PaginaResultados /> },
                   { path: '/evaluaciones/:evaluacionId/resultados/:entregaId', element: <PaginaEntrega /> },
                   { path: '/evaluaciones/:evaluacionId/metricas', element: <PaginaMetricas /> },
@@ -74,7 +79,12 @@ export const rutas: RouteObject[] = [
               {
                 // Solo el docente conduce la sala: el hub rechaza al administrador (contrato sala-hub-v1, 4.2)
                 element: <RutaProtegida roles={['docente']} />,
-                children: [{ path: '/evaluaciones/:evaluacionId/sala', element: <PaginaSalaDocente /> }],
+                children: [
+                  { path: '/evaluaciones/:evaluacionId/sala', element: <PaginaSalaDocente /> },
+                  // Crear y editar exámenes es solo del docente: el back rechaza al administrador
+                  { path: '/evaluaciones/nueva', element: <PaginaNuevaEvaluacion /> },
+                  { path: '/evaluaciones/:evaluacionId/editar', element: <PaginaEditarEvaluacion /> },
+                ],
               },
               {
                 // Alumno e invitado: el invitado solo ve la sala (contrato sala-hub-v1, 13.1)
@@ -84,7 +94,11 @@ export const rutas: RouteObject[] = [
               {
                 // Solo alumnos: «Mis exámenes» no aplica a invitados
                 element: <RutaProtegida roles={['alumno']} />,
-                children: [{ path: '/mis-examenes', element: <PaginaMisExamenes /> }],
+                children: [
+                  { path: '/mis-examenes', element: <PaginaMisExamenes /> },
+                  // S3-EV-05: el alumno ve sus errores cuando la nota está aprobada
+                  { path: '/mis-examenes/:entregaId', element: <PaginaMiExamen /> },
+                ],
               },
             ],
           },

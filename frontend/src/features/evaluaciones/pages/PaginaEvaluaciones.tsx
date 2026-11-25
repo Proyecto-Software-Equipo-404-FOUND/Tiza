@@ -5,6 +5,7 @@ import { EnlaceBoton } from '@/shared/components/EnlaceBoton';
 import { Spinner } from '@/shared/components/Spinner';
 import { Tabla, type Columna } from '@/shared/components/Tabla';
 import { Tarjeta } from '@/shared/components/Tarjeta';
+import { useEsDocente } from '@/features/auth/useEsDocente';
 import { InsigniaEstado } from '../components/InsigniaEstado';
 import { formatearFecha } from '../formato';
 import { useEvaluaciones } from '../hooks/useEvaluaciones';
@@ -39,6 +40,8 @@ const columnas: Columna<Evaluacion>[] = [
 
 export function PaginaEvaluaciones() {
   const { data: evaluaciones, isPending, isError, error, refetch } = useEvaluaciones();
+  // Solo el docente crea evaluaciones (el back rechaza al administrador)
+  const esDocente = useEsDocente();
 
   return (
     <main className='mx-auto flex max-w-6xl flex-col gap-6 p-6'>
@@ -49,13 +52,15 @@ export function PaginaEvaluaciones() {
             Las evaluaciones de tu institución, en borrador o ya publicadas.
           </p>
         </div>
-        <EnlaceBoton
-          to='/evaluaciones/nueva'
-          icono={<Plus className='h-5 w-5' aria-hidden='true' />}
-          className='whitespace-nowrap !px-5 !py-3 !text-base border-transparent bg-tiza-lima hover:brightness-95'
-        >
-          Nueva evaluación
-        </EnlaceBoton>
+        {esDocente && (
+          <EnlaceBoton
+            to='/evaluaciones/nueva'
+            icono={<Plus className='h-5 w-5' aria-hidden='true' />}
+            className='whitespace-nowrap !px-5 !py-3 !text-base border-transparent bg-tiza-lima hover:brightness-95'
+          >
+            Nueva evaluación
+          </EnlaceBoton>
+        )}
       </header>
 
       <Tarjeta

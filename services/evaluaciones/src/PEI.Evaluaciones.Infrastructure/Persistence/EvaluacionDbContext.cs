@@ -55,6 +55,7 @@ public class EvaluacionDbContext : DbContext
             entity.Property(e => e.PuntajeMaximo).HasPrecision(6, 2).IsRequired(false);
             entity.Property(e => e.FechaAprobacionUtc).IsRequired(false);
             entity.Property(e => e.DocenteAprobadorId).IsRequired(false);
+            entity.Property(e => e.NombreInvitado).HasMaxLength(60).IsRequired(false);
             entity.HasIndex(e => new { e.SalaId, e.AlumnoId }).IsUnique();
 
             // S2-EV-02 (#144): concurrencia optimista entre el worker y el callback de IA.

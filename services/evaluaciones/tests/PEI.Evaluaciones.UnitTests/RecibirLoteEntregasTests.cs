@@ -138,6 +138,24 @@ public class RecibirLoteEntregasTests
         Assert.Equal(TipoResultado.NoEncontrado, resultado.Tipo);
     }
 
+    [Fact]
+    public async Task RecibirLote_InvitadoGuardaSuNombre()
+    {
+        var repositorio = CrearRepositorio();
+        var handler = new RecibirLoteEntregasHandler(repositorio);
+        var lote = CrearLote() with
+        {
+            Entregas = [new EntregaLoteRequest(AlumnoId, [], [], "  Lucía Fernández  ")]
+        };
+
+        var resultado = await handler.Handle(
+            new RecibirLoteEntregasCommand(SalaId, lote),
+            CancellationToken.None);
+
+        Assert.Equal(TipoResultado.Ok, resultado.Tipo);
+        Assert.Equal("Lucía Fernández", Assert.Single(repositorio.Entregas).NombreInvitado);
+    }
+
     private static LoteEntregasRequest CrearLote(
         params RespuestaLoteRequest[] respuestas)
     {

@@ -19,12 +19,15 @@ namespace PEI.SalaEnVivo.Application.DTOs.Entregas
 
     /// <summary>
     /// Representa la entrega individual de un alumno que ingresó a la sala.
-    /// El AlumnoId es el claim sub del alumno; nunca viaja nombre ni email.
+    /// El AlumnoId es el claim sub del alumno; de un alumno con cuenta nunca viaja nombre ni email.
+    /// S3-SA-01: del invitado (sin cuenta) viaja el nombre que escribió al entrar, para que el docente lo reconozca.
     /// </summary>
     public sealed record EntregaAlumnoDto(
         Guid AlumnoId,
         List<RespuestaEntregaDto> Respuestas,
-        List<AlertaFocoEntregaDto> AlertasFoco);
+        List<AlertaFocoEntregaDto> AlertasFoco,
+        [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+        string? NombreInvitado = null);
 
     /// <summary>
     /// Respuesta aceptada del alumno a una pregunta de la evaluación.
