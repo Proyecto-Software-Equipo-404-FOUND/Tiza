@@ -201,6 +201,29 @@ public class CorreccionService : ICorreccionService
         // ── Caso A: Fallo total de disponibilidad del LLM ──
         if (llmResult is null)
         {
+            // S3-IA: si la baranda ya detectó manipulación, no se pierde la alerta aunque ningún proveedor responda
+            // (por ejemplo, el filtro de contenido de Azure bloquea el mismo texto). Queda 0 para revisión docente.
+            if (esSospechosa)
+            {
+                var alerta = GenerarAlertaSinLlm(
+                    solicitud.Id,
+                    request,
+                    motivoSospecha ?? "Intento de manipulación de instrucciones detectado en la respuesta.");
+
+                solicitud.MarcarParaRevisionDocente(
+                    motivo: alerta.MotivoRevision!,
+                    esSospechaEngano: true,
+                    notaSugerida: alerta.NotaSugerida,
+                    justificacion: alerta.Justificacion,
+                    desglosePorCriterioJson: JsonSerializer.Serialize(alerta.DesglosePorCriterio, JsonOptions),
+                    proveedor: alerta.Proveedor,
+                    modelo: alerta.Modelo);
+
+                await GuardarSolicitudSeguraAsync(solicitud, cancellationToken);
+                await NotificarEvaluacionesSiAplicaAsync(request, alerta, cancellationToken);
+                return alerta;
+            }
+
             var fallback = GenerarFallback(request, "El proveedor LLM no estuvo disponible o no devolvió respuesta.");
             fallback.SolicitudId = solicitud.Id;
 
@@ -389,6 +412,39 @@ public class CorreccionService : ICorreccionService
             LatenciaMs = llmResult.LatenciaMs,
             RequiereRevisionDocente = true,
             SospechaEngano = esSospechaEngano,
+            MotivoRevision = motivo
+        };
+    }
+
+    // S3-IA: respuesta marcada por la baranda cuando la IA no pudo corregirla (proveedores caídos o filtro de contenido)
+    private static CorregirRespuestaResponse GenerarAlertaSinLlm(
+        Guid solicitudId,
+        CorregirRespuestaRequest request,
+        string motivo)
+    {
+        var comentario = "La IA no corrigió esta respuesta porque parece un intento de manipular la corrección. Revisala y poné el puntaje a mano.";
+        return new CorregirRespuestaResponse
+        {
+            SolicitudId = solicitudId,
+            NotaSugerida = 0m,
+            Justificacion = $"[Alerta Docente: {motivo}] {comentario}",
+            DesglosePorCriterio = new List<DesgloseCriterio>
+            {
+                new()
+                {
+                    Criterio = "Revisión Manual",
+                    PuntajeMaximo = request.PuntajeMaximo,
+                    PuntajeOtorgado = 0m,
+                    Comentario = motivo
+                }
+            },
+            Proveedor = "Barandas",
+            Modelo = "deteccion-patrones",
+            TokensEntrada = 0,
+            TokensSalida = 0,
+            LatenciaMs = 0,
+            RequiereRevisionDocente = true,
+            SospechaEngano = true,
             MotivoRevision = motivo
         };
     }
