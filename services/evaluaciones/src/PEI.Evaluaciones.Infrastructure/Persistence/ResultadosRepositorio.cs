@@ -38,8 +38,9 @@ public class ResultadosRepositorio : IResultadosRepositorio
         Guid institucionId,
         CancellationToken ct)
     {
+        // Con seguimiento: editar y aprobar la nota cambian la entrega y después llaman a GuardarCambiosAsync.
+        // Con AsNoTracking esos cambios no se guardaban y la nota nunca quedaba "Aprobada".
         return _contexto.EntregasExamen
-            .AsNoTracking()
             .FirstOrDefaultAsync(e => e.Id == entregaId && e.EvaluacionId == evaluacionId && e.InstitucionId == institucionId, ct);
     }
 

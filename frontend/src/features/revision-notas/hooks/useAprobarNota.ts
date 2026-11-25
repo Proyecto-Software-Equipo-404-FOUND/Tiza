@@ -14,7 +14,10 @@ export function useAprobarNota(evaluacionId: string, entregaId: string) {
   return useMutation({
     mutationFn: async (cambios: CambioNota[]) => {
       for (const cambio of cambios) {
-        await editarNotaRespuesta(evaluacionId, entregaId, cambio.preguntaId, institucionId, { puntaje: cambio.puntaje });
+        await editarNotaRespuesta(evaluacionId, entregaId, cambio.preguntaId, institucionId, {
+          puntaje: cambio.puntaje,
+          ...(cambio.comentario !== undefined ? { comentario: cambio.comentario } : {}),
+        });
       }
       return aprobarNota(evaluacionId, entregaId, institucionId);
     },

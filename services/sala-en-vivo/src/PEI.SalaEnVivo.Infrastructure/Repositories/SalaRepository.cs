@@ -23,14 +23,16 @@ namespace PEI.SalaEnVivo.Infrastructure.Repositories
 
         public async Task<bool> ExisteActivaPorPINAsync(int pin, CancellationToken cancellationToken)
         {
-            return await _context.Sala.AnyAsync(s => s.CodigoPIN == pin && s.Estado == "Activa", cancellationToken);
+            // Una sala en curso también ocupa su PIN: si no, una sala nueva podría repetirlo.
+            return await _context.Sala.AnyAsync(s => s.CodigoPIN == pin && (s.Estado == "Activa" || s.Estado == "EnCurso"), cancellationToken);
         }
 
         public async Task<Sala?> ObtenerActivaPorPINAsync(int pin, CancellationToken cancellationToken)
         {
             return await _context.Sala.FirstOrDefaultAsync(
                     s => s.CodigoPIN == pin
-                         && s.Estado == "Activa"
+                         // Incluye la sala en curso para que el alumno que cerró la pestaña pueda volver a entrar.
+                         && (s.Estado == "Activa" || s.Estado == "EnCurso")
                          && s.FechaVencimiento > DateTime.UtcNow, cancellationToken);
         }
 

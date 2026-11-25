@@ -6,5 +6,9 @@ namespace PEI.Identidad.Application.Abstractions;
 public interface IUsuariosConsultaDataAccess
 {
     Task<IReadOnlyList<UsuarioResumen>> ListarActivosAsync(string? rol, CancellationToken cancellationToken = default);
+
+    // S3-ID-01: la pantalla Usuarios también muestra a los dados de baja para poder reactivarlos.
+    Task<IReadOnlyList<UsuarioResumen>> ListarIncluyendoInactivosAsync(string? rol, CancellationToken cancellationToken = default) =>
+        ListarActivosAsync(rol, cancellationToken);
     Task<UsuarioResumen?> ObtenerActivoAsync(Guid id, CancellationToken cancellationToken = default);
 }

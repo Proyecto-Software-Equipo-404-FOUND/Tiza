@@ -20,6 +20,10 @@ public sealed class ReactivarUsuarioHandler(IUsuariosModificacionDataAccess data
         if (!IdentityRoles.IsAssignable(usuario.Rol))
             return ModificarEstadoUsuarioResultado.RolNoPermitido;
 
+        // Un pendiente de activación no tiene contraseña: reactivarlo lo dejaría activo sin poder entrar
+        if (!usuario.Activo && usuario.PasswordHash == UsuarioPendiente.MarcaPasswordHash)
+            return ModificarEstadoUsuarioResultado.PendienteActivacion;
+
         if (!usuario.Activo)
         {
             usuario.Activo = true;

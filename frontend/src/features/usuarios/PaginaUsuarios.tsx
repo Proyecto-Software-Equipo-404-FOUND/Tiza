@@ -12,8 +12,16 @@ import { BannerError } from '@/shared/components/BannerError';
 import { Spinner } from '@/shared/components/Spinner';
 import { Tabla, type Columna } from '@/shared/components/Tabla';
 import { Tarjeta } from '@/shared/components/Tarjeta';
+import { ModalConfirmacion } from '@/shared/components/ModalConfirmacion';
 import { useAviso } from '@/shared/components/Aviso';
-import { listarUsuarios, registrarUsuario, type RolNuevo, type UsuarioDeLaLista } from './api/usuarios';
+import {
+  darDeBajaUsuario,
+  listarUsuarios,
+  reactivarUsuario,
+  registrarUsuario,
+  type RolNuevo,
+  type UsuarioDeLaLista,
+} from './api/usuarios';
 import { ImportarAlumnosCsv } from './ImportarAlumnosCsv';
 
 // Mismos límites que valida Identidad (RegisterRequest). BCrypt corta la contraseña en 72 bytes.
@@ -32,11 +40,40 @@ type Errores = Partial<Record<keyof Campos | 'confirmacion' | 'confirmacionEmail
 
 const VACIO: Campos = { nombre: '', apellido: '', email: '', password: '' };
 
-const columnas: Columna<UsuarioDeLaLista>[] = [
+type AccionEstado = { usuario: UsuarioDeLaLista; accion: 'baja' | 'reactivar' };
+
+const columnasUsuarios = (onAccion: (accion: AccionEstado) => void): Columna<UsuarioDeLaLista>[] => [
   // En el celular la tabla tiene que entrar sin desplazarse: los textos largos (sobre todo el email) se parten en líneas
   { titulo: 'Nombre', celda: (usuario) => <span className='break-words font-semibold'>{usuario.nombre}</span> },
   { titulo: 'Email', celda: (usuario) => <span className='break-all'>{usuario.email}</span> },
   { titulo: 'Rol', celda: (usuario) => usuario.rol },
+  {
+    titulo: 'Estado',
+    celda: (usuario) =>
+      usuario.pendienteActivacion ? (
+        <span className='rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900'>Pendiente de activación</span>
+      ) : usuario.activo === false ? (
+        <span className='rounded-full bg-tiza-pizarra/10 px-3 py-1 text-xs font-bold text-tiza-pizarra'>Dado de baja</span>
+      ) : (
+        <span className='rounded-full bg-tiza-menta px-3 py-1 text-xs font-bold text-tiza-bosque'>Activo</span>
+      ),
+  },
+  {
+    titulo: 'Acción',
+    celda: (usuario) =>
+      usuario.pendienteActivacion ? (
+        // Sin contraseña no puede entrar aunque se lo active: hay que volver a importarlo con contraseña inicial
+        <span className='text-xs text-tiza-bosque/70'>Importalo de nuevo con contraseña inicial</span>
+      ) : usuario.activo === false ? (
+        <Boton type='button' variante='secundario' onClick={() => onAccion({ usuario, accion: 'reactivar' })}>
+          Reactivar
+        </Boton>
+      ) : (
+        <Boton type='button' variante='peligro' onClick={() => onAccion({ usuario, accion: 'baja' })}>
+          Dar de baja
+        </Boton>
+      ),
+  },
 ];
 
 const AVISO_CREADO: Record<RolNuevo, string> = {
@@ -55,8 +92,20 @@ export function PaginaUsuarios() {
 
   const [rol, setRol] = useState<RolNuevo>('Alumno');
 
-  const alumnos = useQuery({ queryKey: ['alumnos', 'detalle'], queryFn: () => listarUsuarios('Alumno') });
-  const docentes = useQuery({ queryKey: ['docentes', 'detalle'], queryFn: () => listarUsuarios('Docente') });
+  const alumnos = useQuery({ queryKey: ['alumnos', 'detalle'], queryFn: () => listarUsuarios('Alumno', true) });
+  const docentes = useQuery({ queryKey: ['docentes', 'detalle'], queryFn: () => listarUsuarios('Docente', true) });
+  const [pendiente, setPendiente] = useState<AccionEstado | null>(null);
+  const cambiarEstado = useMutation({
+    mutationFn: ({ usuario, accion }: AccionEstado) =>
+      accion === 'baja' ? darDeBajaUsuario(usuario.id) : reactivarUsuario(usuario.id),
+    onSuccess: (_resultado, { usuario, accion }) => {
+      mostrar('exito', accion === 'baja' ? `${usuario.nombre} quedó dado de baja.` : `${usuario.nombre} fue reactivado.`);
+      // Las otras pantallas (matrículas, selector de docentes) usan sus propias listas de activos
+      void cliente.invalidateQueries({ queryKey: ['alumnos'] });
+      void cliente.invalidateQueries({ queryKey: ['docentes'] });
+    },
+    onError: (falla) => mostrar('error', mensajeDeError(falla)),
+  });
   const cargando = alumnos.isPending || docentes.isPending;
   const falla = alumnos.error ?? docentes.error;
   const usuarios = [...(docentes.data ?? []), ...(alumnos.data ?? [])];
@@ -231,13 +280,30 @@ export function PaginaUsuarios() {
           />
         ) : (
           <Tabla
-            columnas={columnas}
+            columnas={columnasUsuarios(setPendiente)}
             filas={usuarios}
             clave={(usuario) => usuario.id}
             textoVacio='Todavía no hay usuarios.'
           />
         )}
       </Tarjeta>
+
+      <ModalConfirmacion
+        abierto={pendiente !== null}
+        titulo={pendiente?.accion === 'reactivar' ? '¿Reactivar al usuario?' : '¿Dar de baja al usuario?'}
+        mensaje={
+          pendiente?.accion === 'reactivar'
+            ? `${pendiente.usuario.nombre} va a poder iniciar sesión de nuevo.`
+            : `${pendiente?.usuario.nombre ?? ''} no va a poder iniciar sesión y se cierran sus sesiones. No se borran sus datos y lo podés reactivar.`
+        }
+        textoConfirmar={pendiente?.accion === 'reactivar' ? 'Sí, reactivar' : 'Sí, dar de baja'}
+        variante={pendiente?.accion === 'reactivar' ? 'principal' : 'peligro'}
+        onConfirmar={() => {
+          if (pendiente) cambiarEstado.mutate(pendiente);
+          setPendiente(null);
+        }}
+        onCancelar={() => setPendiente(null)}
+      />
     </main>
   );
 }

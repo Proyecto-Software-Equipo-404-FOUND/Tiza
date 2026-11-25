@@ -101,13 +101,13 @@ describe('ImportarAlumnosCsv', () => {
     mostrar();
     await userEvent.upload(screen.getByLabelText('Archivo CSV'), csv());
     await userEvent.click(screen.getByRole('button', { name: 'Importar CSV' }));
-    expect(await screen.findByText(/Reciben un email para definir su contraseña/)).toBeInTheDocument();
+    expect(await screen.findByText(/Quedan pendientes de activación/)).toBeInTheDocument();
 
     vi.mocked(api.importarAlumnos).mockResolvedValueOnce({ creados: 1, omitidos: 0, errores: [] });
     await userEvent.upload(screen.getByLabelText('Archivo CSV'), csv());
     await userEvent.click(screen.getByRole('button', { name: 'Importar CSV' }));
-    expect(await screen.findByText(/Recibe un email para definir su contraseña/)).toBeInTheDocument();
-    expect(screen.queryByText(/Reciben un email/)).not.toBeInTheDocument();
+    expect(await screen.findByText(/Queda pendiente de activación/)).toBeInTheDocument();
+    expect(screen.queryByText(/Quedan pendientes de activación/)).not.toBeInTheDocument();
   });
 
   it('muestra un ejemplo de cómo armar el archivo y aclara el máximo de alumnos', () => {
@@ -171,7 +171,7 @@ describe('ImportarAlumnosCsv', () => {
     await userEvent.upload(screen.getByLabelText('Archivo CSV'), csv());
     await userEvent.click(screen.getByRole('button', { name: 'Importar CSV' }));
 
-    expect(await screen.findByText(/Reciben un email para definir su contraseña/)).toBeInTheDocument();
+    expect(await screen.findByText(/Quedan pendientes de activación/)).toBeInTheDocument();
     expect(vi.mocked(api.importarAlumnos).mock.calls[0]?.[1]).toBeUndefined();
   });
 
@@ -183,7 +183,7 @@ describe('ImportarAlumnosCsv', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Importar CSV' }));
 
     expect(await screen.findByText(/Ya pueden iniciar sesión con la contraseña inicial/)).toBeInTheDocument();
-    expect(screen.queryByText(/Reciben un email/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Quedan pendientes de activación/)).not.toBeInTheDocument();
     expect(vi.mocked(api.importarAlumnos).mock.calls[0]?.[1]).toBe('clave1234');
     expect(screen.getByLabelText('Contraseña inicial (opcional)')).toHaveValue('');
   });

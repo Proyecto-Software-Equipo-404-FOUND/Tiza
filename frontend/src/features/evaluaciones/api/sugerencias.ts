@@ -20,7 +20,7 @@ export async function sugerirPreguntas(datos: DatosSugerencia): Promise<Respuest
 }
 
 // Mismas rutas que usa la feature de cursos; se repiten acá porque una feature no importa de otra
-export const listarCursosParaSugerir = () => pedir<ResultadoPaginado<Curso>>('/api/v1/cursos');
+export const listarCursosParaSugerir = () => pedir<ResultadoPaginado<Curso>>('/api/v1/cursos?tamanoPagina=50');
 
 export const listarApuntesParaSugerir = (cursoId: string) =>
   pedir<ApunteSugerible[]>(`/api/v1/cursos/${cursoId}/materiales`);

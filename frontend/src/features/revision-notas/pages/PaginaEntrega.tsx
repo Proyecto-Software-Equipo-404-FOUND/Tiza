@@ -146,6 +146,7 @@ function DetalleEntrega({ entrega, evaluacionId, nombre }: { entrega: EntregaDet
   // El componente se vuelve a montar (key) solo cuando cambia de entrega. Si al aprobar falla un paso y la pantalla se
   // refresca, lo escrito y el mensaje de error siguen ahí.
   const [escritos, setEscritos] = useState(() => puntajesIniciales(entrega.respuestas));
+  const [comentarios, setComentarios] = useState<Record<string, string>>({});
   const [confirmando, setConfirmando] = useState(false);
   const aprobar = useAprobarNota(evaluacionId, entrega.entregaId);
   const { usuario } = useSesion();
@@ -165,7 +166,7 @@ function DetalleEntrega({ entrega, evaluacionId, nombre }: { entrega: EntregaDet
 
   const confirmar = () => {
     setConfirmando(false);
-    const cambios = armarCambios(entrega, valores);
+    const cambios = armarCambios(entrega, valores, comentarios);
     if (cambios) aprobar.mutate(cambios);
   };
 
@@ -251,6 +252,12 @@ function DetalleEntrega({ entrega, evaluacionId, nombre }: { entrega: EntregaDet
                       error={errorDe(respuesta)}
                       deshabilitado={aprobada || soloLectura}
                       onCambiar={(texto) => setEscritos((previos) => ({ ...previos, [respuesta.preguntaId]: texto }))}
+                      comentario={comentarios[respuesta.preguntaId] ?? respuesta.comentarioDocente ?? ''}
+                      onCambiarComentario={
+                        soloLectura
+                          ? undefined
+                          : (texto) => setComentarios((previos) => ({ ...previos, [respuesta.preguntaId]: texto }))
+                      }
                     />
                   ) : undefined
                 }
